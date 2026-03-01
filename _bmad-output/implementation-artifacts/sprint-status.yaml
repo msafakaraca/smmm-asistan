@@ -1,0 +1,230 @@
+# SMMM-AI Sprint Planning
+# Generated: 2026-01-29
+# BMAD Methodology
+
+project: smmm-ai
+version: 1.0.0
+planning_date: 2026-01-29
+sprint_duration: 2_weeks
+
+# ===========================================
+# SPRINT OVERVIEW
+# ===========================================
+
+sprints:
+  - id: S1
+    name: "Altyapı İyileştirmeleri"
+    start_date: 2026-02-01
+    end_date: 2026-02-14
+    goal: "Test altyapısı ve API dokümantasyonu kurulumu"
+    status: planned
+    capacity: 40 # story points
+
+    stories:
+      - id: E11-S1
+        title: "API Dokümantasyonu (Swagger)"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Swagger/OpenAPI entegrasyonu ile API endpoint'lerinin belgelenmesi"
+
+      - id: E11-S16
+        title: "Test Altyapısı Kurulumu"
+        priority: P1
+        points: 13
+        status: pending
+        assignee: null
+        description: "Jest + Testing Library kurulumu, kritik API'ler için test yazımı"
+
+      - id: E9-S11
+        title: "Key Rotation Mekanizması"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Encryption key rotation ve migration script'leri"
+
+      - id: E11-S10
+        title: "Bulk Import İyileştirme"
+        priority: P2
+        points: 5
+        status: pending
+        assignee: null
+        description: "Excel import hata mesajlarının iyileştirilmesi"
+
+      - id: E11-S8
+        title: "Keyboard Shortcuts"
+        priority: P3
+        points: 5
+        status: pending
+        assignee: null
+        description: "Hızlı navigasyon için klavye kısayolları"
+
+  - id: S2
+    name: "Bot & Performans"
+    start_date: 2026-02-15
+    end_date: 2026-02-28
+    goal: "Bot queue sistemi ve performans iyileştirmeleri"
+    status: planned
+    capacity: 40
+
+    stories:
+      - id: E11-S11
+        title: "Bot Queue System"
+        priority: P2
+        points: 13
+        status: pending
+        assignee: null
+        description: "GİB bot için kuyruk yönetimi sistemi"
+
+      - id: E11-S6
+        title: "Dashboard Analytics"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Kullanım istatistikleri dashboard'u"
+
+      - id: E11-S12
+        title: "PDF OCR İyileştirme"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Türkçe karakter OCR doğruluğu artırma"
+
+      - id: E11-S2
+        title: "APM Monitoring"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Sentry veya benzeri APM entegrasyonu"
+
+  - id: S3
+    name: "Entegrasyonlar"
+    start_date: 2026-03-01
+    end_date: 2026-03-14
+    goal: "Webhook ve dış sistem entegrasyonları"
+    status: planned
+    capacity: 40
+
+    stories:
+      - id: E11-S14
+        title: "Webhook Entegrasyonları"
+        priority: P2
+        points: 13
+        status: pending
+        assignee: null
+        description: "3. parti sistemler için webhook desteği"
+
+      - id: E11-S3
+        title: "Backup Stratejisi"
+        priority: P2
+        points: 8
+        status: pending
+        assignee: null
+        description: "Otomatik yedekleme ve restore mekanizması"
+
+      - id: E11-S15
+        title: "Advanced Reporting"
+        priority: P2
+        points: 13
+        status: pending
+        assignee: null
+        description: "Gelişmiş raporlama özellikleri"
+
+  - id: S4
+    name: "E-Fatura MVP"
+    start_date: 2026-03-15
+    end_date: 2026-03-28
+    goal: "E-Fatura entegrasyonu planlama ve MVP"
+    status: planned
+    capacity: 40
+
+    stories:
+      - id: E11-S4-PLAN
+        title: "E-Fatura Entegrasyonu - Planlama"
+        priority: P1
+        points: 8
+        status: pending
+        assignee: null
+        description: "GİB e-fatura API araştırma ve mimari tasarım"
+
+      - id: E11-S4-MVP
+        title: "E-Fatura Entegrasyonu - MVP"
+        priority: P1
+        points: 21
+        status: pending
+        assignee: null
+        description: "Temel e-fatura görüntüleme ve listeleme"
+
+# ===========================================
+# BACKLOG (Future Sprints)
+# ===========================================
+
+backlog:
+  - id: E11-S5
+    title: "Mobil Uygulama"
+    priority: P2
+    points: 34
+    status: backlog
+    description: "iOS/Android native uygulama"
+
+  - id: E11-S7
+    title: "PDF Merge İyileştirme"
+    priority: P3
+    points: 5
+    status: backlog
+    description: "Çoklu PDF birleştirme UX iyileştirmesi"
+
+  - id: E11-S9
+    title: "Dark Mode"
+    priority: P3
+    points: 8
+    status: backlog
+    description: "Karanlık tema desteği"
+
+  - id: E11-S13
+    title: "Multi-Language"
+    priority: P3
+    points: 13
+    status: backlog
+    description: "İngilizce dil desteği"
+
+# ===========================================
+# VELOCITY & METRICS
+# ===========================================
+
+metrics:
+  team_size: 1
+  velocity_target: 40
+  sprint_length_days: 14
+
+priorities:
+  P0: "Kritik - Hemen yapılmalı"
+  P1: "Yüksek - Sprint içinde"
+  P2: "Orta - Planlanmış"
+  P3: "Düşük - Backlog"
+
+point_scale:
+  1: "Trivial (< 1 saat)"
+  2: "Kolay (1-2 saat)"
+  3: "Basit (2-4 saat)"
+  5: "Orta (4-8 saat)"
+  8: "Büyük (1-2 gün)"
+  13: "Çok Büyük (3-5 gün)"
+  21: "Epic (1 hafta+)"
+  34: "Split gerekli"
+
+# ===========================================
+# NOTES
+# ===========================================
+
+notes:
+  - "Sprint 1 altyapı odaklı - test ve dokümantasyon öncelikli"
+  - "Sprint 2 bot stabilitesi ve performans"
+  - "Sprint 3 dış entegrasyonlar"
+  - "Sprint 4 e-fatura MVP - en çok talep edilen özellik"
+  - "Mobil uygulama ayrı bir proje olarak değerlendirilmeli"

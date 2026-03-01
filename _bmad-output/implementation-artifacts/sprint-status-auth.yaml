@@ -1,0 +1,164 @@
+# Auth Sistemi Sprint Planı
+# Proje: smmm_asistan
+# Oluşturma: 2026-02-09
+# PRD: prd-auth-system.md
+# Mimari: architecture-auth.md
+
+sprint:
+  name: "Auth Sistemi MVP"
+  status: "completed"
+  completed_at: "2026-02-09"
+  started_at: "2026-02-09"
+
+epics:
+  - id: E1
+    title: "Altyapı & Brownfield Temizlik"
+    status: completed
+    stories:
+      - id: E1-S1
+        title: "NextAuth Kalıntılarını Temizle ve Auth Dosyalarını Konsolide Et"
+        status: completed
+        blocked_by: []
+        frs: [FR37, FR38]
+        ars: [AR1, AR2, AR8, AR10]
+        notes: |
+          - prisma/schema.prisma: accounts, sessions, verification_tokens modelleri silindi
+          - user_profiles: hashedPassword ve emailVerified kaldırıldı, kvkkConsentAt/Version eklendi
+          - [...nextauth]/route.ts, auth.ts, register/route.ts silindi
+          - auth-supabase.ts yeniden yazıldı (registerAction, loginAction, logoutAction, completeOAuthRegistration, resetPasswordAction, updatePasswordAction, resendVerificationEmail)
+
+      - id: E1-S2
+        title: "Auth Callback Route ve Middleware Email Doğrulama"
+        status: completed
+        blocked_by: [E1-S1]
+        frs: [FR39, FR9, FR18]
+        ars: [AR5, AR6]
+        notes: |
+          - src/app/auth/callback/route.ts oluşturuldu (exchangeCodeForSession, type routing, OAuth profile check)
+          - middleware.ts güncellendi: email_confirmed_at kontrolü, auth flow sayfaları koruma
+
+  - id: E2
+    title: "Email/Şifre Kayıt Akışı"
+    status: completed
+    stories:
+      - id: E2-S1
+        title: "Supabase Auth ile Email/Şifre Kayıt"
+        status: completed
+        blocked_by: [E1-S1, E1-S2]
+        frs: [FR1, FR4, FR5, FR6, FR7]
+        ars: [AR3]
+        notes: |
+          - register-form.tsx yeniden yazıldı: registerAction Server Action, Zod validation, KVKK checkbox
+          - Başarılı kayıt sonrası /auth/verify-email'e yönlendirme
+
+      - id: E2-S2
+        title: "KVKK Onay Kutusu ve Kayıt Entegrasyonu"
+        status: completed
+        blocked_by: [E2-S1]
+        frs: [FR27, FR28, FR29, FR32]
+        notes: |
+          - KVKK checkbox register-form.tsx'e entegre edildi (z.literal(true) validasyon)
+          - KVKK link yeni sekmede açılıyor
+
+  - id: E3
+    title: "Giriş & Şifre Kurtarma"
+    status: completed
+    stories:
+      - id: E3-S1
+        title: "Email/Şifre Giriş Akışını Güncelle"
+        status: completed
+        blocked_by: [E1-S1]
+        frs: [FR13, FR15, FR16, FR17, FR33, FR34]
+        notes: |
+          - login-form.tsx güncellendi: auth-supabase import, OAuth button, "Şifremi Unuttum" linki
+          - "veya" separator ile Google OAuth butonu eklendi
+
+      - id: E3-S2
+        title: "Şifremi Unuttum & Şifre Sıfırlama Akışı"
+        status: completed
+        blocked_by: [E1-S2, E3-S1]
+        frs: [FR19, FR20, FR21, FR22, FR36]
+        notes: |
+          - src/app/auth/forgot-password/page.tsx + forgot-password-form.tsx oluşturuldu
+          - src/app/auth/reset-password/page.tsx + reset-password-form.tsx oluşturuldu
+          - Şifre onay alanı, min 8 karakter validasyonu
+
+  - id: E4
+    title: "Google OAuth Entegrasyonu"
+    status: completed
+    stories:
+      - id: E4-S1
+        title: "Google OAuth Kayıt & Giriş"
+        status: completed
+        blocked_by: [E1-S2, E2-S1]
+        frs: [FR2, FR3, FR14]
+        ars: [AR4, AR9]
+        notes: |
+          - oauth-button.tsx oluşturuldu (Google SVG, mode prop)
+          - set-password page + form oluşturuldu (OAuth sonrası tamamlama: şifre + ofis + KVKK)
+          - Callback route OAuth kullanıcı profilsizse /auth/set-password'e yönlendiriyor
+
+  - id: E5
+    title: "Email Doğrulama Akışı"
+    status: completed
+    stories:
+      - id: E5-S1
+        title: "Email Doğrulama Bekleme Sayfası"
+        status: completed
+        blocked_by: [E1-S2, E2-S1]
+        frs: [FR8, FR10, FR11, FR12, FR35]
+        notes: |
+          - src/app/auth/verify-email/page.tsx + verify-email-card.tsx oluşturuldu
+          - "Tekrar Gönder" butonu resendVerificationEmail action ile entegre
+
+  - id: E6
+    title: "KVKK Uyumluluk Sayfaları"
+    status: completed
+    stories:
+      - id: E6-S1
+        title: "KVKK Sayfaları ve Footer Linkleri"
+        status: completed
+        blocked_by: []
+        frs: [FR30, FR31]
+        notes: |
+          - kvkk-aydinlatma-metni sayfası oluşturuldu (8 bölüm, KVKK 11. madde hakları)
+          - gizlilik-politikasi mevcut ve kapsamlı
+          - cerez-politikasi sayfası oluşturuldu
+          - register sayfası footer'ına gizlilik ve çerez politikası linkleri eklendi
+
+  - id: E7
+    title: "Güvenlik & Polish"
+    status: completed
+    stories:
+      - id: E7-S1
+        title: "Auth Rate Limiting Genişletme"
+        status: completed
+        blocked_by: [E1-S1]
+        frs: [FR23, FR24]
+        ars: [AR7]
+        notes: |
+          - getRateLimiter: /auth/* path'leri authRatelimit kapsamına eklendi (5 req/min)
+          - Mevcut authRatelimit altyapısı yeni auth sayfalarını kapsıyor
+
+      - id: E7-S2
+        title: "Hata Mesajları Standardizasyonu ve Erişilebilirlik"
+        status: completed
+        blocked_by: [E2-S1, E3-S1, E3-S2, E4-S1]
+        frs: [FR33, FR34, FR35, FR36]
+        nfrs: [NFR14, NFR15, NFR16]
+        notes: |
+          - Tüm hata mesajları Türkçe ve tutarlı
+          - Label/Input htmlFor/id eşleşmeleri doğru
+          - Form validasyonları Zod ile tip-güvenli
+          - Güvenlik: resetPasswordAction her zaman success döner (email enumeration koruması)
+
+# Uygulama sırası (bağımlılıklara göre):
+# 1. ✅ E1-S1 (temizlik) + E6-S1 (KVKK sayfaları)
+# 2. ✅ E1-S2 (callback + middleware)
+# 3. ✅ E2-S1 (kayıt) + E3-S1 (giriş)
+# 4. ✅ E2-S2 (KVKK checkbox)
+# 5. ✅ E3-S2 (şifre sıfırlama)
+# 6. ✅ E4-S1 (Google OAuth)
+# 7. ✅ E5-S1 (email doğrulama UI)
+# 8. ✅ E7-S1 (rate limiting)
+# 9. ✅ E7-S2 (polish)

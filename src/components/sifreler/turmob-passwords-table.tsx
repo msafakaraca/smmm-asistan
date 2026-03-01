@@ -1,0 +1,414 @@
+"use client";
+
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Icon } from "@iconify/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
+
+interface CustomerPasswordSummary {
+  id: string;
+  unvan: string;
+  kisaltma: string | null;
+  vknTckn: string;
+  turmob: {
+    kullaniciAdi: string | null;
+    sifre: string | null;
+    hasKullaniciAdi: boolean;
+    hasSifre: boolean;
+  };
+}
+
+interface FormState {
+  turmobKullaniciAdi: string;
+  turmobSifre: string;
+  isDirty: boolean;
+}
+
+const VIRTUAL_THRESHOLD = 100;
+
+export function TurmobPasswordsTable() {
+  const [customers, setCustomers] = useState<CustomerPasswordSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const [formStates, setFormStates] = useState<Record<string, FormState>>({});
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/sifreler/summary");
+      if (!response.ok) throw new Error("Veriler yüklenemedi");
+      const data = await response.json();
+      setCustomers(data);
+      setFormStates({});
+    } catch (error) {
+      console.error("Şifreler yüklenirken hata:", error);
+      toast.error("Şifreler yüklenirken bir hata oluştu");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery.trim()) return customers;
+
+    const query = searchQuery.toLowerCase();
+    return customers.filter(
+      (c) =>
+        c.unvan.toLowerCase().includes(query) ||
+        c.vknTckn.includes(query) ||
+        (c.kisaltma && c.kisaltma.toLowerCase().includes(query))
+    );
+  }, [customers, searchQuery]);
+
+  const useVirtual = filteredCustomers.length > VIRTUAL_THRESHOLD;
+  const rowVirtualizer = useVirtualizer({
+    count: filteredCustomers.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 64,
+    overscan: 5,
+    enabled: useVirtual,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const totalSize = rowVirtualizer.getTotalSize();
+
+  const getFormState = (customerId: string): FormState => {
+    return (
+      formStates[customerId] || {
+        turmobKullaniciAdi: "",
+        turmobSifre: "",
+        isDirty: false,
+      }
+    );
+  };
+
+  const updateFormState = (
+    customerId: string,
+    field: "turmobKullaniciAdi" | "turmobSifre",
+    value: string
+  ) => {
+    setFormStates((prev) => ({
+      ...prev,
+      [customerId]: {
+        ...getFormState(customerId),
+        [field]: value,
+        isDirty: true,
+      },
+    }));
+  };
+
+  const handleSave = async (customerId: string) => {
+    const formState = getFormState(customerId);
+    if (!formState.isDirty) return;
+
+    if (!formState.turmobKullaniciAdi.trim() && !formState.turmobSifre.trim()) {
+      toast.error("En az bir alan doldurulmalı");
+      return;
+    }
+
+    const previousCustomers = customers;
+    const previousFormStates = formStates;
+
+    setCustomers((prev) =>
+      prev.map((c) => {
+        if (c.id === customerId) {
+          return {
+            ...c,
+            turmob: {
+              ...c.turmob,
+              kullaniciAdi: formState.turmobKullaniciAdi.trim() || c.turmob.kullaniciAdi,
+              sifre: formState.turmobSifre.trim() || c.turmob.sifre,
+              hasKullaniciAdi: formState.turmobKullaniciAdi.trim() ? true : c.turmob.hasKullaniciAdi,
+              hasSifre: formState.turmobSifre.trim() ? true : c.turmob.hasSifre,
+            },
+          };
+        }
+        return c;
+      })
+    );
+
+    setFormStates((prev) => {
+      const newStates = { ...prev };
+      delete newStates[customerId];
+      return newStates;
+    });
+
+    toast.success("Kaydedildi");
+
+    const payload: Record<string, string> = { type: "turmob" };
+    if (formState.turmobKullaniciAdi.trim()) {
+      payload.turmobKullaniciAdi = formState.turmobKullaniciAdi.trim();
+    }
+    if (formState.turmobSifre.trim()) {
+      payload.turmobSifre = formState.turmobSifre.trim();
+    }
+
+    try {
+      const response = await fetch(`/api/customers/${customerId}/credentials`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Kaydetme başarısız");
+    } catch (error) {
+      console.error("Kaydetme hatası:", error);
+      setCustomers(previousCustomers);
+      setFormStates(previousFormStates);
+      toast.error("Kaydetme sırasında bir hata oluştu");
+    }
+  };
+
+  const getStatus = (customer: CustomerPasswordSummary) => {
+    return customer.turmob.hasKullaniciAdi && customer.turmob.hasSifre;
+  };
+
+  const togglePassword = (customerId: string) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [customerId]: !prev[customerId],
+    }));
+  };
+
+  const renderRow = (customer: CustomerPasswordSummary, index: number, style?: React.CSSProperties) => {
+    const formState = getFormState(customer.id);
+    const isSaving = savingId === customer.id;
+    const isComplete = getStatus(customer);
+
+    return (
+      <div
+        key={customer.id}
+        style={style}
+        className={cn(
+          "grid grid-cols-[minmax(200px,1.5fr)_minmax(140px,1fr)_minmax(140px,1fr)_auto] gap-2 px-3 items-center transition-colors border-b border-border/50",
+          index % 2 === 0 ? "bg-background" : "bg-muted/20",
+          "hover:bg-muted/40",
+          style ? "" : "py-2"
+        )}
+      >
+        {/* Şirket */}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "w-1.5 h-1.5 rounded-full shrink-0",
+                isComplete ? "bg-green-500" : "bg-yellow-500"
+              )}
+            />
+            <span className="font-medium text-sm truncate">
+              {customer.kisaltma || customer.unvan}
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground ml-3.5">
+            {customer.vknTckn}
+          </span>
+        </div>
+
+        {/* Kullanıcı Adı (TCKN/VKN) */}
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="TCKN/VKN girin"
+            value={formState.isDirty ? formState.turmobKullaniciAdi : (customer.turmob.kullaniciAdi || "")}
+            onChange={(e) =>
+              updateFormState(customer.id, "turmobKullaniciAdi", e.target.value)
+            }
+            disabled={isSaving}
+            className="h-8 text-xs"
+          />
+          {customer.turmob.hasKullaniciAdi && !formState.isDirty && (
+            <Icon
+              icon="solar:check-circle-bold"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-3.5 text-green-500"
+            />
+          )}
+        </div>
+
+        {/* Şifre */}
+        <div className="relative">
+          <Input
+            type={showPasswords[customer.id] ? "text" : "password"}
+            placeholder="Şifre girin"
+            value={formState.isDirty ? formState.turmobSifre : (customer.turmob.sifre || "")}
+            onChange={(e) =>
+              updateFormState(customer.id, "turmobSifre", e.target.value)
+            }
+            disabled={isSaving}
+            className="h-8 text-xs pr-8"
+          />
+          {customer.turmob.sifre && (
+            <button
+              type="button"
+              onClick={() => togglePassword(customer.id)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Icon
+                icon={
+                  showPasswords[customer.id]
+                    ? "solar:eye-closed-linear"
+                    : "solar:eye-linear"
+                }
+                className="size-4"
+              />
+            </button>
+          )}
+        </div>
+
+        {/* Kaydet Butonu */}
+        <div className="w-[70px]">
+          <Button
+            size="sm"
+            variant={formState.isDirty ? "default" : "ghost"}
+            onClick={() => handleSave(customer.id)}
+            disabled={!formState.isDirty || isSaving}
+            className="h-8 w-full text-xs gap-1"
+          >
+            {isSaving ? (
+              <Icon
+                icon="solar:refresh-bold"
+                className="size-3.5 animate-spin"
+              />
+            ) : (
+              <>
+                <Icon icon="solar:diskette-bold" className="size-3.5" />
+                Kaydet
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-full flex flex-col p-6">
+      <Card className="flex-1 flex flex-col overflow-hidden">
+        <CardHeader className="border-b">
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-xl">Şifreler</CardTitle>
+              <CardDescription className="mt-1">
+                TÜRMOB Entegratör (e-Beyanname) Giriş Bilgileri
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 overflow-hidden p-4">
+          {/* Search */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-1">
+              <Icon
+                icon="solar:magnifer-linear"
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+              />
+              <Input
+                placeholder="Mükellef ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          {/* Content */}
+          {loading ? (
+            <div className="flex items-center justify-center h-[calc(100%-60px)]">
+              <Icon
+                icon="solar:refresh-bold"
+                className="size-6 animate-spin text-muted-foreground"
+              />
+              <span className="ml-2 text-muted-foreground">Yükleniyor...</span>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[calc(100%-60px)] text-muted-foreground">
+              <Icon
+                icon="solar:lock-keyhole-bold"
+                className="size-12 mb-4 opacity-50"
+              />
+              <p className="font-medium">
+                {searchQuery
+                  ? "Arama sonucu bulunamadı"
+                  : "Henüz mükellef bulunmuyor"}
+              </p>
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2"
+                >
+                  Aramayı Temizle
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="h-[calc(100%-60px)] flex flex-col">
+              {/* Tablo Header */}
+              <div className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm border-b">
+                <div className="grid grid-cols-[minmax(200px,1.5fr)_minmax(140px,1fr)_minmax(140px,1fr)_auto] gap-2 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <div>Şirket</div>
+                  <div>Kullanıcı (TCKN/VKN)</div>
+                  <div>Şifre</div>
+                  <div className="w-[70px]"></div>
+                </div>
+              </div>
+
+              {/* Tablo Satırları - Virtual Scrolling */}
+              <div ref={parentRef} className="flex-1 overflow-auto">
+                <div
+                  style={{
+                    height: useVirtual ? totalSize : "auto",
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {useVirtual ? (
+                    virtualRows.map((virtualRow) => {
+                      const customer = filteredCustomers[virtualRow.index];
+                      return renderRow(customer, virtualRow.index, {
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: virtualRow.size,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      });
+                    })
+                  ) : (
+                    <div className="divide-y divide-border/50">
+                      {filteredCustomers.map((customer, index) =>
+                        renderRow(customer, index)
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

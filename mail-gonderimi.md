@@ -1,0 +1,851 @@
+# Mail Gönderim Modülü - Implementation Planı
+
+## 🎯 Özet
+
+Bu plan, SMMM-AI platformuna kapsamlı bir **Mail Gönderim Modülü** eklemek için gerekli tüm adımları içerir. Modül, mükelleflere ve bankalara beyanname bildirimleri göndermek için **Outlook (Microsoft Graph API)** ve **Gmail (Google API)** entegrasyonları ile çalışacaktır.
+
+---
+
+## 1. Database Schema Değişiklikleri
+
+### 1.1 Yeni Model: MailStatus
+
+```prisma
+// prisma/schema.prisma
+
+model MailStatus {
+  id              String    @id @default(uuid()) @db.Uuid
+
+  // Müşteri bilgisi
+  customerId      String    @db.Uuid
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Dönem bilgisi
+  year            Int
+  month           Int
+
+  // Mod: "mukellef" veya "banka"
+  mode            String    @default("mukellef")
+
+  // Durum takibi
+  mailSent        Boolean   @default(false)
+  mailSentAt      DateTime?
+  mailSentBy      String?   // user email
+
+  whatsappSent    Boolean   @default(false)
+  whatsappSentAt  DateTime?
+
+  // Gönderilen beyannameler (JSON array)
+  sentBeyannameler String[]  @default([])
+
+  // Tenant relation
+  tenantId        String    @db.Uuid
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([customerId, year, month, mode])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+  @@map("mail_status")
+}
+```
+
+### 1.2 Model İlişkileri
+
+```prisma
+// Tenant modeline ekle:
+model Tenant {
+  // ... mevcut alanlar ...
+  mailStatus      MailStatus[]
+}
+
+// Customer modeline ekle:
+model Customer {
+  // ... mevcut alanlar ...
+  mailStatus      MailStatus[]
+}
+```
+
+### 1.3 Migration Komutu
+
+```bash
+npx prisma migrate dev --name add_mail_status
+```
+
+---
+
+## 2. API Endpoint'leri
+
+### 2.1 Dosya Yapısı
+
+```
+src/app/api/mail/
+├── route.ts                    # GET: Liste, POST: Durum güncelle
+├── send/route.ts               # POST: Mail gönderim (validation)
+├── whatsapp/route.ts           # POST: WhatsApp API gönderim
+├── reset/route.ts              # POST: Durum sıfırlama
+├── templates/route.ts          # GET: Email şablonları
+└── attachments/
+    └── route.ts                # POST: Dosya yükleme (temp)
+```
+
+### 2.2 Endpoint Detayları
+
+#### `GET /api/mail`
+```typescript
+// Request Query
+?year=2025&month=1&mode=mukellef
+
+// Response
+{
+  customers: [
+    {
+      id: "uuid",
+      unvan: "ABC Ltd.",
+      kisaltma: "ABC",
+      email: "info@abc.com",
+      telefon1: "5321234567",
+      mailSent: false,
+      whatsappSent: false,
+      sentBeyannameler: []
+    }
+  ],
+  total: 150
+}
+```
+
+#### `POST /api/mail`
+```typescript
+// Request Body
+{
+  customerId: "uuid",
+  year: 2025,
+  month: 1,
+  mode: "mukellef",
+  action: "mailSent" | "whatsappSent",
+  value: true,
+  sentBeyannameler?: ["KDV1", "MUHSGK"]
+}
+
+// Response
+{ success: true }
+```
+
+#### `POST /api/mail/reset`
+```typescript
+// Request Body
+{
+  type: "all" | "single",
+  customerId?: "uuid", // for single
+  year: 2025,
+  month: 1,
+  mode: "mukellef",
+  field: "mail" | "whatsapp" | "both"
+}
+```
+
+#### `GET /api/mail/templates`
+```typescript
+// Response
+{
+  mukellef: {
+    subject: "${declarationTypes} BEYANNAME TAHAKKUKU - ${monthName} ${year}",
+    body: "Sayın ${customerName},\n\n${year} yılı ${monthName} ayına ait ${declarationTypes} beyanname tahakkukunuz ekte sunulmuştur.\n\nBilgilerinize sunar, iyi çalışmalar dileriz.\n\nSaygılarımızla;\n${officeName}"
+  },
+  banka: {
+    subject: "${customerName} - Banka Evrakları - ${documentTypes}",
+    body: "Sayın Yetkili,\n\nMüşterimiz ${customerName} adına tarafınızca talep edilen ${documentTypes} evrakları ekte sunulmuştur.\n\nBilgilerinize sunar, iyi çalışmalar dileriz.\n\nSaygılarımızla;\n${officeName}"
+  }
+}
+```
+
+---
+
+## 3. UI Component Yapısı
+
+### 3.1 Dosya Yapısı
+
+```
+src/components/mail/
+├── mail-module.tsx           # YENIDEN YAZILACAK - Ana container
+├── mail-sidebar.tsx          # Mükellef/Banka tab + Provider seçici
+├── provider-selector.tsx     # Outlook/Gmail seçimi + OAuth
+├── customer-list.tsx         # Mükellef listesi (checkboxlar ile)
+├── customer-row.tsx          # Tek mükellef satırı
+├── customer-edit-dialog.tsx  # Email/telefon düzenleme
+├── beyanname-selector.tsx    # Çoklu beyanname seçimi
+├── email-preview.tsx         # Önizleme modal
+├── email-composer.tsx        # Subject/Body editor
+├── attachment-zone.tsx       # Drag & drop dosya yükleme
+├── whatsapp-send-button.tsx  # WhatsApp API gönderim butonu
+├── reset-menu.tsx            # Sıfırlama dropdown
+├── storage-widget.tsx        # Mevcut widget (korunacak)
+└── hooks/
+    ├── use-mail-customers.ts # SWR hook
+    ├── use-oauth.ts          # OAuth flow hook
+    └── use-send-mail.ts      # Mail gönderim hook
+```
+
+### 3.2 Component Sorumlulukları
+
+| Component | Sorumluluk |
+|-----------|------------|
+| `mail-module.tsx` | Full-height layout, state yönetimi, dönem seçici |
+| `mail-sidebar.tsx` | Mükellef/Banka tabs, provider seçimi, storage widget |
+| `provider-selector.tsx` | Outlook/Gmail toggle, OAuth bağlantı durumu |
+| `customer-list.tsx` | Virtual scrolling (500+ mükellef), checkbox seçimi, arama |
+| `customer-row.tsx` | Tek mükellef kartı, mailSent/whatsappSent badge'leri |
+| `beyanname-selector.tsx` | 31 beyanname türü listesi, çoklu seçim |
+| `email-preview.tsx` | Modal dialog, subject/body önizleme, attachment listesi |
+| `attachment-zone.tsx` | Drag & drop alanı, PDF/XML/ZIP desteği |
+| `whatsapp-send-button.tsx` | Whapi.cloud API ile mesaj gönderimi |
+| `reset-menu.tsx` | Tümünü sıfırla / Tek müşteri sıfırla dropdown |
+
+---
+
+## 4. OAuth Flow Detayları
+
+### 4.1 Microsoft (Outlook) - MSAL Browser
+
+**Azure Entra ID Konfigürasyonu:**
+- Application (client) ID
+- Redirect URI: `http://localhost:3000` (popup mode)
+- Permissions: `Mail.Send`, `User.Read`
+
+**Client-Side Flow:**
+```typescript
+// src/lib/oauth/microsoft.ts
+import { PublicClientApplication } from "@azure/msal-browser";
+
+const msalConfig = {
+  auth: {
+    clientId: process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID!,
+    authority: "https://login.microsoftonline.com/common",
+    redirectUri: window.location.origin,
+  }
+};
+
+const pca = new PublicClientApplication(msalConfig);
+
+export async function loginMicrosoft() {
+  const response = await pca.loginPopup({
+    scopes: ["Mail.Send", "User.Read"]
+  });
+  return response.accessToken;
+}
+
+export async function sendMailMicrosoft(
+  accessToken: string,
+  to: string,
+  subject: string,
+  body: string,
+  attachments: File[]
+) {
+  const endpoint = "https://graph.microsoft.com/v1.0/me/sendMail";
+
+  const message = {
+    message: {
+      subject,
+      body: { contentType: "HTML", content: body },
+      toRecipients: [{ emailAddress: { address: to } }],
+      attachments: await Promise.all(
+        attachments.map(async (file) => ({
+          "@odata.type": "#microsoft.graph.fileAttachment",
+          name: file.name,
+          contentBytes: await fileToBase64(file)
+        }))
+      )
+    }
+  };
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(message)
+  });
+
+  if (!res.ok) {
+    throw new Error("Mail gönderimi başarısız");
+  }
+}
+```
+
+### 4.2 Google (Gmail) - Google Identity Services
+
+**Google Cloud Console Konfigürasyonu:**
+- OAuth 2.0 Client ID (Web application)
+- Authorized JavaScript origins: `http://localhost:3000`
+- Scopes: `https://www.googleapis.com/auth/gmail.send`
+
+**Client-Side Flow:**
+```typescript
+// src/lib/oauth/google.ts
+export function initGoogleAuth(callback: (token: string) => void) {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+    scope: "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email",
+    callback: (response) => {
+      if (response.access_token) {
+        callback(response.access_token);
+      }
+    }
+  });
+  return client;
+}
+
+export async function sendMailGmail(
+  accessToken: string,
+  to: string,
+  subject: string,
+  body: string,
+  attachments: File[]
+) {
+  const raw = await createMimeMessage(to, subject, body, attachments);
+  const base64 = btoa(unescape(encodeURIComponent(raw)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ raw: base64 })
+  });
+
+  if (!res.ok) {
+    throw new Error("Mail gönderimi başarısız");
+  }
+}
+
+// MIME message helper
+async function createMimeMessage(
+  to: string,
+  subject: string,
+  body: string,
+  attachments: File[]
+): Promise<string> {
+  const boundary = "----boundary_" + Date.now();
+
+  let message = [
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "",
+    body
+  ].join("\r\n");
+
+  for (const file of attachments) {
+    const base64 = await fileToBase64(file);
+    message += `\r\n--${boundary}\r\n`;
+    message += `Content-Type: ${file.type || "application/octet-stream"}\r\n`;
+    message += `Content-Disposition: attachment; filename="${file.name}"\r\n`;
+    message += "Content-Transfer-Encoding: base64\r\n\r\n";
+    message += base64;
+  }
+
+  message += `\r\n--${boundary}--`;
+  return message;
+}
+```
+
+---
+
+## 4.3 WhatsApp API - Whapi.cloud Entegrasyonu
+
+**Mevcut Altyapı:**
+Projede Reminders modülü için WhatsApp yapısı hazır:
+- `src/lib/whatsapp/types.ts` - WhatsAppMessage, WhatsAppResponse tipleri
+- `src/lib/whatsapp/mock.ts` - Mock servis (development için)
+- `.env` - `WHATSAPP_API_KEY` (Whapi.cloud API key)
+
+**Gerçek API Implementasyonu:**
+```typescript
+// src/lib/whatsapp/whapi.ts
+import { WhatsAppMessage, WhatsAppResponse } from "./types";
+
+const WHAPI_BASE_URL = "https://gate.whapi.cloud";
+
+/**
+ * Whapi.cloud API ile WhatsApp mesajı gönderir
+ */
+export async function sendWhatsAppMessage(
+  message: WhatsAppMessage
+): Promise<WhatsAppResponse> {
+  const apiKey = process.env.WHATSAPP_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("WHATSAPP_API_KEY is not configured");
+  }
+
+  // Telefon numarası formatı: 905551234567 (başında + yok)
+  const phone = message.to.replace(/^\+/, "").replace(/\s/g, "");
+
+  try {
+    const response = await fetch(`${WHAPI_BASE_URL}/messages/text`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: `${phone}@s.whatsapp.net`,
+        body: message.message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        success: false,
+        error: errorData.message || "WhatsApp gönderim hatası",
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      messageId: data.message?.id,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("[WhatsApp API Error]:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Bilinmeyen hata",
+    };
+  }
+}
+```
+
+**Mail Modülü WhatsApp Endpoint:**
+```typescript
+// src/app/api/mail/whatsapp/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth, createSupabaseClient } from "@/lib/api-helpers";
+import { sendWhatsAppMessage } from "@/lib/whatsapp/whapi";
+
+export const POST = withAuth(async (req: NextRequest, user) => {
+  const supabase = await createSupabaseClient();
+  const { customerId, year, month, mode, beyannameler } = await req.json();
+
+  // Müşteri bilgisini al
+  const { data: customer, error } = await supabase
+    .from('Customer')
+    .select('id, unvan, kisaltma, telefon1')
+    .eq('id', customerId)
+    .single();
+
+  if (error || !customer) {
+    return NextResponse.json({ error: "Müşteri bulunamadı" }, { status: 404 });
+  }
+
+  if (!customer.telefon1) {
+    return NextResponse.json({ error: "Telefon numarası yok" }, { status: 400 });
+  }
+
+  // Mesaj oluştur
+  const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  const monthName = monthNames[month - 1];
+  const beyannameList = beyannameler.join(", ");
+
+  const message = `📋 *Beyanname Bildirimi*\n\n` +
+    `Sayın ${customer.kisaltma || customer.unvan},\n\n` +
+    `${year} yılı ${monthName} ayına ait ${beyannameList} beyanname tahakkukunuz hazırlanmıştır.\n\n` +
+    `Detaylı bilgi için e-postanızı kontrol ediniz.\n\n` +
+    `---\nSMMM Asistan`;
+
+  // WhatsApp gönder
+  const result = await sendWhatsAppMessage({
+    to: customer.telefon1,
+    message,
+  });
+
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 500 });
+  }
+
+  // MailStatus güncelle
+  await supabase
+    .from('mail_status')
+    .upsert({
+      customerId,
+      year,
+      month,
+      mode,
+      tenantId: user.tenantId,
+      whatsappSent: true,
+      whatsappSentAt: new Date().toISOString(),
+    }, {
+      onConflict: 'customerId,year,month,mode'
+    });
+
+  return NextResponse.json({ success: true, messageId: result.messageId });
+});
+```
+
+**WhatsApp Mesaj Şablonu:**
+```
+📋 *Beyanname Bildirimi*
+
+Sayın ${customerName},
+
+${year} yılı ${monthName} ayına ait ${declarationTypes} beyanname tahakkukunuz hazırlanmıştır.
+
+Detaylı bilgi için e-postanızı kontrol ediniz.
+
+---
+SMMM Asistan
+```
+
+---
+
+## 5. Security Considerations
+
+### 5.1 OAuth Token Güvenliği
+- ✅ Token'lar client-side localStorage'da (server'a gönderilmez)
+- ✅ Access token süresi: 1 saat (otomatik expire)
+- ✅ Popup-based login (redirect yok, CSRF koruması)
+- ✅ Token sadece mail gönderim scope'unda
+
+### 5.2 API Güvenliği
+- ✅ `withAuth` wrapper tüm endpoint'lerde
+- ✅ Tenant isolation (RLS)
+- ✅ Customer belongs to tenant check
+
+### 5.3 Dosya Yükleme
+- ✅ Max dosya boyutu: 25MB (Graph API limiti)
+- ✅ İzin verilen tipler: PDF, XML, ZIP
+- ✅ Client-side validation
+- ✅ Dosyalar memory'de işlenir (disk'e yazılmaz)
+
+### 5.4 WhatsApp (API Entegrasyonu - Whapi.cloud)
+- ✅ Telefon numarası format kontrolü (+90 prefix)
+- ✅ Server-side API çağrısı (client token exposure yok)
+- ✅ Mesaj içerik sanitization
+- ✅ Rate limiting (Whapi.cloud free tier: 100 msg/day)
+- ✅ Hata durumunda retry mekanizması
+
+---
+
+## 6. Implementation Adımları (Sprint Bazlı)
+
+### Sprint 1: Temel Altyapı (3 gün)
+
+**Gün 1: Database**
+- [ ] Prisma schema güncelleme (MailStatus modeli)
+- [ ] `npm run db:push`
+- [ ] RLS policy ekleme (Supabase)
+
+**Gün 2: API**
+- [ ] `/api/mail` GET endpoint (customer listesi + mail status)
+- [ ] `/api/mail` POST endpoint (durum güncelleme)
+- [ ] `/api/mail/reset` endpoint
+
+**Gün 3: Temel UI**
+- [ ] `mail-module.tsx` temel layout
+- [ ] `mail-sidebar.tsx` (Mükellef/Banka tabs)
+- [ ] `customer-list.tsx` (virtual scrolling)
+
+---
+
+### Sprint 2: OAuth Entegrasyonu (3 gün)
+
+**Gün 4: Microsoft Setup**
+- [ ] Azure Portal app registration
+- [ ] `@azure/msal-browser` paketi kurulumu
+- [ ] `src/lib/oauth/microsoft.ts` utility
+
+**Gün 5: Google Setup**
+- [ ] Google Cloud Console OAuth credentials
+- [ ] Google Identity Services script ekleme
+- [ ] `src/lib/oauth/google.ts` utility
+
+**Gün 6: UI Entegrasyonu**
+- [ ] `provider-selector.tsx` component
+- [ ] Token localStorage yönetimi
+- [ ] Bağlı hesap gösterimi
+
+---
+
+### Sprint 3: Mail Gönderim (3 gün)
+
+**Gün 7: Beyanname & Composer**
+- [ ] `beyanname-selector.tsx` (çoklu seçim)
+- [ ] `email-composer.tsx` (template sistem)
+- [ ] `/api/mail/templates` endpoint
+
+**Gün 8: Attachments**
+- [ ] `attachment-zone.tsx` (drag & drop)
+- [ ] Dosya validation (tip, boyut)
+- [ ] Base64 encoding helper
+
+**Gün 9: Mail Gönderim**
+- [ ] Microsoft Graph API entegrasyonu
+- [ ] Gmail API entegrasyonu
+- [ ] `email-preview.tsx` modal
+- [ ] Mail durum güncelleme
+
+---
+
+### Sprint 4: WhatsApp API & Finalizasyon (2 gün)
+
+**Gün 10: WhatsApp API**
+- [ ] `src/lib/whatsapp/whapi.ts` - Whapi.cloud API entegrasyonu
+- [ ] `/api/mail/whatsapp` endpoint (server-side gönderim)
+- [ ] `whatsapp-send-button.tsx` (API çağrısı yapan buton)
+- [ ] WhatsApp durum güncelleme (whatsappSent, whatsappSentAt)
+- [ ] Bulk WhatsApp gönderim (seçili mükelleflere)
+
+**Gün 11: Polishing**
+- [ ] `reset-menu.tsx`
+- [ ] WebSocket entegrasyonu (mail:sent event)
+- [ ] Toast notifications
+- [ ] Error handling
+- [ ] E2E test
+
+---
+
+## 7. Test Senaryoları
+
+### 7.1 Unit Tests
+- [ ] MailStatus CRUD operations
+- [ ] OAuth token validation
+- [ ] Email template rendering
+- [ ] Attachment base64 encoding
+
+### 7.2 Integration Tests
+- [ ] Customer list loading with mail status
+- [ ] Mail status update
+- [ ] Bulk selection
+- [ ] Reset operations
+
+### 7.3 E2E Tests
+- [ ] Microsoft OAuth login flow
+- [ ] Google OAuth login flow
+- [ ] Single mail send (Outlook)
+- [ ] Single mail send (Gmail)
+- [ ] Bulk mail send
+- [ ] WhatsApp API gönderim (tek mükellef)
+- [ ] WhatsApp API bulk gönderim
+- [ ] Attachment upload (PDF, XML, ZIP)
+
+### 7.4 Manual Test Checklist
+- [ ] 500+ mükellef virtual scrolling performansı
+- [ ] Offline durumda hata mesajları
+- [ ] Token expire durumunda re-login
+- [ ] Büyük dosya yükleme (20MB)
+- [ ] Çoklu sekme senkronizasyonu (WebSocket)
+- [ ] Banka modu email input
+
+---
+
+## 8. Bağımlılıklar
+
+### 8.1 Yeni NPM Paketleri
+
+```bash
+npm install @azure/msal-browser
+```
+
+### 8.2 Google Identity Services (CDN)
+
+```typescript
+// src/app/layout.tsx veya _document.tsx
+<Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
+```
+
+### 8.3 Environment Variables
+
+```env
+# .env.local
+
+# Microsoft OAuth
+NEXT_PUBLIC_MICROSOFT_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# Google OAuth
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+```
+
+---
+
+## 9. Kritik Dosyalar
+
+| Dosya | Açıklama |
+|-------|----------|
+| `prisma/schema.prisma` | MailStatus modeli ekleme |
+| `src/components/mail/mail-module.tsx` | Ana container (tamamen yeniden yazılacak) |
+| `src/app/api/mail/route.ts` | Customer listesi + durum güncelleme |
+| `src/app/api/mail/whatsapp/route.ts` | WhatsApp API gönderim endpoint'i |
+| `src/lib/oauth/microsoft.ts` | MSAL entegrasyonu |
+| `src/lib/oauth/google.ts` | Google OAuth entegrasyonu |
+| `src/lib/whatsapp/whapi.ts` | Whapi.cloud API entegrasyonu |
+| `src/components/mail/customer-list.tsx` | Virtual scrolling, checkbox seçimi |
+| `src/components/mail/provider-selector.tsx` | OAuth bağlantı UI |
+| `src/components/mail/whatsapp-send-button.tsx` | WhatsApp gönderim butonu |
+| `src/lib/constants/beyanname-types.ts` | Beyanname listesi (mevcut) |
+| `server.ts` | WebSocket mail:sent event |
+
+---
+
+## 10. Referans Dosyalar (Mevcut Koddan)
+
+| Dosya | Referans Amacı |
+|-------|----------------|
+| `src/app/api/customers/route.ts` | API pattern, withAuth, RLS |
+| `src/components/reminders/reminders-page.tsx` | Dönem seçici pattern |
+| `src/lib/constants/beyanname-types.ts` | Beyanname listesi |
+| `server.ts` | WebSocket broadcast pattern |
+| `src/lib/api-helpers.ts` | withAuth wrapper |
+| `src/components/kontrol/kontrol-client.tsx` | Virtual scrolling pattern |
+
+---
+
+## 11. Sidebar Menü Değişiklikleri
+
+### Silinecek Menüler
+- ❌ Panel
+- ❌ Takvim
+- ❌ E-Posta
+- ❌ Çalışma Alanı
+- ❌ Görevler
+
+### Eklenecek Menüler
+- ✅ **Mükellef** - Standart beyanname gönderimi
+- ✅ **Banka** - Banka evrakları gönderimi
+
+### Layout
+```tsx
+<NavItem icon={<Users />} label="Mükellef" active={mode === 'mukellef'} />
+<NavItem icon={<Building2 />} label="Banka" active={mode === 'banka'} />
+```
+
+---
+
+## 12. Email Şablon Sistemi
+
+### Mükellef Modu
+
+**Subject:**
+```
+${declarationTypes} BEYANNAME TAHAKKUKU - ${monthName} ${year}
+```
+
+**Body:**
+```
+Sayın ${customerName},
+
+${year} yılı ${monthName} ayına ait ${declarationTypes} beyanname tahakkukunuz ekte sunulmuştur.
+
+Bilgilerinize sunar, iyi çalışmalar dileriz.
+
+Saygılarımızla;
+${officeName}
+```
+
+### Banka Modu
+
+**Subject:**
+```
+${customerName} - Banka Evrakları - ${documentTypes}
+```
+
+**Body:**
+```
+Sayın Yetkili,
+
+Müşterimiz ${customerName} adına tarafınızca talep edilen ${documentTypes} evrakları ekte sunulmuştur.
+
+Bilgilerinize sunar, iyi çalışmalar dileriz.
+
+Saygılarımızla;
+${officeName}
+```
+
+### Önemli Not
+- Muhasebe 1 ay geriden gelir: `displayMonth = currentMonth - 1`
+- Yıl başında (Ocak): `displayMonth = Aralık`, `displayYear = year - 1`
+
+---
+
+## 13. Beyanname Türleri
+
+### Mükellef Modu (Tam Liste)
+Mevcut `src/lib/constants/beyanname-types.ts` dosyasındaki 31 beyanname türü kullanılacak.
+
+### Banka Modu (Seçili Türler)
+```typescript
+const BANK_DECLARATION_TYPES = [
+  'KDV',
+  'GELİR',
+  'GELİR GEÇİCİ',
+  'KURUM GEÇİCİ',
+  'KURUMLAR',
+  'MİZAN',
+  'VERGİ LEVHASI'
+];
+```
+
+---
+
+## 14. WebSocket Entegrasyonu
+
+### Server-Side Event
+```typescript
+// server.ts
+broadcastToTenant(tenantId, {
+  type: 'mail:sent',
+  data: {
+    customerId,
+    mode,
+    year,
+    month,
+    mailSent: true,
+    timestamp: new Date()
+  }
+});
+```
+
+### Client-Side Listener
+```typescript
+// use-mail-connection.ts
+useEffect(() => {
+  ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    if (message.type === 'mail:sent') {
+      // Re-fetch customer list or optimistic update
+      mutate('/api/mail?...');
+    }
+  };
+}, [ws]);
+```
+
+---
+
+## 📝 Tahmini Süre
+
+| Sprint | Gün | Saat |
+|--------|-----|------|
+| Sprint 1: Temel Altyapı | 3 gün | ~9 saat |
+| Sprint 2: OAuth Entegrasyonu | 3 gün | ~9 saat |
+| Sprint 3: Mail Gönderim | 3 gün | ~9 saat |
+| Sprint 4: WhatsApp & Finalizasyon | 2 gün | ~6 saat |
+| **TOPLAM** | **11 gün** | **~33 saat** |
+
+---
+
+**Plan Hazırlayan:** Claude Opus 4.5
+**Tarih:** 2026-01-15

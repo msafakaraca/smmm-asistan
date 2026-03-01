@@ -1,0 +1,1298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+model announcement_logs {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  channel                 String
+  status                  String                   @default("pending")
+  recipientEmail          String?
+  recipientPhone          String?
+  recipientName           String?
+  subject                 String?
+  content                 String?
+  sentAt                  DateTime?
+  error                   String?
+  customerId              String?                  @db.Uuid
+  announcementId          String?                  @db.Uuid
+  tenantId                String                   @db.Uuid
+  createdAt               DateTime                 @default(now())
+  scheduled_announcements scheduled_announcements? @relation(fields: [announcementId], references: [id])
+  customers               customers?               @relation(fields: [customerId], references: [id])
+  tenants                 tenants                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+  @@index([channel])
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([status])
+  @@index([tenantId])
+}
+
+model announcement_templates {
+  id                      String                    @id @default(uuid()) @db.Uuid
+  name                    String
+  subject                 String?
+  content                 String
+  type                    String                    @default("general")
+  channels                String[]                  @default([])
+  isActive                Boolean                   @default(true)
+  tenantId                String                    @db.Uuid
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  tenants                 tenants                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  scheduled_announcements scheduled_announcements[]
+
+  @@unique([tenantId, name])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model beyanname_takip {
+  id           String    @id @default(uuid()) @db.Uuid
+  year         Int
+  month        Int
+  customerId   String    @db.Uuid
+  beyannameler Json      @default("{}")
+  tenantId     String    @db.Uuid
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  customers    customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants      tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month])
+  @@index([tenantId])
+  @@index([year, month])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+model beyanname_turleri {
+  id        String   @id @default(uuid()) @db.Uuid
+  kod       String
+  aciklama  String
+  kisaAd    String?
+  kategori  String?
+  aktif     Boolean  @default(true)
+  siraNo    Int      @default(0)
+  tenantId  String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, kod])
+  @@index([tenantId])
+  @@index([tenantId, aktif])
+  @@index([kategori])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bulk_send_logs {
+  id             String     @id @default(uuid()) @db.Uuid
+  documentId     String?    @db.Uuid
+  customerId     String?    @db.Uuid
+  mailSent       Boolean    @default(false)
+  mailSentAt     DateTime?
+  mailSentTo     String?
+  mailError      String?
+  whatsappSent   Boolean    @default(false)
+  whatsappSentAt DateTime?
+  whatsappSentTo String?
+  whatsappType   String?
+  whatsappError  String?
+  smsSent        Boolean    @default(false)
+  smsSentAt      DateTime?
+  smsSentTo      String?
+  smsError       String?
+  year           Int?
+  month          Int?
+  beyannameTuru  String?
+  dosyaTipi      String?
+  sentBy         String?
+  tenantId       String     @db.Uuid
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  error          String?
+  message        String?
+  recipientEmail String?
+  recipientName  String?
+  recipientPhone String?
+  sentAt         DateTime?
+  status         String     @default("pending")
+  subject        String?
+  type           String
+  documents      documents? @relation(fields: [documentId], references: [id])
+  tenants        tenants    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, tenantId])
+  @@index([customerId])
+  @@index([documentId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([type])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model customer_group_members {
+  id              String          @id @default(uuid()) @db.Uuid
+  groupId         String          @db.Uuid
+  customerId      String          @db.Uuid
+  tenantId        String          @db.Uuid
+  addedAt         DateTime        @default(now())
+  customers       customers       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer_groups customer_groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  tenants         tenants         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, customerId])
+  @@index([customerId])
+  @@index([groupId])
+  @@index([tenantId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model customer_groups {
+  id                     String                   @id @default(uuid()) @db.Uuid
+  name                   String
+  description            String?
+  color                  String                   @default("#3B82F6")
+  icon                   String?
+  sirketTipiFilter       String?
+  tenantId               String                   @db.Uuid
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  beyannameTypes         String[]                 @default([])
+  customer_group_members customer_group_members[]
+  tenants                tenants                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model customers {
+  id                       String                   @id @default(uuid()) @db.Uuid
+  unvan                    String
+  kisaltma                 String?
+  vknTckn                  String
+  vergiKimlikNo            String?
+  tcKimlikNo               String?
+  vergiDairesi             String?
+  sirketTipi               String                   @default("sahis")
+  faaliyetKodu             String?
+  sortOrder                Int                      @default(0)
+  email                    String?
+  telefon1                 String?
+  telefon2                 String?
+  adres                    String?
+  yetkiliKisi              String?
+  gibKodu                  String?
+  gibSifre                 String?
+  gibParola                String?
+  interaktifSifre          String?
+  emuhurPin                String?
+  sgkKullaniciAdi          String?
+  sgkIsyeriKodu            String?
+  sgkSistemSifresi         String?
+  sgkIsyeriSifresi         String?
+  // TÜRMOB Entegratör
+  turmobKullaniciAdi       String?
+  turmobSifre              String?
+  // e-Devlet Kapısı
+  edevletTckn              String?
+  edevletSifre             String?
+  // İŞKUR İşveren Sistemi
+  iskurTckn                String?
+  iskurSifre               String?
+  status                   String                   @default("active")
+  notes                    String?
+  verilmeyecekBeyannameler String[]                 @default([])
+  siraNo                   String?
+  sozlesmeNo               String?
+  sozlesmeTarihi           String?
+  tenantId                 String                   @db.Uuid
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  announcement_logs        announcement_logs[]
+  beyanname_takip          beyanname_takip[]
+  customer_group_members   customer_group_members[]
+  tenants                  tenants                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  documents                documents[]
+  email_messages           email_messages[]
+  reminders                reminders[]
+  sgk_kontrol              sgk_kontrol[]
+  kdv_kontrol              kdv_kontrol[]
+  kdv2_kontrol             kdv2_kontrol[]
+  kdv9015_kontrol          kdv9015_kontrol[]
+  gecici_vergi_kontrol     gecici_vergi_kontrol[]
+  takip_satirlar           takip_satirlar[]
+  tasks                    tasks[]
+
+  customer_branches        customer_branches[]
+
+  // Finansal İşlemler ilişkileri
+  cost_definitions         cost_definitions[]
+  financial_transactions   financial_transactions[]
+  checks                   checks[]
+
+  // Sorgulama Arşivi
+  query_archives           query_archives[]
+
+  @@unique([tenantId, vknTckn])
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model customer_branches {
+  id               String    @id @default(uuid()) @db.Uuid
+  branchName       String
+  sgkKullaniciAdi  String?
+  sgkIsyeriKodu    String?
+  sgkSistemSifresi String?
+  sgkIsyeriSifresi String?
+  customerId       String    @db.Uuid
+  tenantId         String    @db.Uuid
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  customers        customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants          tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, customerId, branchName])
+  @@index([customerId])
+  @@index([tenantId])
+}
+
+model documents {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  originalName    String?
+  type            String
+  mimeType        String?
+  size            Int              @default(0)
+  isFolder        Boolean          @default(false)
+  parentId        String?          @db.Uuid
+  path            String?
+  url             String?
+  storage         String           @default("local")
+  year            Int?
+  month           Int?
+  icon            String?
+  color           String?
+  vknTckn         String?
+  beyannameTuru   String?
+  fileCategory    String?
+  fileIndex       Int?
+  customerId      String?          @db.Uuid
+  tenantId        String           @db.Uuid
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  bulk_send_logs  bulk_send_logs[]
+  customers       customers?       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  documents       documents?       @relation("documentsTodocuments", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_documents documents[]      @relation("documentsTodocuments")
+  tenants         tenants          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([beyannameTuru])
+  @@index([parentId])
+  @@index([tenantId, customerId])
+  @@index([tenantId])
+  @@index([vknTckn])
+}
+
+model sgk_kontrol {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @db.Uuid
+  year                Int
+  month               Int
+
+  // Hizmet Listesi bilgileri (PDF'den parse)
+  hizmetIsciSayisi    Int?
+  hizmetOnayTarihi    DateTime?
+  hizmetDocumentId    String?   // Birden fazla dosya varsa virgülle ayrılmış UUID'ler
+  hizmetDosyaSayisi   Int?      @default(1) // Kaç dosyanın toplandığı
+
+  // Tahakkuk bilgileri (PDF'den parse)
+  tahakkukIsciSayisi  Int?
+  tahakkukGunSayisi   Int?
+  tahakkukNetTutar    Decimal?  @db.Decimal(15, 2)
+  tahakkukKabulTarihi DateTime?
+  tahakkukDocumentId  String?   // Birden fazla dosya varsa virgülle ayrılmış UUID'ler
+  tahakkukDosyaSayisi Int?      @default(1) // Kaç dosyanın toplandığı
+
+  // Durum
+  status              String    @default("bekliyor") // bekliyor, gonderildi, eksik
+  notes               String?
+
+  tenantId            String    @db.Uuid
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  customers           customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants             tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+model kdv_kontrol {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @db.Uuid
+  year                Int
+  month               Int
+
+  // PDF'den parse edilen KDV verileri
+  kdvMatrah           Decimal?  @db.Decimal(15, 2)
+  tahakkukEden        Decimal?  @db.Decimal(15, 2)
+  mahsupEdilen        Decimal?  @db.Decimal(15, 2)
+  odenecek            Decimal?  @db.Decimal(15, 2)
+  devredenKdv         Decimal?  @db.Decimal(15, 2)
+  damgaVergisi        Decimal?  @db.Decimal(15, 2)
+  vade                DateTime?
+  beyanTarihi         DateTime?
+
+  // Dosya referansları
+  tahakkukDocumentId  String?
+  tahakkukDosyaSayisi Int?      @default(1)
+
+  // Durum
+  status              String    @default("bekliyor")
+  notes               String?
+
+  tenantId            String    @db.Uuid
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  customers           customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants             tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+model kdv2_kontrol {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @db.Uuid
+  year                Int
+  month               Int
+
+  // PDF'den parse edilen KDV2 (Tevkifat) verileri
+  kdvMatrah           Decimal?  @db.Decimal(15, 2)
+  tahakkukEden        Decimal?  @db.Decimal(15, 2)
+  mahsupEdilen        Decimal?  @db.Decimal(15, 2)
+  odenecek            Decimal?  @db.Decimal(15, 2)
+  devredenKdv         Decimal?  @db.Decimal(15, 2)
+  damgaVergisi        Decimal?  @db.Decimal(15, 2)
+  vade                DateTime?
+  beyanTarihi         DateTime?
+
+  // Dosya referansları
+  tahakkukDocumentId  String?
+  tahakkukDosyaSayisi Int?      @default(1)
+
+  // Durum
+  status              String    @default("bekliyor")
+  notes               String?
+
+  tenantId            String    @db.Uuid
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  customers           customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants             tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+model kdv9015_kontrol {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @db.Uuid
+  year                Int
+  month               Int
+
+  // PDF'den parse edilen KDV9015 (Tevkifat) verileri
+  kdvMatrah           Decimal?  @db.Decimal(15, 2)
+  tahakkukEden        Decimal?  @db.Decimal(15, 2)
+  mahsupEdilen        Decimal?  @db.Decimal(15, 2)
+  odenecek            Decimal?  @db.Decimal(15, 2)
+  devredenKdv         Decimal?  @db.Decimal(15, 2)
+  damgaVergisi        Decimal?  @db.Decimal(15, 2)
+  vade                DateTime?
+  beyanTarihi         DateTime?
+
+  // Dosya referansları
+  tahakkukDocumentId  String?
+  tahakkukDosyaSayisi Int?      @default(1)
+
+  // Durum
+  status              String    @default("bekliyor")
+  notes               String?
+
+  tenantId            String    @db.Uuid
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  customers           customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants             tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+model gecici_vergi_kontrol {
+  id                    String    @id @default(uuid()) @db.Uuid
+  customerId            String    @db.Uuid
+  year                  Int
+  month                 Int       // Çeyreğin son ayı (3, 6, 9, 12)
+
+  vergiTuru             String    // "GGECICI" veya "KGECICI"
+  vergilendirmeDonemi   String?   // "10/2025-12/2025"
+
+  matrah                Decimal?  @db.Decimal(15, 2)
+  tahakkukEden          Decimal?  @db.Decimal(15, 2)
+  mahsupEdilen          Decimal?  @db.Decimal(15, 2)
+  odenecek              Decimal?  @db.Decimal(15, 2)
+  damgaVergisi1047      Decimal?  @db.Decimal(15, 2)
+  damgaVergisi1048      Decimal?  @db.Decimal(15, 2)
+  vade                  DateTime?
+  beyanTarihi           DateTime?
+
+  tahakkukDocumentId    String?
+
+  status                String    @default("bekliyor")
+  notes                 String?
+
+  tenantId              String    @db.Uuid
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  customers             customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants               tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, year, month, vergiTuru])
+  @@index([tenantId])
+  @@index([tenantId, year, month])
+  @@index([customerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_messages {
+  id                      String                  @id @default(uuid()) @db.Uuid
+  provider                String?
+  providerId              String?
+  threadId                String?
+  fromEmail               String?
+  fromName                String?
+  toEmails                String[]                @default([])
+  ccEmails                String[]                @default([])
+  subject                 String?
+  snippet                 String?
+  bodyHtml                String?
+  bodyText                String?
+  isRead                  Boolean                 @default(false)
+  isStarred               Boolean                 @default(false)
+  labelIds                String[]                @default([])
+  folder                  String?
+  hasAttachments          Boolean                 @default(false)
+  attachments             Json?
+  receivedAt              DateTime?
+  connectionId            String                  @db.Uuid
+  tenantId                String                  @db.Uuid
+  customerId              String?                 @db.Uuid
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  bcc                     String[]                @default([])
+  cc                      String[]                @default([])
+  from                    String?
+  headers                 Json?
+  messageId               String
+  to                      String[]                @default([])
+  email_oauth_connections email_oauth_connections @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  customers               customers?              @relation(fields: [customerId], references: [id])
+  tenants                 tenants                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, messageId])
+  @@unique([connectionId, providerId])
+  @@index([connectionId])
+  @@index([customerId])
+  @@index([folder])
+  @@index([isRead])
+  @@index([receivedAt])
+  @@index([tenantId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_oauth_connections {
+  id             String           @id @default(uuid()) @db.Uuid
+  provider       String
+  email          String
+  accessToken    String
+  refreshToken   String?
+  expiresAt      DateTime?
+  scopes         String[]         @default([])
+  lastSyncAt     DateTime?
+  syncStatus     String           @default("idle")
+  syncError      String?
+  tenantId       String           @db.Uuid
+  userId         String?          @db.Uuid
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  isActive       Boolean          @default(true)
+  scope          String?
+  tokenExpiry    DateTime?
+  email_messages email_messages[]
+  tenants        tenants          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, provider, email])
+  @@index([provider])
+  @@index([syncStatus])
+  @@index([tenantId])
+}
+
+model jobs {
+  id            String        @id @default(uuid()) @db.Uuid
+  type          String
+  status        String        @default("PENDING")
+  payload       Json
+  result        Json?
+  error         String?
+  tenantId      String        @db.Uuid
+  userId        String        @db.Uuid
+  createdAt     DateTime      @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  tenants       tenants       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user_profiles user_profiles @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model kontrol {
+  id         String   @id @default(uuid()) @db.Uuid
+  no         String
+  isim       String
+  vkn        String?
+  kdv        String   @default("bos")
+  kdvMeta    Json?
+  muh        String   @default("bos")
+  muhMeta    Json?
+  ssk        String   @default("bos")
+  sskMeta    Json?
+  berat      String   @default("bos")
+  beratMeta  Json?
+  kurum      String   @default("bos")
+  kurumMeta  Json?
+  gecici     String   @default("bos")
+  geciciMeta Json?
+  turz       String   @default("bos")
+  turzMeta   Json?
+  konk       String   @default("bos")
+  konkMeta   Json?
+  poset      String   @default("bos")
+  posetMeta  Json?
+  kdv2       String   @default("bos")
+  kdv2Meta   Json?
+  kdv9015    String   @default("bos")
+  kdv9015Meta Json?
+  mail       String   @default("bos")
+  tenantId   String   @db.Uuid
+  updatedAt  DateTime @updatedAt
+  tenants    tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model licenses {
+  id           String    @id @default(uuid()) @db.Uuid
+  key          String    @unique
+  type         String    @default("standard")
+  status       String    @default("active")
+  isActive     Boolean   @default(true)
+  maxUsers     Int       @default(5)
+  maxCustomers Int       @default(100)
+  features     String[]  @default([])
+  expiresAt    DateTime?
+  activatedAt  DateTime?
+  tenantId     String    @unique @db.Uuid
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  tenants      tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([status])
+}
+
+model mails {
+  id           String   @id @default(uuid()) @db.Uuid
+  no           String
+  isim         String
+  unvan        String?
+  email        String?
+  telefon      String?
+  mailSent     Boolean  @default(false)
+  whatsappSent Boolean  @default(false)
+  tenantId     String   @db.Uuid
+  updatedAt    DateTime @updatedAt
+  tenants      tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model passwords {
+  id             String   @id @default(uuid()) @db.Uuid
+  customerNo     String
+  customerName   String
+  emuhurSafeWord String?
+  emuhurPin      String?
+  gibUsername    String?
+  gibPassword    String?
+  otherPasswords Json?
+  notes          String?
+  tenantId       String   @db.Uuid
+  updatedAt      DateTime @updatedAt
+  tenants        tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reminders {
+  id             String         @id @default(uuid()) @db.Uuid
+  title          String
+  description    String?
+  type           String         @default("event")
+  date           DateTime?
+  isAllDay       Boolean        @default(false)
+  startTime      String?
+  endTime        String?
+  repeatPattern  String?
+  repeatDays     String[]       @default([])
+  repeatEndDate  DateTime?
+  phoneNumber    String?
+  sendWhatsApp   Boolean        @default(false)
+  whatsappSentAt DateTime?
+  status         String         @default("active")
+  location       String?
+  userId         String?        @db.Uuid
+  tenantId       String         @db.Uuid
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  customerId     String?        @db.Uuid
+  customerIds    String[]       @default([]) @db.Uuid
+  completed      Boolean        @default(false)
+  dueDate        DateTime?
+  customers      customers?     @relation(fields: [customerId], references: [id])
+  tenants        tenants        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user_profiles  user_profiles? @relation(fields: [userId], references: [id])
+
+  @@index([customerId])
+  @@index([tenantId, date])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model rows {
+  id        String   @id @default(uuid()) @db.Uuid
+  no        String
+  isim      String
+  platform  String?
+  alis      Boolean?
+  satis     Boolean?
+  fis       Boolean?
+  zRaporu   Boolean?
+  muhtasar  String?
+  vergiTA   Boolean?
+  puantaj   Boolean?
+  rapor     Boolean?
+  sonDurum  Boolean  @default(false)
+  notlar    String?
+  tenantId  String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model scheduled_announcements {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  name                   String
+  subject                String?
+  content                String
+  sendEmail              Boolean                 @default(false)
+  sendSms                Boolean                 @default(false)
+  sendWhatsApp           Boolean                 @default(false)
+  scheduledAt            DateTime
+  repeatPattern          String?
+  repeatDay              Int?
+  repeatEndDate          DateTime?
+  lastExecutedAt         DateTime?
+  nextExecuteAt          DateTime?
+  targetType             String                  @default("selected")
+  customerIds            String[]                @default([])
+  groupIds               String[]                @default([])
+  status                 String                  @default("active")
+  templateId             String?                 @db.Uuid
+  tenantId               String                  @db.Uuid
+  createdBy              String                  @db.Uuid
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  announcement_logs      announcement_logs[]
+  announcement_templates announcement_templates? @relation(fields: [templateId], references: [id])
+  tenants                tenants                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([createdBy])
+  @@index([status])
+  @@index([status, nextExecuteAt])
+  @@index([tenantId])
+}
+
+
+model takip_kolonlar {
+  id        String   @id @default(uuid()) @db.Uuid
+  kod       String
+  baslik    String
+  tip       String   @default("boolean")
+  siraNo    Int      @default(0)
+  sistem    Boolean  @default(false)
+  aktif     Boolean  @default(true)
+  name      String?
+  type      String?
+  width     Int      @default(100)
+  order     Int      @default(0)
+  tenantId  String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, kod])
+  @@index([aktif])
+  @@index([siraNo])
+  @@index([tenantId])
+}
+
+model takip_satirlar {
+  id         String     @id @default(uuid()) @db.Uuid
+  no         String?
+  isim       String?
+  customerId String?    @db.Uuid
+  year       Int
+  month      Int
+  siraNo     Int        @default(0)
+  degerler   Json       @default("{}")
+  values     Json       @default("{}")
+  tenantId   String     @db.Uuid
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  customers  customers? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants    tenants    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, customerId, year, month])
+  @@index([siraNo])
+  @@index([tenantId])
+  @@index([year, month])
+}
+
+model task_assignees {
+  id            String        @id @default(uuid()) @db.Uuid
+  taskId        String        @db.Uuid
+  userId        String        @db.Uuid
+  assignedAt    DateTime      @default(now())
+  tasks         tasks         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user_profiles user_profiles @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model task_attachments {
+  id           String   @id @default(uuid()) @db.Uuid
+  filename     String
+  originalName String
+  mimeType     String?
+  size         Int      @default(0)
+  url          String
+  storage      String   @default("supabase")
+  taskId       String   @db.Uuid
+  uploadedById String   @db.Uuid
+  createdAt    DateTime @default(now())
+  tasks        tasks    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model task_comments {
+  id            String        @id @default(uuid()) @db.Uuid
+  content       String
+  taskId        String        @db.Uuid
+  userId        String        @db.Uuid
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  tasks         tasks         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user_profiles user_profiles @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model tasks {
+  id               String             @id @default(uuid()) @db.Uuid
+  title            String
+  description      String?
+  priority         String             @default("medium")
+  status           String             @default("todo")
+  dueDate          DateTime?
+  createdById      String             @db.Uuid
+  tenantId         String             @db.Uuid
+  customerId       String?            @db.Uuid
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  task_assignees   task_assignees[]
+  task_attachments task_attachments[]
+  task_comments    task_comments[]
+  user_profiles    user_profiles      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  customers        customers?         @relation(fields: [customerId], references: [id])
+  tenants          tenants            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@index([customerId])
+  @@index([tenantId, dueDate])
+  @@index([tenantId])
+  @@index([tenantId, priority])
+  @@index([tenantId, status])
+}
+
+model tenants {
+  id                      String                    @id @default(uuid()) @db.Uuid
+  name                    String
+  slug                    String                    @unique
+  plan                    String                    @default("trial")
+  status                  String                    @default("active")
+  expiresAt               DateTime?
+  settings                Json?
+  gibSettings             Json?
+  turmobSettings          Json?
+  edevletSettings         Json?
+  captchaKey              String?
+
+  // Ofis Bilgileri
+  email                   String?
+  telefon                 String?
+  adres                   String?
+  vergiDairesi            String?
+  vknTckn                 String?
+  smmmSicilNo             String?
+
+  // Bildirim Ayarları
+  notificationSettings    Json?
+  whatsappApiKey          String?
+
+  // Finansal İşlemler Varsayılan Ayarlar
+  financialDefaults       Json? // { hasSMM, defaultKdvRate, defaultStopajRate, autoChargeEnabled, autoChargeDay }
+
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  announcement_logs       announcement_logs[]
+  announcement_templates  announcement_templates[]
+  beyanname_takip         beyanname_takip[]
+  beyanname_turleri       beyanname_turleri[]
+  bulk_send_logs          bulk_send_logs[]
+  customer_branches       customer_branches[]
+  customer_group_members  customer_group_members[]
+  customer_groups         customer_groups[]
+  customers               customers[]
+  documents               documents[]
+  email_messages          email_messages[]
+  email_oauth_connections email_oauth_connections[]
+  jobs                    jobs[]
+  kontrol                 kontrol[]
+  licenses                licenses?
+  mails                   mails[]
+  passwords               passwords[]
+  reminders               reminders[]
+  rows                    rows[]
+  scheduled_announcements scheduled_announcements[]
+  sgk_kontrol             sgk_kontrol[]
+  kdv_kontrol             kdv_kontrol[]
+  kdv2_kontrol            kdv2_kontrol[]
+  kdv9015_kontrol         kdv9015_kontrol[]
+  gecici_vergi_kontrol    gecici_vergi_kontrol[]
+  takip_kolonlar          takip_kolonlar[]
+  takip_satirlar          takip_satirlar[]
+  tasks                   tasks[]
+  audit_logs              audit_logs[]
+  user_profiles           user_profiles[]
+  // Finansal İşlemler ilişkileri
+  finance_categories      finance_categories[]
+  cost_definitions        cost_definitions[]
+  financial_transactions  financial_transactions[]
+  checks                  checks[]
+  expenses                expenses[]
+  auto_charge_logs        auto_charge_logs[]
+  recurring_expense_logs  recurring_expense_logs[]
+  query_archives          query_archives[]
+}
+
+model user_profiles {
+  id             String           @id @db.Uuid
+  tenantId       String           @db.Uuid
+  role           String           @default("user")
+  phoneNumber    String?
+  email          String           @unique
+  name           String
+  image              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  invitedAt          DateTime?
+  invitedBy          String?          @db.Uuid
+  lastLoginAt        DateTime?
+  permissions        String[]         @default([])
+  status             String           @default("active")
+  kvkkConsentAt      DateTime?
+  kvkkConsentVersion String?
+  jobs           jobs[]
+  reminders      reminders[]
+  task_assignees task_assignees[]
+  task_comments  task_comments[]
+  tasks          tasks[]
+  query_archives query_archives[]
+  tenants        tenants          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+
+// ============================================
+// AUDIT LOGGING
+// ============================================
+model audit_logs {
+  id         String   @id @default(uuid()) @db.Uuid
+  timestamp  DateTime @default(now())
+
+  // Kim yaptı?
+  userId     String?  @db.Uuid
+  userEmail  String?
+
+  // Hangi tenant?
+  tenantId   String   @db.Uuid
+
+  // Ne yaptı?
+  action     String   // LOGIN, LOGOUT, LOGIN_FAILED, CREATE, UPDATE, DELETE, VIEW, VIEW_SENSITIVE, EXPORT, IMPORT, BOT_START, BOT_COMPLETE, BOT_ERROR
+
+  // Neyi etkiledi?
+  resource   String   // customers, documents, beyanname_takip, credentials, etc.
+  resourceId String?  @db.Uuid
+
+  // Detaylar
+  details    Json?    // Ek bilgiler (eski değer, yeni değer, hata mesajı, vb.)
+
+  // İstek bilgileri
+  ipAddress  String?
+  userAgent  String?
+
+  // İlişkiler
+  tenants    tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, timestamp])
+  @@index([tenantId, action])
+  @@index([tenantId, resource])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+// ============================================
+// FİNANSAL İŞLEMLER - ENUM TANIMLARI
+// ============================================
+
+enum Currency {
+  TRY
+  USD
+  EUR
+}
+
+enum Frequency {
+  MONTHLY
+  QUARTERLY
+  BIANNUAL
+  ANNUAL
+  ONE_TIME
+}
+
+enum ChargeStrategy {
+  FULL
+  DISTRIBUTED
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  PARTIAL
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  EFT
+  CHECK
+  CREDIT_CARD
+}
+
+enum CheckStatus {
+  IN_PORTFOLIO
+  COLLECTED
+  BOUNCED
+  RETURNED
+}
+
+enum FinanceCategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum AutoChargeStatus {
+  SUCCESS
+  FAILED
+}
+
+enum RecurringFrequency {
+  REC_MONTHLY
+  REC_QUARTERLY
+  REC_ANNUAL
+}
+
+// ============================================
+// FİNANSAL İŞLEMLER - MODELLERİ
+// ============================================
+
+model finance_categories {
+  id        String              @id @default(uuid()) @db.Uuid
+  name      String
+  type      FinanceCategoryType
+  isDefault Boolean             @default(false)
+  color     String?
+  icon      String?
+  tenantId  String              @db.Uuid
+
+  cost_definitions       cost_definitions[]
+  financial_transactions financial_transactions[]
+  expenses               expenses[]
+
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, name, type])
+  @@index([tenantId])
+}
+
+model cost_definitions {
+  id              String         @id @default(uuid()) @db.Uuid
+  customerId      String         @db.Uuid
+  categoryId      String         @db.Uuid
+  description     String?
+  amount          Decimal        @db.Decimal(12, 2)
+  currency        Currency       @default(TRY)
+  frequency       Frequency
+  chargeStrategy  ChargeStrategy @default(FULL)
+  hasSMM          Boolean        @default(true)
+  kdvRate         Decimal?       @db.Decimal(5, 2)
+  stopajRate      Decimal?       @db.Decimal(5, 2)
+  startDate       DateTime
+  endDate         DateTime?
+  isActive        Boolean        @default(true)
+  tenantId        String         @db.Uuid
+
+  customers       customers          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  category        finance_categories @relation(fields: [categoryId], references: [id])
+  transactions    financial_transactions[]
+  auto_charge_logs auto_charge_logs[]
+
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, isActive])
+}
+
+model financial_transactions {
+  id                  String            @id @default(uuid()) @db.Uuid
+  customerId          String?           @db.Uuid
+  costDefinitionId    String?           @db.Uuid
+  categoryId          String            @db.Uuid
+  type                TransactionType
+  amount              Decimal           @db.Decimal(12, 2)
+  currency            Currency          @default(TRY)
+  exchangeRate        Decimal?          @db.Decimal(10, 4)
+  originalAmount      Decimal?          @db.Decimal(12, 2)
+  grossAmount         Decimal?          @db.Decimal(12, 2)
+  kdvAmount           Decimal?          @db.Decimal(12, 2)
+  stopajAmount        Decimal?          @db.Decimal(12, 2)
+  netAmount           Decimal           @db.Decimal(12, 2)
+  description         String?
+  date                DateTime
+  dueDate             DateTime?
+  paymentMethod       PaymentMethod?
+  checkId             String?           @db.Uuid
+  status              TransactionStatus @default(PENDING)
+  parentTransactionId String?           @db.Uuid
+  autoGenerated       Boolean           @default(false)
+  tenantId            String            @db.Uuid
+
+  customers          customers?              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  cost_definition    cost_definitions?       @relation(fields: [costDefinitionId], references: [id])
+  category           finance_categories      @relation(fields: [categoryId], references: [id])
+  check              checks?                 @relation(fields: [checkId], references: [id])
+  parent_transaction financial_transactions? @relation("PartialPayments", fields: [parentTransactionId], references: [id])
+  child_transactions financial_transactions[] @relation("PartialPayments")
+
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, customerId, date])
+  @@index([tenantId, status])
+  @@index([tenantId, type, date])
+  @@index([tenantId, categoryId])
+}
+
+model checks {
+  id          String      @id @default(uuid()) @db.Uuid
+  checkNumber String?
+  bankName    String?
+  amount      Decimal     @db.Decimal(12, 2)
+  currency    Currency    @default(TRY)
+  issueDate   DateTime
+  dueDate     DateTime
+  status      CheckStatus @default(IN_PORTFOLIO)
+  customerId  String      @db.Uuid
+  note        String?
+  tenantId    String      @db.Uuid
+
+  customers    customers              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transactions financial_transactions[]
+
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, dueDate])
+  @@index([tenantId, status])
+}
+
+model expenses {
+  id                  String              @id @default(uuid()) @db.Uuid
+  categoryId          String              @db.Uuid
+  amount              Decimal             @db.Decimal(12, 2)
+  currency            Currency            @default(TRY)
+  date                DateTime
+  description         String?
+  isRecurring         Boolean             @default(false)
+  recurringFrequency  RecurringFrequency?
+  tenantId            String              @db.Uuid
+
+  category finance_categories @relation(fields: [categoryId], references: [id])
+
+  // Tekrarlayan gider log ilişkileri
+  recurring_source_logs  recurring_expense_logs[] @relation("recurring_source")
+  recurring_created_logs recurring_expense_logs[] @relation("recurring_created")
+
+  tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, date])
+  @@index([tenantId, categoryId])
+}
+
+model auto_charge_logs {
+  id               String           @id @default(uuid()) @db.Uuid
+  costDefinitionId String           @db.Uuid
+  transactionId    String?          @db.Uuid
+  period           String           // "2026-02" formatında
+  status           AutoChargeStatus
+  errorMessage     String?
+  executedAt       DateTime         @default(now())
+  tenantId         String           @db.Uuid
+
+  cost_definition cost_definitions @relation(fields: [costDefinitionId], references: [id], onDelete: Cascade)
+
+  tenants tenants @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([costDefinitionId, period])
+  @@index([tenantId])
+}
+
+model recurring_expense_logs {
+  id               String           @id @default(uuid()) @db.Uuid
+  sourceExpenseId  String           @db.Uuid
+  createdExpenseId String?          @db.Uuid
+  period           String           // "2026-02" formatında
+  status           AutoChargeStatus // SUCCESS veya FAILED
+  errorMessage     String?
+  executedAt       DateTime         @default(now())
+  tenantId         String           @db.Uuid
+
+  source_expense  expenses  @relation("recurring_source", fields: [sourceExpenseId], references: [id], onDelete: Cascade)
+  created_expense expenses? @relation("recurring_created", fields: [createdExpenseId], references: [id], onDelete: SetNull)
+  tenants         tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceExpenseId, period])
+  @@index([tenantId])
+}
+
+// ============================================
+// SORGULAMA ARŞİVİ
+// ============================================
+model query_archives {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerId    String   @db.Uuid
+  tenantId      String   @db.Uuid
+  userId        String   @db.Uuid
+  queryType     String   // "beyanname"|"tahsilat"|"edefter"|"earsiv"|"pos"|"okc"|"etebligat"
+
+  month         Int      // 1-12
+  year          Int      // 2025, 2026, ...
+
+  resultData    Json     // Merge edilmiş tüm sonuçlar
+  resultMeta    Json?    // { totalCount, ... }
+  queryHistory  Json     @default("[]") // Array<{ date, params, addedCount }>
+  totalCount    Int      @default(0)
+  totalAmount   Decimal? @db.Decimal(15, 2)
+
+  lastQueriedAt DateTime @default(now())
+  queryCount    Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customers     customers     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenants       tenants       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user_profiles user_profiles @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, customerId, queryType, month, year])
+  @@index([tenantId, queryType])
+  @@index([tenantId, customerId])
+  @@index([tenantId, year, month])
+}

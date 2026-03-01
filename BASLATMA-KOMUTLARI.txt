@@ -1,0 +1,168 @@
+═══════════════════════════════════════════════════════════════════
+  SMMM ASİSTAN - VS CODE TERMİNAL BAŞLATMA KOMUTLARI
+═══════════════════════════════════════════════════════════════════
+
+Bu dosya, SMMM Asistan projesini VS Code terminalinde başlatmak için
+gereken tüm komutları içerir.
+
+═══════════════════════════════════════════════════════════════════
+  ADIM 1: VS CODE TERMİNAL PANELİNİ AÇ
+═══════════════════════════════════════════════════════════════════
+
+Kısayol: Ctrl + ` (backtick)
+veya
+Menü: Terminal → New Terminal
+
+═══════════════════════════════════════════════════════════════════
+  ADIM 2: 3 AYRI TERMİNAL PENCERESI OLUŞTUR
+═══════════════════════════════════════════════════════════════════
+
+Terminal panelinde "+" butonuna 3 kez tıkla
+veya
+Mevcut terminali split et (sağ üstteki split icon)
+
+═══════════════════════════════════════════════════════════════════
+  TERMİNAL 1: NEXT.JS + WEBSOCKET SERVER
+═══════════════════════════════════════════════════════════════════
+
+npm run dev
+
+BEKLENEN ÇIKTI:
+> smmm-asistan@0.1.0 dev
+> ts-node --project tsconfig.server.json server.ts
+
+> Ready on http://localhost:3000 (WS + Internal API enabled)
+
+NOT: Bu terminal sürekli açık kalmalı (watch mode)
+
+═══════════════════════════════════════════════════════════════════
+  TERMİNAL 2: ELECTRON DEV TOOLS (TYPESCRIPT + VITE)
+═══════════════════════════════════════════════════════════════════
+
+cd electron-bot
+npm run dev
+
+BEKLENEN ÇIKTI:
+[0] > smmm-bot@1.0.0 dev:main
+[0] > tsc -p tsconfig.main.json --watch
+[1] > smmm-bot@1.0.0 dev:renderer
+[1] > vite
+[1] ➜  Local:   http://localhost:5174/
+[0] Found 0 errors. Watching for file changes.
+
+NOT: Bu terminal sürekli açık kalmalı (watch mode)
+
+taskkill /F /IM node.exe
+taskkill /F /IM node.exe
+taskkill /F /IM node.exe
+taskkill /F /IM node.exe
+"taskkill /F /IM node.exe"
+
+═══════════════════════════════════════════════════════════════════
+  TERMİNAL 3: ELECTRON MASAÜSTÜ UYGULAMASI
+═══════════════════════════════════════════════════════════════════
+
+cd electron-bot
+npm start
+
+BEKLENEN ÇIKTI:
+> smmm-bot@1.0.0 start
+> electron .
+
+[SMMM-ASISTAN] Main process started
+[STORE] Initialized: C:\Users\msafa\AppData\Roaming\smmm-bot\smmm-bot-data.json
+[WS] Connected
+[MAIN] WebSocket connected
+
+NOT: Bu komut Electron penceresini açacak!
+
+═══════════════════════════════════════════════════════════════════
+  SERVİS DURUM KONTROLÜ
+═══════════════════════════════════════════════════════════════════
+
+Tüm servisler başlatıldıktan sonra kontrol et:
+
+✅ Next.js Web App       → http://localhost:3000
+✅ WebSocket Server      → ws://localhost:3000/ws
+✅ Vite Dev Server       → http://localhost:5174
+✅ Electron Desktop App  → Otomatik açılmalı
+
+═══════════════════════════════════════════════════════════════════
+  SERVİSLERİ DURDURMA
+═══════════════════════════════════════════════════════════════════
+
+Her bir terminalde:
+Ctrl + C
+
+Electron uygulamasını kapatmak için:
+- Pencereyi kapat veya
+- Terminal 3'te Ctrl + C
+
+═══════════════════════════════════════════════════════════════════
+  SORUN GİDERME
+═══════════════════════════════════════════════════════════════════
+
+SORUN: Port 3000 zaten kullanımda
+ÇÖZÜM: Çalışan servisi durdur veya farklı port kullan
+
+SORUN: TypeScript compilation errors
+ÇÖZÜM: npm install çalıştır, node_modules'i yeniden yükle
+
+SORUN: Electron penceresi açılmıyor
+ÇÖZÜM:
+1. Terminal 2'nin başlatıldığından emin ol (TypeScript compile edilmeli)
+2. electron-bot/dist/ klasörünün oluştuğunu kontrol et
+3. Terminal 3'ü tekrar başlat
+
+SORUN: WebSocket bağlantısı kurulamıyor
+ÇÖZÜM: Terminal 1'in çalıştığından emin ol
+
+═══════════════════════════════════════════════════════════════════
+  KISA YOLLAR
+═══════════════════════════════════════════════════════════════════
+
+# Tüm servisleri tek komutta başlatmak için (her birini ayrı terminalde çalıştır):
+
+Terminal 1: npm run dev
+Terminal 2: cd electron-bot && npm run dev
+Terminal 3: cd electron-bot && npm start
+
+═══════════════════════════════════════════════════════════════════
+  EK BİLGİLER
+═══════════════════════════════════════════════════════════════════
+
+Proje Yapısı:
+- smmm_asistan/          → Ana Next.js projesi
+- electron-bot/          → Electron masaüstü uygulaması
+- server.ts              → WebSocket + Next.js server
+
+Kullanılan Portlar:
+- 3000  → Next.js + WebSocket
+- 5174  → Vite dev server (Electron renderer)
+
+Node.js Versiyonu:
+- Gerekli: >= 20.x
+- Kontrol: node --version
+
+═══════════════════════════════════════════════════════════════════
+  İLK KERE ÇALIŞTIRIYORSAN
+═══════════════════════════════════════════════════════════════════
+
+1. Bağımlılıkları yükle:
+   npm install
+   cd electron-bot && npm install && cd ..
+
+2. Prisma'yı hazırla:
+   npm run db:generate
+   npm run db:push
+
+3. .env dosyasını oluştur:
+   .env.example dosyasını kopyala ve .env olarak kaydet
+   Gerekli değişkenleri doldur
+
+4. Yukarıdaki komutları çalıştır
+
+═══════════════════════════════════════════════════════════════════
+Son Güncelleme: 2026-01-11
+Proje: SMMM Asistan v0.1.0
+═══════════════════════════════════════════════════════════════════

@@ -1,0 +1,399 @@
+import { z } from "zod";
+
+// ============================================
+// ENUM TANIMLARI
+// ============================================
+
+export const CurrencyEnum = ["TRY", "USD", "EUR"] as const;
+export type Currency = (typeof CurrencyEnum)[number];
+
+export const FrequencyEnum = ["MONTHLY", "QUARTERLY", "BIANNUAL", "ANNUAL", "ONE_TIME"] as const;
+export type Frequency = (typeof FrequencyEnum)[number];
+
+export const ChargeStrategyEnum = ["FULL", "DISTRIBUTED"] as const;
+export type ChargeStrategy = (typeof ChargeStrategyEnum)[number];
+
+export const TransactionTypeEnum = ["DEBIT", "CREDIT"] as const;
+export type TransactionType = (typeof TransactionTypeEnum)[number];
+
+export const TransactionStatusEnum = ["PENDING", "COMPLETED", "PARTIAL", "CANCELLED"] as const;
+export type TransactionStatus = (typeof TransactionStatusEnum)[number];
+
+export const PaymentMethodEnum = ["CASH", "BANK_TRANSFER", "EFT", "CHECK", "CREDIT_CARD"] as const;
+export type PaymentMethod = (typeof PaymentMethodEnum)[number];
+
+export const CheckStatusEnum = ["IN_PORTFOLIO", "COLLECTED", "BOUNCED", "RETURNED"] as const;
+export type CheckStatus = (typeof CheckStatusEnum)[number];
+
+export const FinanceCategoryTypeEnum = ["INCOME", "EXPENSE"] as const;
+export type FinanceCategoryType = (typeof FinanceCategoryTypeEnum)[number];
+
+export const RecurringFrequencyEnum = ["REC_MONTHLY", "REC_QUARTERLY", "REC_ANNUAL"] as const;
+export type RecurringFrequency = (typeof RecurringFrequencyEnum)[number];
+
+// GİB SMM Oran Sabitleri
+export const KDV_RATE_OPTIONS = [
+  { label: "%20", value: 20 },
+  { label: "%10", value: 10 },
+  { label: "%1", value: 1 },
+  { label: "%0", value: 0 },
+] as const;
+
+export const STOPAJ_RATE_OPTIONS = [
+  { label: "%20", value: 20 },
+  { label: "%17", value: 17 },
+  { label: "%0", value: 0 },
+] as const;
+
+export const VALID_KDV_RATES = [20, 10, 1, 0] as const;
+export const VALID_STOPAJ_RATES = [20, 17, 0] as const;
+
+// ============================================
+// ENUM LABEL HARITALARI (UI için Türkçe)
+// ============================================
+
+export const CURRENCY_LABELS: Record<Currency, string> = {
+  TRY: "₺ TL",
+  USD: "$ USD",
+  EUR: "€ EUR",
+};
+
+export const FREQUENCY_LABELS: Record<Frequency, string> = {
+  MONTHLY: "Aylık",
+  QUARTERLY: "3 Aylık",
+  BIANNUAL: "6 Aylık",
+  ANNUAL: "Yıllık",
+  ONE_TIME: "Tek Seferlik",
+};
+
+export const CHARGE_STRATEGY_LABELS: Record<ChargeStrategy, string> = {
+  FULL: "Tam Tutar",
+  DISTRIBUTED: "Dağıtılmış",
+};
+
+export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
+  DEBIT: "Borç",
+  CREDIT: "Alacak",
+};
+
+export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
+  PENDING: "Bekliyor",
+  COMPLETED: "Tamamlandı",
+  PARTIAL: "Kısmi",
+  CANCELLED: "İptal",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: "Nakit",
+  BANK_TRANSFER: "Havale",
+  EFT: "EFT",
+  CHECK: "Çek",
+  CREDIT_CARD: "Kredi Kartı",
+};
+
+export const CHECK_STATUS_LABELS: Record<CheckStatus, string> = {
+  IN_PORTFOLIO: "Portföyde",
+  COLLECTED: "Tahsil Edildi",
+  BOUNCED: "Karşılıksız",
+  RETURNED: "İade Edildi",
+};
+
+export const CATEGORY_TYPE_LABELS: Record<FinanceCategoryType, string> = {
+  INCOME: "Gelir",
+  EXPENSE: "Gider",
+};
+
+export const RECURRING_FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
+  REC_MONTHLY: "Aylık",
+  REC_QUARTERLY: "3 Aylık",
+  REC_ANNUAL: "Yıllık",
+};
+
+// ============================================
+// MODEL INTERFACE'LERİ
+// ============================================
+
+export interface FinanceCategory {
+  id: string;
+  name: string;
+  type: FinanceCategoryType;
+  isDefault: boolean;
+  color: string | null;
+  icon: string | null;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CostDefinition {
+  id: string;
+  customerId: string;
+  categoryId: string;
+  description: string | null;
+  amount: number;
+  currency: Currency;
+  frequency: Frequency;
+  chargeStrategy: ChargeStrategy;
+  hasSMM: boolean;
+  kdvRate: number | null;
+  stopajRate: number | null;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+  // İlişkiler (include ile gelir)
+  customers?: CustomerSummary;
+  category?: CategorySummary;
+}
+
+export interface FinancialTransaction {
+  id: string;
+  customerId: string | null;
+  costDefinitionId: string | null;
+  categoryId: string;
+  type: TransactionType;
+  amount: number;
+  currency: Currency;
+  exchangeRate: number | null;
+  originalAmount: number | null;
+  grossAmount: number | null;
+  kdvAmount: number | null;
+  stopajAmount: number | null;
+  netAmount: number;
+  description: string | null;
+  date: string;
+  dueDate: string | null;
+  paymentMethod: PaymentMethod | null;
+  checkId: string | null;
+  status: TransactionStatus;
+  parentTransactionId: string | null;
+  autoGenerated: boolean;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+  // İlişkiler
+  customers?: CustomerSummary;
+  category?: CategorySummary;
+  check?: CheckSummary;
+  child_transactions?: FinancialTransaction[];
+}
+
+export interface Check {
+  id: string;
+  checkNumber: string | null;
+  bankName: string | null;
+  amount: number;
+  currency: Currency;
+  issueDate: string;
+  dueDate: string;
+  status: CheckStatus;
+  customerId: string;
+  note: string | null;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+  // İlişkiler
+  customers?: CustomerSummary;
+  transactions?: { id: string; amount: number; status: TransactionStatus }[];
+}
+
+export interface Expense {
+  id: string;
+  categoryId: string;
+  amount: number;
+  currency: Currency;
+  date: string;
+  description: string | null;
+  isRecurring: boolean;
+  recurringFrequency: RecurringFrequency | null;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+  // İlişkiler
+  category?: CategorySummary;
+}
+
+export interface AutoChargeLog {
+  id: string;
+  costDefinitionId: string;
+  transactionId: string | null;
+  period: string;
+  status: "SUCCESS" | "FAILED";
+  errorMessage: string | null;
+  executedAt: string;
+  tenantId: string;
+}
+
+// ============================================
+// ÖZET TİPLERİ (include select'leri)
+// ============================================
+
+export interface CustomerSummary {
+  id: string;
+  unvan: string;
+  kisaltma: string | null;
+  vknTckn?: string;
+}
+
+export interface CategorySummary {
+  id: string;
+  name: string;
+  type?: FinanceCategoryType;
+  color: string | null;
+  icon?: string | null;
+}
+
+export interface CheckSummary {
+  id: string;
+  checkNumber: string | null;
+  status: CheckStatus;
+  dueDate: string;
+}
+
+// ============================================
+// API REQUEST/RESPONSE TİPLERİ
+// ============================================
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface FinanceSettings {
+  hasSMM: boolean;
+  defaultKdvRate: number;
+  defaultStopajRate: number;
+  autoChargeEnabled: boolean;
+  autoChargeDay: number;
+}
+
+export interface CollectRequest {
+  customerId: string;
+  transactionIds: string[];
+  amount: number;
+  paymentMethod: PaymentMethod;
+  currency: Currency;
+  exchangeRate?: number;
+  checkData?: {
+    checkNumber?: string;
+    bankName?: string;
+    dueDate: string;
+    amount: number;
+  };
+  date: string;
+  note?: string;
+}
+
+export interface BulkCostDefinitionRequest {
+  customerIds: string[];
+  categoryId: string;
+  amount: number;
+  currency: Currency;
+  frequency: Frequency;
+  chargeStrategy: ChargeStrategy;
+  hasSMM: boolean;
+  kdvRate?: number;
+  stopajRate?: number;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+}
+
+export interface PendingDebtWithBalance extends FinancialTransaction {
+  totalPaid: number;
+  remaining: number;
+}
+
+// ============================================
+// ZOD VALIDATION ŞEMALARI
+// ============================================
+
+export const categoryFormSchema = z.object({
+  name: z.string().min(1, "Kategori adı zorunludur"),
+  type: z.enum(["INCOME", "EXPENSE"], { required_error: "Tür seçiniz" }),
+  color: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
+
+export const costDefinitionFormSchema = z.object({
+  customerId: z.string().uuid("Geçerli bir müşteri seçiniz"),
+  categoryId: z.string().uuid("Geçerli bir kategori seçiniz"),
+  description: z.string().optional(),
+  amount: z.number().positive("Tutar sıfırdan büyük olmalı"),
+  currency: z.enum(["TRY", "USD", "EUR"]),
+  frequency: z.enum(["MONTHLY", "QUARTERLY", "BIANNUAL", "ANNUAL", "ONE_TIME"]),
+  chargeStrategy: z.enum(["FULL", "DISTRIBUTED"]),
+  hasSMM: z.boolean(),
+  kdvRate: z.number().min(0).max(100).optional().nullable(),
+  stopajRate: z.number().min(0).max(100).optional().nullable(),
+  startDate: z.string().min(1, "Başlangıç tarihi zorunludur"),
+  endDate: z.string().optional().nullable(),
+});
+
+export type CostDefinitionFormValues = z.infer<typeof costDefinitionFormSchema>;
+
+export const collectionFormSchema = z.object({
+  customerId: z.string().uuid("Geçerli bir müşteri seçiniz"),
+  transactionIds: z.array(z.string().uuid()).min(1, "En az bir borç seçiniz"),
+  amount: z.number().positive("Tutar sıfırdan büyük olmalı"),
+  paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "EFT", "CHECK", "CREDIT_CARD"]),
+  currency: z.enum(["TRY", "USD", "EUR"]),
+  exchangeRate: z.number().positive().optional(),
+  date: z.string().min(1, "Tarih zorunludur"),
+  note: z.string().optional(),
+});
+
+export type CollectionFormValues = z.infer<typeof collectionFormSchema>;
+
+export const checkFormSchema = z.object({
+  checkNumber: z.string().optional(),
+  bankName: z.string().optional(),
+  amount: z.number().positive("Tutar sıfırdan büyük olmalı"),
+  dueDate: z.string().min(1, "Vade tarihi zorunludur"),
+});
+
+export type CheckFormValues = z.infer<typeof checkFormSchema>;
+
+export const expenseFormSchema = z.object({
+  categoryId: z.string().uuid("Geçerli bir kategori seçiniz"),
+  amount: z.number().positive("Tutar sıfırdan büyük olmalı"),
+  currency: z.enum(["TRY", "USD", "EUR"]),
+  date: z.string().min(1, "Tarih zorunludur"),
+  description: z.string().optional(),
+  isRecurring: z.boolean(),
+  recurringFrequency: z.enum(["REC_MONTHLY", "REC_QUARTERLY", "REC_ANNUAL"]).optional().nullable(),
+});
+
+export type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
+
+export const serviceFormSchema = z.object({
+  customerId: z.string().uuid("Geçerli bir müşteri seçiniz"),
+  categoryId: z.string().uuid("Geçerli bir kategori seçiniz"),
+  amount: z.number().positive("Tutar sıfırdan büyük olmalı"),
+  currency: z.enum(["TRY", "USD", "EUR"]),
+  hasSMM: z.boolean(),
+  kdvRate: z.number().min(0).max(100).optional().nullable(),
+  stopajRate: z.number().min(0).max(100).optional().nullable(),
+  date: z.string().min(1, "Tarih zorunludur"),
+  dueDate: z.string().optional().nullable(),
+  description: z.string().optional(),
+});
+
+export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+export const financeSettingsSchema = z.object({
+  hasSMM: z.boolean(),
+  defaultKdvRate: z.number().min(0).max(100),
+  defaultStopajRate: z.number().min(0).max(100),
+  autoChargeEnabled: z.boolean(),
+  autoChargeDay: z.number().min(1).max(28),
+});
+
+export type FinanceSettingsFormValues = z.infer<typeof financeSettingsSchema>;

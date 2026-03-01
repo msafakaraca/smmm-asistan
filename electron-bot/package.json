@@ -1,0 +1,78 @@
+{
+    "name": "smmm-bot",
+    "version": "1.0.0",
+    "description": "SMMM Asistan Bot - Mali Müşavirler için Otomatik İşlem Botu",
+    "main": "dist/main/index.js",
+    "author": "SMMM Asistan",
+    "license": "MIT",
+    "scripts": {
+        "dev": "concurrently -k \"npm run dev:main\" \"npm run dev:renderer\"",
+        "dev:main": "tsc -p tsconfig.main.json --watch",
+        "dev:renderer": "vite",
+        "build": "npm run build:main && npm run build:renderer",
+        "build:main": "tsc -p tsconfig.main.json",
+        "build:renderer": "vite build",
+        "start": "chcp 65001 >nul 2>&1 && node scripts/start-electron.js || node scripts/start-electron.js",
+        "start:electron": "chcp 65001 >nul 2>&1 && node scripts/start-electron.js || node scripts/start-electron.js",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder",
+        "postinstall": "npx puppeteer browsers install chrome"
+    },
+    "dependencies": {
+        "axios": "^1.13.2",
+        "cheerio": "^1.2.0",
+        "dotenv": "^17.2.3",
+        "jsonwebtoken": "^9.0.3",
+        "pdf-parse": "^1.1.4",
+        "puppeteer": "^24.0.0",
+        "puppeteer-extra": "^3.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/node": "^25.0.3",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@types/ws": "^8.5.13",
+        "@vitejs/plugin-react": "^4.3.4",
+        "autoprefixer": "^10.4.20",
+        "concurrently": "^9.1.2",
+        "cross-env": "^10.1.0",
+        "electron": "^34.0.0",
+        "electron-builder": "^25.1.8",
+        "postcss": "^8.4.49",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.7.2",
+        "vite": "^6.0.5"
+    },
+    "build": {
+        "appId": "com.smmm.bot",
+        "productName": "SMMM Bot",
+        "directories": {
+            "output": "release"
+        },
+        "win": {
+            "target": "nsis",
+            "icon": "assets/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        },
+        "extraResources": [
+            {
+                "from": ".chromium",
+                "to": "chromium",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "asarUnpack": [
+            "node_modules/puppeteer-core/**/*"
+        ]
+    }
+}

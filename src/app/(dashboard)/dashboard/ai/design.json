@@ -1,0 +1,220 @@
+{
+  "application": {
+    "name": "SMMM AI Asistan",
+    "version": "v1.0",
+    "description": "Mali Müşavirlik AI Asistan Sayfası - Muhasebe Odaklı",
+    "theme": {
+      "mode": "light",
+      "style": "glassmorphism",
+      "primary_colors": ["#FFFFFF", "#F3F4F6", "#F8FAFC"],
+      "accent_colors": ["#111827", "#F97316", "#3B82F6", "#22C55E"],
+      "background": {
+        "type": "gradient_blur",
+        "colors": ["rgba(168, 85, 247, 0.15)", "rgba(59, 130, 246, 0.15)", "rgba(236, 72, 153, 0.1)"],
+        "blur": "120px"
+      },
+      "card_style": {
+        "background": "rgba(255, 255, 255, 0.8)",
+        "backdrop_blur": "16px",
+        "border": "1px solid rgba(255, 255, 255, 0.3)",
+        "border_radius": "16px",
+        "shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+      }
+    }
+  },
+  "layout": {
+    "type": "full_page_no_sidebar",
+    "main_container": {
+      "padding": "24px 32px",
+      "max_width": "900px",
+      "margin": "0 auto",
+      "sections": {
+        "header": {
+          "height": "48px",
+          "display": "flex",
+          "justify_content": "space-between",
+          "align_items": "center",
+          "elements": {
+            "left": {
+              "type": "dropdown_button",
+              "id": "model_selector",
+              "content": {
+                "icon": "solar:snowflake-bold",
+                "text": "Asistan v1.0",
+                "has_dropdown": true
+              },
+              "style": {
+                "background": "transparent",
+                "color": "#374151",
+                "font_size": "14px",
+                "font_weight": "500"
+              }
+            },
+            "center": {
+              "type": "text",
+              "id": "title",
+              "content": "SMMM AI Asistan",
+              "style": {
+                "color": "#9CA3AF",
+                "font_size": "14px"
+              }
+            },
+            "right": {
+              "type": "spacer",
+              "width": "128px"
+            }
+          }
+        },
+        "hero_section": {
+          "margin_top": "48px",
+          "margin_bottom": "40px",
+          "elements": {
+            "headline": {
+              "type": "heading",
+              "content": {
+                "greeting": "Merhaba",
+                "name_placeholder": "{{user_full_name}}",
+                "question": "Bugün Ne Yapmak İstersin?"
+              },
+              "style": {
+                "font_size": "36px",
+                "font_weight": "600",
+                "line_height": "1.3",
+                "color": {
+                  "greeting": "#111827",
+                  "name": "var(--primary)",
+                  "question": "#111827"
+                }
+              }
+            },
+            "mascot": {
+              "type": "robot_icon",
+              "id": "ai_mascot",
+              "position": {
+                "type": "absolute",
+                "right": "0",
+                "top": "0"
+              },
+              "size": {
+                "width": "128px",
+                "height": "128px"
+              },
+              "speech_bubble": {
+                "text": "Selam! Yardıma hazırım!",
+                "emoji": "wave"
+              },
+              "animation": "float"
+            }
+          }
+        },
+        "cards_container": {
+          "display": "grid",
+          "grid_template_columns": "repeat(3, 1fr)",
+          "gap": "20px",
+          "margin_bottom": "48px",
+          "cards": [
+            {
+              "id": "card_vergi",
+              "icon": {
+                "type": "solar:calculator-bold",
+                "color": "#F97316"
+              },
+              "tag": "Vergi Hesaplama",
+              "title": "KDV, Gelir Vergisi, Kurumlar Vergisi hesaplamaları ve beyanname sorguları.",
+              "prompt_on_click": "KDV hesaplaması nasıl yapılır?"
+            },
+            {
+              "id": "card_muhasebe",
+              "icon": {
+                "type": "solar:notebook-bookmark-bold",
+                "color": "#3B82F6"
+              },
+              "tag": "Muhasebe Kayıtları",
+              "title": "Muhasebe kayıtları, hesap planı ve yevmiye fişi oluşturma rehberi.",
+              "prompt_on_click": "Satış faturası için muhasebe kaydı nasıl yapılır?"
+            },
+            {
+              "id": "card_sgk",
+              "icon": {
+                "type": "solar:shield-check-bold",
+                "color": "#22C55E"
+              },
+              "tag": "SGK İşlemleri",
+              "title": "SGK bildirgeleri, işe giriş-çıkış, MUHSGK ve e-bildirge işlemleri.",
+              "prompt_on_click": "MUHSGK beyannamesi nasıl verilir?"
+            }
+          ]
+        },
+        "input_area": {
+          "elements": {
+            "status_bar": {
+              "display": "flex",
+              "justify_content": "center",
+              "margin_bottom": "12px",
+              "center": {
+                "type": "text_with_icon",
+                "icon": "solar:cpu-bolt-bold",
+                "text": "AI Asistan v1.0 ile güçlendirildi",
+                "style": {
+                  "color": "#9CA3AF",
+                  "font_size": "12px"
+                }
+              }
+            },
+            "search_bar": {
+              "type": "input_container",
+              "style": {
+                "background": "rgba(255, 255, 255, 0.9)",
+                "backdrop_blur": "16px",
+                "border_radius": "16px",
+                "border": "1px solid rgba(0, 0, 0, 0.08)",
+                "padding": "16px 20px"
+              },
+              "input": {
+                "placeholder": "Örnek: \"KDV oranlarını açıkla\" veya \"Muhasebe kaydı nasıl yapılır\""
+              },
+              "actions": [
+                {
+                  "id": "voice_input",
+                  "icon": "solar:microphone-bold",
+                  "tooltip": "Sesli Giriş"
+                },
+                {
+                  "id": "submit",
+                  "icon": "solar:arrow-right-linear",
+                  "tooltip": "Gönder",
+                  "style": {
+                    "background": "#111827",
+                    "color": "#FFFFFF"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "responsive": {
+    "breakpoints": {
+      "mobile": "< 640px",
+      "tablet": "640px - 1024px",
+      "desktop": "> 1024px"
+    },
+    "mobile_adjustments": {
+      "cards_container": {
+        "grid_template_columns": "1fr"
+      },
+      "hero_section": {
+        "mascot": {
+          "hidden": true
+        }
+      }
+    },
+    "tablet_adjustments": {
+      "cards_container": {
+        "grid_template_columns": "repeat(2, 1fr)"
+      }
+    }
+  }
+}
