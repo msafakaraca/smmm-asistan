@@ -143,9 +143,14 @@ export function KontrolPage() {
         const aStatus = beyannameStatuses[a.id]?.[sortColumn]?.status || "bos";
         const bStatus = beyannameStatuses[b.id]?.[sortColumn]?.status || "bos";
 
-        const statusOrder = { verildi: 0, "3aylik": 1, bos: 2, muaf: 3 };
-        const aOrder = statusOrder[aStatus as keyof typeof statusOrder] ?? 2;
-        const bOrder = statusOrder[bStatus as keyof typeof statusOrder] ?? 2;
+        const statusOrder: Record<string, number> = {
+          onaylandi: 0, verildi: 0, dilekce_verildi: 1,
+          onay_bekliyor: 2, dilekce_gonderilecek: 3,
+          verilmedi: 4, bos: 5, gonderilmeyecek: 6,
+          "3aylik": 2, muaf: 6,
+        };
+        const aOrder = statusOrder[aStatus] ?? 5;
+        const bOrder = statusOrder[bStatus] ?? 5;
 
         return sortDirection === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
@@ -204,10 +209,13 @@ export function KontrolPage() {
     async (customerId: string, beyannameKod: string, currentStatus: string) => {
       const customer = customers.find((c) => c.id === customerId);
       if (customer?.verilmeyecekBeyannameler?.includes(beyannameKod)) {
-        return; // Muaf ise tıklamayı engelle
+        return;
       }
+      if (currentStatus === "gonderilmeyecek") return;
 
-      const newStatus: DeclarationStatus = currentStatus === "verildi" ? "bos" : "verildi";
+      // Toggle: verildi/onaylandi ↔ bos
+      const newStatus: DeclarationStatus =
+        (currentStatus === "verildi" || currentStatus === "onaylandi") ? "bos" : "verildi";
       try {
         await updateBeyannameStatus(customerId, beyannameKod, newStatus);
       } catch {
@@ -303,7 +311,6 @@ export function KontrolPage() {
           th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
           th { background: #f5f5f5; font-weight: bold; }
           .bg-green-100 { background: #d1fae5 !important; }
-          .bg-zinc-600 { background: #52525b !important; color: white; }
           @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             @page { size: landscape; margin: 10mm; }
@@ -451,15 +458,9 @@ export function KontrolPage() {
             )}
 
             {/* Footer Legend */}
-            <div className="flex items-center justify-end gap-6 text-[10px] font-medium text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-background border-2 border-border rounded" />
-                Sol Tık: Değiştir
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-zinc-600 border-2 border-border rounded" />
-                Sağ Tık: Muaf/Var
-              </div>
+            <div className="flex items-center justify-end gap-4 text-[10px] font-medium text-muted-foreground">
+              <span>Sol tık: Durum değiştir</span>
+              <span>Sağ tık: Gönderilmeyecek</span>
             </div>
           </CardContent>
         )}

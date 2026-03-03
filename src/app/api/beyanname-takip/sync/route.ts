@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
                 // Bu tür için mevcut veri var mı?
                 if (!currentBeyannameler[turKod]) {
                     currentBeyannameler[turKod] = {
-                        status: 'verildi',
+                        status: 'onaylandi',
                         meta: {
                             vknTckn: doc.vknTckn || nameParts[0],
                             beyannameTuru: turKod,

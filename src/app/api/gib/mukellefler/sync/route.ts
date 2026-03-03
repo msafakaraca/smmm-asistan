@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
                     username: gibSettings.gibCode,
                     password: decryptedPassword,
                     captchaApiKey: captchaApiKey,
+                    ocrSpaceApiKey: process.env.OCR_SPACE_API_KEY,
                     tenantId: tenantId
                 }
             })

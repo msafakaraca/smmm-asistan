@@ -128,7 +128,7 @@ const sirketTipiOrder: Record<string, number> = {
     "basit_usul": 3
 }
 
-// Kompakt kolonlar - Split-view için optimize edilmiş
+// Kompakt kolonlar - Tam ekran liste için
 export const columns: ColumnDef<Customer>[] = [
     {
         id: "select",
@@ -194,9 +194,9 @@ export const columns: ColumnDef<Customer>[] = [
     },
     {
         accessorKey: "unvan",
-        size: 320,
-        minSize: 260,
-        maxSize: 400,
+        size: 160,
+        minSize: 120,
+        maxSize: 220,
         header: ({ column }) => (
             <Button
                 variant="ghost"

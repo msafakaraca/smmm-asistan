@@ -2,11 +2,20 @@
  * KontrolCustomerRow Component
  *
  * Memoized müşteri satırı bileşeni.
- * Inline düzenleme, drag & drop ve beyanname hücreleri içerir.
+ * Inline düzenleme ve beyanname hücreleri içerir.
+ * Yeni ikon tabanlı statü sistemi.
  */
 
 import React from "react";
 import { Icon } from "@iconify/react";
+import {
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Ban,
+  FileText,
+  FileCheck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -71,7 +80,6 @@ function getFiles(
   beyannameKod: string
 ): { beyanname?: FileInfo; tahakkuk?: FileInfo; sgkTahakkuk?: FileInfo; hizmetListesi?: FileInfo } | undefined {
   const data = customerStatuses[beyannameKod];
-  // Önce BeyannameStatus.files kontrol et, yoksa meta.files'a bak (backwards compatibility)
   return data?.files || data?.meta?.files;
 }
 
@@ -94,6 +102,14 @@ function openPdf(
       "width=1000,height=800"
     );
   }
+}
+
+// Efektif statü hesapla (backward compat: verildi → onaylandi gibi göster, isMuaf → gonderilmeyecek)
+function getEffectiveStatus(status: string, isMuaf: boolean): string {
+  if (isMuaf) return "gonderilmeyecek";
+  if (status === "muaf") return "gonderilmeyecek";
+  if (status === "3aylik") return "onay_bekliyor";
+  return status;
 }
 
 function KontrolCustomerRowComponent({
@@ -197,17 +213,17 @@ function KontrolCustomerRowComponent({
       {/* Beyanname Hücreleri */}
       {beyannameTurleri.map((tur) => {
         const beyannameData = customerStatuses[tur.kod];
-        const status = beyannameData?.status || "bos";
+        const rawStatus = beyannameData?.status || "bos";
         const isMuaf =
           customer.verilmeyecekBeyannameler?.includes(tur.kod) || false;
+        const effectiveStatus = getEffectiveStatus(rawStatus, isMuaf);
 
         return (
           <BeyannameCell
             key={tur.kod}
             customerId={customer.id}
             turKod={tur.kod}
-            status={status}
-            isMuaf={isMuaf}
+            status={effectiveStatus}
             customerStatuses={customerStatuses}
             onLeftClick={onLeftClick}
             onRightClick={onRightClick}
@@ -218,12 +234,11 @@ function KontrolCustomerRowComponent({
   );
 }
 
-// Beyanname hücre bileşeni
+// Beyanname hücre bileşeni — ikon tabanlı statü sistemi
 interface BeyannameCellProps {
   customerId: string;
   turKod: string;
   status: string;
-  isMuaf: boolean;
   customerStatuses: Record<string, BeyannameStatus>;
   onLeftClick: (
     customerId: string,
@@ -241,13 +256,11 @@ function BeyannameCell({
   customerId,
   turKod,
   status,
-  isMuaf,
   customerStatuses,
   onLeftClick,
   onRightClick,
 }: BeyannameCellProps) {
   const meta = getMeta(customerStatuses, turKod);
-  // files objesini doğru yerden al: BeyannameStatus.files veya meta.files (backwards compatibility)
   const files = getFiles(customerStatuses, turKod);
 
   // SGK ve Hizmet Listesi path'lerini kontrol et
@@ -274,67 +287,59 @@ function BeyannameCell({
     meta?.sgkTahakkukPath ||
     meta?.hizmetListesiPath;
 
+  const isLocked = status === "gonderilmeyecek";
+  const isVerildi = status === "verildi" || status === "onaylandi";
+
+  // Hücre tıklama title
+  const cellTitle = isLocked
+    ? "Gönderilmeyecek (kalıcı)"
+    : "Sol tık: Durum değiştir | Sağ tık: Gönderilmeyecek (kalıcı)";
+
   return (
     <td
-      onClick={() => onLeftClick(customerId, turKod, status)}
+      data-cell={`${customerId}-${turKod}`}
+      onClick={() => !isLocked && onLeftClick(customerId, turKod, status)}
       onContextMenu={(e) => onRightClick(e, customerId, turKod)}
-      title="Sol tık: Verildi/Boş | Sağ tık: Muaf (kalıcı)"
+      title={cellTitle}
       className={`
-        border border-border cursor-pointer text-center select-none h-8 transition-colors
-        ${
-          isMuaf
-            ? "bg-zinc-600 dark:bg-zinc-700 hover:bg-zinc-500"
-            : status === "verildi"
-            ? "bg-background hover:bg-green-50 dark:hover:bg-green-950/30"
-            : status === "3aylik"
-            ? "bg-amber-100 dark:bg-amber-900/30"
-            : "bg-background hover:bg-muted/50"
+        border border-border text-center select-none h-8 transition-colors
+        ${isLocked
+          ? "cursor-not-allowed bg-muted/40"
+          : "cursor-pointer bg-background hover:bg-muted/50"
         }
       `}
     >
-      {status === "verildi" && meta && (
+      {/* Onaylandı veya Verildi — Yeşil tik + dosya linkleri */}
+      {isVerildi && meta && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center w-full h-full gap-0.5 relative group">
+              <div className="flex items-center justify-center w-full h-full gap-0.5">
                 {hasAnyFile ? (
                   <div className="flex items-center gap-0.5">
-                    <Icon
-                      icon="solar:check-read-linear"
-                      className="w-3 h-3 text-green-600"
-                    />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-700 dark:text-green-500 flex-shrink-0" />
                     {/* B - Beyanname */}
                     {(files?.beyanname || meta?.beyannamePath) && (
                       <div
                         onClick={(e) =>
-                          openPdf(
-                            e,
-                            files?.beyanname || {
-                              path: meta?.beyannamePath,
-                            }
-                          )
+                          openPdf(e, files?.beyanname || { path: meta?.beyannamePath })
                         }
-                        className="w-4 h-4 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-[2px] cursor-pointer border border-red-200"
+                        className="w-5 h-5 flex items-center justify-center bg-red-100 hover:bg-red-300 text-red-600 rounded-[3px] cursor-pointer border border-red-200 hover:border-red-400 transition-colors"
                         title="Beyanname PDF"
                       >
-                        <span className="text-[9px] font-bold">B</span>
+                        <span className="text-[10px] font-bold">B</span>
                       </div>
                     )}
                     {/* T - Tahakkuk */}
                     {(files?.tahakkuk || meta?.tahakkukPath) && (
                       <div
                         onClick={(e) =>
-                          openPdf(
-                            e,
-                            files?.tahakkuk || {
-                              path: meta?.tahakkukPath,
-                            }
-                          )
+                          openPdf(e, files?.tahakkuk || { path: meta?.tahakkukPath })
                         }
-                        className="w-4 h-4 flex items-center justify-center bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-[2px] cursor-pointer border border-orange-200"
+                        className="w-5 h-5 flex items-center justify-center bg-orange-100 hover:bg-orange-300 text-orange-600 rounded-[3px] cursor-pointer border border-orange-200 hover:border-orange-400 transition-colors"
                         title="Tahakkuk PDF"
                       >
-                        <span className="text-[9px] font-bold">T</span>
+                        <span className="text-[10px] font-bold">T</span>
                       </div>
                     )}
                     {/* S - SGK Tahakkuk */}
@@ -342,17 +347,12 @@ function BeyannameCell({
                       isSgkTahakkuk && (
                         <div
                           onClick={(e) =>
-                            openPdf(
-                              e,
-                              files?.sgkTahakkuk || {
-                                path: meta?.sgkTahakkukPath,
-                              }
-                            )
+                            openPdf(e, files?.sgkTahakkuk || { path: meta?.sgkTahakkukPath })
                           }
-                          className="w-4 h-4 flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-[2px] cursor-pointer border border-blue-200"
+                          className="w-5 h-5 flex items-center justify-center bg-blue-100 hover:bg-blue-300 text-blue-600 rounded-[3px] cursor-pointer border border-blue-200 hover:border-blue-400 transition-colors"
                           title="SGK Tahakkuk PDF"
                         >
-                          <span className="text-[8px] font-bold">S</span>
+                          <span className="text-[10px] font-bold">S</span>
                         </div>
                       )}
                     {/* H - Hizmet Listesi */}
@@ -362,30 +362,20 @@ function BeyannameCell({
                           if (files?.hizmetListesi) {
                             openPdf(e, files.hizmetListesi);
                           } else if (meta?.hizmetListesiPath) {
-                            openPdf(e, {
-                              path: meta?.hizmetListesiPath,
-                            });
+                            openPdf(e, { path: meta?.hizmetListesiPath });
                           } else if (sgkPath.toUpperCase().includes("HIZMET")) {
-                            openPdf(
-                              e,
-                              files?.sgkTahakkuk || {
-                                path: meta?.sgkTahakkukPath,
-                              }
-                            );
+                            openPdf(e, files?.sgkTahakkuk || { path: meta?.sgkTahakkukPath });
                           }
                         }}
-                        className="w-4 h-4 flex items-center justify-center bg-purple-100 hover:bg-purple-200 text-purple-600 rounded-[2px] cursor-pointer border border-purple-200"
+                        className="w-5 h-5 flex items-center justify-center bg-purple-100 hover:bg-purple-300 text-purple-600 rounded-[3px] cursor-pointer border border-purple-200 hover:border-purple-400 transition-colors"
                         title="Hizmet Listesi PDF"
                       >
-                        <span className="text-[9px] font-bold">H</span>
+                        <span className="text-[10px] font-bold">H</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <Icon
-                    icon="solar:check-read-linear"
-                    className="w-4 h-4 text-green-600"
-                  />
+                  <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-500" />
                 )}
               </div>
             </TooltipTrigger>
@@ -395,7 +385,7 @@ function BeyannameCell({
             >
               <div className="space-y-2.5 min-w-[220px]">
                 <div className="font-bold text-green-800 dark:text-green-200 text-sm flex items-center gap-2 pb-2 border-b border-green-200 dark:border-green-700">
-                  <Icon icon="solar:check-read-linear" className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4" />
                   {meta?.beyannameTuru}
                 </div>
                 <div className="space-y-1.5 text-xs">
@@ -419,17 +409,51 @@ function BeyannameCell({
           </Tooltip>
         </TooltipProvider>
       )}
-      {status === "verildi" && !meta && (
+
+      {/* Onaylandı/Verildi — meta yoksa sadece ikon */}
+      {isVerildi && !meta && (
         <div className="flex items-center justify-center w-full h-full">
-          <Icon icon="solar:check-read-bold" className="w-4 h-4 text-green-600" />
+          <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-500" />
         </div>
       )}
-      {status === "3aylik" && (
+
+      {/* Onay Bekliyor — Turuncu saat */}
+      {status === "onay_bekliyor" && (
         <div className="flex items-center justify-center w-full h-full">
-          <span className="text-[9px] font-bold text-amber-700">3AY</span>
+          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         </div>
       )}
-      {(status === "bos" || status === "muaf") && (
+
+      {/* Verilmedi — Kırmızı X */}
+      {status === "verilmedi" && (
+        <div className="flex items-center justify-center w-full h-full">
+          <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+        </div>
+      )}
+
+      {/* Gönderilmeyecek — Gri ban (kilitli) */}
+      {status === "gonderilmeyecek" && (
+        <div className="flex items-center justify-center w-full h-full">
+          <Ban className="w-3.5 h-3.5 text-muted-foreground/50" />
+        </div>
+      )}
+
+      {/* Dilekçe Gönderilecek — Mor dosya */}
+      {status === "dilekce_gonderilecek" && (
+        <div className="flex items-center justify-center w-full h-full">
+          <FileText className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+        </div>
+      )}
+
+      {/* Dilekçe Verildi — Mor/Yeşil dosya onay */}
+      {status === "dilekce_verildi" && (
+        <div className="flex items-center justify-center w-full h-full">
+          <FileCheck className="w-4 h-4 text-purple-800 dark:text-purple-400" />
+        </div>
+      )}
+
+      {/* Boş hücre */}
+      {status === "bos" && (
         <div className="flex items-center justify-center w-full h-full" />
       )}
     </td>
@@ -440,8 +464,6 @@ function BeyannameCell({
 export const KontrolCustomerRow = React.memo(
   KontrolCustomerRowComponent,
   (prevProps, nextProps): boolean => {
-    // Shallow comparison
-    // verilmeyecekBeyannameler array'ini de kontrol et (muafiyet için kritik!)
     const prevMuaf = prevProps.customer.verilmeyecekBeyannameler;
     const nextMuaf = nextProps.customer.verilmeyecekBeyannameler;
     const muafEqual =

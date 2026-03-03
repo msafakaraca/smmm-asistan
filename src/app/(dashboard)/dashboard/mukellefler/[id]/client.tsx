@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { X, Save, Eye, EyeOff, Copy, Check, Hash, Building2, Loader2, Plus, Trash2, Pencil, GitBranch } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Save, Eye, EyeOff, Copy, Check, Hash, Building2, Loader2, Plus, Trash2, Pencil, GitBranch, Shield, Landmark, GraduationCap, KeyRound } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,7 +10,6 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Form,
     FormControl,
@@ -27,11 +27,9 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/sonner"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
-// Profile Form Schema
 const profileSchema = z.object({
     unvan: z.string().min(2, "Ünvan en az 2 karakter olmalıdır"),
     kisaltma: z.string().optional(),
@@ -53,25 +51,24 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>
 
-interface CustomerDetailPanelProps {
+interface CustomerDetailClientProps {
     customerId: string
-    onClose?: () => void
-    onCustomerUpdate?: () => void
 }
 
-export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: CustomerDetailPanelProps) {
+export function CustomerDetailClient({ customerId }: CustomerDetailClientProps) {
+    const router = useRouter()
     const [activeTab, setActiveTab] = React.useState<string>("profile")
     const [loading, setLoading] = React.useState(true)
     const [saving, setSaving] = React.useState(false)
     const [customer, setCustomer] = React.useState<any>(null)
 
-    // Password states
+    // Şifre state'leri
     const [credentials, setCredentials] = React.useState<any>(null)
     const [loadingCredentials, setLoadingCredentials] = React.useState(false)
     const [showPasswords, setShowPasswords] = React.useState<Record<string, boolean>>({})
     const [copied, setCopied] = React.useState<string | null>(null)
 
-    // Branch states
+    // Şube state'leri
     const [branches, setBranches] = React.useState<Array<{ id: string; branchName: string; sgk: any }>>([])
     const [loadingBranches, setLoadingBranches] = React.useState(false)
     const [branchDialogOpen, setBranchDialogOpen] = React.useState(false)
@@ -106,16 +103,10 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
         },
     })
 
-    // Reset state when customerId changes
     React.useEffect(() => {
-        setCredentials(null)
-        setShowPasswords({})
-        setBranches([])
-        setActiveTab("profile")
         fetchCustomer()
     }, [customerId])
 
-    // Fetch branches when tab changes to branches
     React.useEffect(() => {
         if (activeTab === "branches" && branches.length === 0) {
             fetchBranches()
@@ -147,7 +138,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                 sozlesmeNo: data.sozlesmeNo || "",
                 sozlesmeTarihi: data.sozlesmeTarihi || "",
             })
-        } catch (error) {
+        } catch {
             toast.error("Müşteri bilgileri yüklenemedi")
         } finally {
             setLoading(false)
@@ -172,7 +163,6 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
         const trimmedName = newBranchName.trim()
         if (!trimmedName) return
 
-        // İlk şube kontrolü: onay dialog göster
         if (branches.length === 0 && !confirmFirstBranch) {
             const hasExistingSgk = customer?.sgkKullaniciAdi || customer?.sgkIsyeriKodu || customer?.sgkSistemSifresi || customer?.sgkIsyeriSifresi
             if (hasExistingSgk) {
@@ -270,7 +260,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
             if (!res.ok) throw new Error("Şifreler alınamadı")
             const data = await res.json()
             setCredentials(data)
-        } catch (error) {
+        } catch {
             toast.error("Şifreler yüklenemedi")
         } finally {
             setLoadingCredentials(false)
@@ -288,8 +278,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
             if (!res.ok) throw new Error("Kayıt başarısız")
             toast.success("Bilgiler güncellendi")
             fetchCustomer()
-            onCustomerUpdate?.()
-        } catch (error) {
+        } catch {
             toast.error("Güncelleme sırasında hata oluştu")
         } finally {
             setSaving(false)
@@ -308,7 +297,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
 
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center gap-3">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Yükleniyor...</p>
@@ -319,92 +308,91 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
 
     if (!customer) {
         return (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
                     <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="font-semibold">Müşteri bulunamadı</h3>
-                    <p className="text-sm text-muted-foreground">Bu mükellef silinmiş veya erişim izniniz yok.</p>
+                    <p className="text-sm text-muted-foreground mb-4">Bu mükellef silinmiş veya erişim izniniz yok.</p>
+                    <Button variant="outline" onClick={() => router.push("/dashboard/mukellefler")}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Mükelleflere Dön
+                    </Button>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between bg-background shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                        <Building2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="font-semibold truncate">{customer.unvan}</h2>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>VKN: {customer.vknTckn}</span>
-                            <Badge variant={customer.status === "passive" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0">
-                                {customer.status === "passive" ? "Pasif" : "Aktif"}
-                            </Badge>
-                        </div>
-                    </div>
-                </div>
-                {onClose && (
-                    <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
-                        <X className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
-
-            {/* Tabs */}
+        <div className="flex flex-col h-[calc(100vh-64px)] -m-4 xl:-m-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-                <div className="border-b px-4 py-2 shrink-0 flex items-center justify-between">
-                    <TabsList className="h-9 gap-2 bg-transparent p-0">
+                {/* Header + Tabs birleşik */}
+                <div className="border-b px-4 py-2 shrink-0 bg-background">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/mukellefler")} className="shrink-0 h-8">
+                                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                                Geri
+                            </Button>
+                            <div className="h-5 w-px bg-border shrink-0" />
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="font-semibold truncate text-sm">{customer.unvan}</h2>
+                                    <Badge variant={customer.status === "passive" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 shrink-0">
+                                        {customer.status === "passive" ? "Pasif" : "Aktif"}
+                                    </Badge>
+                                </div>
+                                <span className="text-xs text-muted-foreground">VKN: {customer.vknTckn}</span>
+                            </div>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs shrink-0"
+                            onClick={() => {
+                                setAddedBranches([])
+                                setNewBranchName("")
+                                setBranchDialogOpen(true)
+                            }}
+                        >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Şube Ekle
+                        </Button>
+                    </div>
+                    <TabsList className="h-9 gap-1 bg-transparent p-0">
                         <TabsTrigger
                             value="profile"
-                            className="rounded-full px-4 py-1.5 text-sm font-medium transition-all data-[state=inactive]:bg-muted/50 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                            className="rounded-md px-3 py-1.5 text-xs font-medium data-[state=inactive]:text-muted-foreground data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                         >
                             Profil
                         </TabsTrigger>
                         <TabsTrigger
                             value="passwords"
-                            className="rounded-full px-4 py-1.5 text-sm font-medium transition-all data-[state=inactive]:bg-muted/50 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                            className="rounded-md px-3 py-1.5 text-xs font-medium data-[state=inactive]:text-muted-foreground data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                         >
                             Şifreler
                         </TabsTrigger>
                         <TabsTrigger
                             value="branches"
-                            className="rounded-full px-4 py-1.5 text-sm font-medium transition-all data-[state=inactive]:bg-muted/50 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                            className="rounded-md px-3 py-1.5 text-xs font-medium data-[state=inactive]:text-muted-foreground data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                         >
                             Şubeler
                             {branches.length > 0 && (
-                                <Badge variant="secondary" className="ml-1.5 h-5 min-w-5 px-1 text-[10px]">
+                                <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 px-1 text-[10px]">
                                     {branches.length}
                                 </Badge>
                             )}
                         </TabsTrigger>
                     </TabsList>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs"
-                        onClick={() => {
-                            setAddedBranches([])
-                            setNewBranchName("")
-                            setBranchDialogOpen(true)
-                        }}
-                    >
-                        <Plus className="h-3.5 w-3.5 mr-1" />
-                        Şube Ekle
-                    </Button>
                 </div>
 
-                <ScrollArea className="flex-1">
-                    {/* Profile Tab */}
-                    <TabsContent value="profile" className="m-0 p-4">
+                <div className="flex-1 overflow-auto">
+                    {/* Profil Tab */}
+                    <TabsContent value="profile" className="m-0 p-4 xl:p-6">
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <div className="grid gap-3 sm:grid-cols-2">
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                                <div className="grid gap-x-4 gap-y-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                                     <FormField control={form.control} name="unvan" render={({ field }) => (
-                                        <FormItem className="sm:col-span-2">
+                                        <FormItem className="sm:col-span-2 lg:col-span-3">
                                             <FormLabel className="text-xs">Ticari Ünvan</FormLabel>
                                             <FormControl><Input {...field} className="h-9" /></FormControl>
                                             <FormMessage />
@@ -431,6 +419,12 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                                             </Select>
                                         </FormItem>
                                     )} />
+                                    <FormField control={form.control} name="vergiDairesi" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Vergi Dairesi</FormLabel>
+                                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                                        </FormItem>
+                                    )} />
                                     <FormField control={form.control} name="vergiKimlikNo" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs">Vergi Kimlik No</FormLabel>
@@ -441,12 +435,6 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                                         <FormItem>
                                             <FormLabel className="text-xs">T.C. Kimlik No</FormLabel>
                                             <FormControl><Input {...field} maxLength={11} placeholder="11 haneli TC" className="h-9" /></FormControl>
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="vergiDairesi" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs">Vergi Dairesi</FormLabel>
-                                            <FormControl><Input {...field} className="h-9" /></FormControl>
                                         </FormItem>
                                     )} />
                                     <FormField control={form.control} name="email" render={({ field }) => (
@@ -462,9 +450,27 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                                             <FormControl><Input {...field} className="h-9" /></FormControl>
                                         </FormItem>
                                     )} />
+                                    <FormField control={form.control} name="telefon2" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Telefon 2</FormLabel>
+                                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="yetkiliKisi" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs">Yetkili Kişi</FormLabel>
+                                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                                        </FormItem>
+                                    )} />
                                     <FormField control={form.control} name="adres" render={({ field }) => (
-                                        <FormItem className="sm:col-span-2">
+                                        <FormItem className="sm:col-span-2 lg:col-span-3">
                                             <FormLabel className="text-xs">Adres</FormLabel>
+                                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="notes" render={({ field }) => (
+                                        <FormItem className="sm:col-span-2 lg:col-span-3">
+                                            <FormLabel className="text-xs">Notlar</FormLabel>
                                             <FormControl><Input {...field} className="h-9" /></FormControl>
                                         </FormItem>
                                     )} />
@@ -475,7 +481,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                         Sözleşme & Türmob Bilgileri
                                     </h4>
-                                    <div className="grid gap-3 sm:grid-cols-3">
+                                    <div className="grid gap-x-4 gap-y-3 grid-cols-1 sm:grid-cols-3">
                                         <FormField control={form.control} name="siraNo" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel className="text-xs flex items-center gap-1">
@@ -516,79 +522,95 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                         </Form>
                     </TabsContent>
 
-                    {/* Passwords Tab */}
-                    <TabsContent value="passwords" className="m-0 p-4">
-                        <Card className="border-orange-200 bg-orange-50/20 dark:bg-orange-950/10">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base text-orange-700 dark:text-orange-400">GİB Şifreleri</CardTitle>
-                                <CardDescription className="text-xs">
-                                    Şifreler güvenli olarak şifrelenmiştir.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {!credentials ? (
-                                    <div className="text-center py-6">
-                                        <p className="text-sm text-muted-foreground mb-3">
-                                            Şifreleri görüntülemek için butona tıklayın.
-                                        </p>
-                                        <Button onClick={fetchCredentials} disabled={loadingCredentials} size="sm">
-                                            {loadingCredentials ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Yükleniyor...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Şifreleri Göster
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {[
-                                            { key: "gibKodu", label: "GİB Kullanıcı Kodu" },
-                                            { key: "gibParola", label: "GİB Parola" },
-                                            { key: "gibSifre", label: "GİB Şifre" },
-                                        ].map(({ key, label }) => (
-                                            <div key={key}>
-                                                <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                                                <div className="flex mt-1 gap-1">
-                                                    <Input
-                                                        type={showPasswords[key] ? "text" : "password"}
-                                                        value={credentials[key] || ""}
-                                                        readOnly
-                                                        className="flex-1 h-9 font-mono text-sm"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-9 w-9"
-                                                        onClick={() => togglePassword(key)}
-                                                    >
-                                                        {showPasswords[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-9 w-9"
-                                                        onClick={() => copyToClipboard(credentials[key] || "", key)}
-                                                    >
-                                                        {copied === key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                                    </Button>
+                    {/* Şifreler Tab */}
+                    <TabsContent value="passwords" className="m-0 p-4 xl:p-6">
+                        {!credentials ? (
+                            <div className="text-center py-12">
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Şifreleri görüntülemek için butona tıklayın.
+                                </p>
+                                <Button onClick={fetchCredentials} disabled={loadingCredentials} size="sm">
+                                    {loadingCredentials ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Yükleniyor...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            Şifreleri Göster
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
+                                {[
+                                    {
+                                        title: "GİB Şifreleri",
+                                        icon: Landmark,
+                                        fields: [
+                                            { key: "gibKodu", label: "Kullanıcı Kodu" },
+                                            { key: "gibParola", label: "Parola" },
+                                            { key: "gibSifre", label: "Şifre" },
+                                        ],
+                                    },
+                                    {
+                                        title: "SGK Şifreleri",
+                                        icon: Shield,
+                                        fields: [
+                                            { key: "sgkKullaniciAdi", label: "Kullanıcı Adı" },
+                                            { key: "sgkIsyeriKodu", label: "İşyeri Kodu" },
+                                            { key: "sgkSistemSifresi", label: "Sistem Şifresi" },
+                                            { key: "sgkIsyeriSifresi", label: "İşyeri Şifresi" },
+                                        ],
+                                    },
+                                    {
+                                        title: "TÜRMOB Şifreleri",
+                                        icon: GraduationCap,
+                                        fields: [
+                                            { key: "turmobKullaniciAdi", label: "Kullanıcı Adı" },
+                                            { key: "turmobSifre", label: "Şifre" },
+                                        ],
+                                    },
+                                    {
+                                        title: "E-Devlet Şifreleri",
+                                        icon: KeyRound,
+                                        fields: [
+                                            { key: "edevletTckn", label: "T.C. Kimlik No" },
+                                            { key: "edevletSifre", label: "Şifre" },
+                                        ],
+                                    },
+                                ].map((section) => (
+                                    <div key={section.title} className="rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/10 p-4">
+                                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-blue-200/60 dark:border-blue-800/40">
+                                            <section.icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            <h3 className="text-sm font-bold text-blue-700 dark:text-blue-300">{section.title}</h3>
+                                        </div>
+                                        <div className="space-y-2.5">
+                                            {section.fields.map(({ key, label }) => (
+                                                <div key={key}>
+                                                    <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                                                    <div className="flex mt-0.5 gap-1">
+                                                        <Input type={showPasswords[key] ? "text" : "password"} value={credentials[key] || ""} readOnly className="flex-1 h-9 font-mono text-sm bg-white dark:bg-background" />
+                                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => togglePassword(key)}>
+                                                            {showPasswords[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        </Button>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(credentials[key] || "", key)}>
+                                                            {copied === key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                ))}
+                            </div>
+                        )}
                     </TabsContent>
-                    {/* Branches Tab */}
-                    <TabsContent value="branches" className="m-0 p-4">
+
+                    {/* Şubeler Tab */}
+                    <TabsContent value="branches" className="m-0 p-4 xl:p-6">
                         {loadingBranches ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -614,95 +636,92 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {branches.map((branch) => (
-                                    <Card key={branch.id} className="border">
-                                        <CardHeader className="py-3 px-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <GitBranch className="h-4 w-4 text-muted-foreground" />
-                                                    <CardTitle className="text-sm">{branch.branchName}</CardTitle>
-                                                    {branch.sgk?.hasKullaniciAdi && branch.sgk?.hasIsyeriKodu && branch.sgk?.hasSistemSifresi && branch.sgk?.hasIsyeriSifresi ? (
-                                                        <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400">Tamam</Badge>
-                                                    ) : (
-                                                        <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">Eksik</Badge>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    {editingBranchId === branch.id ? (
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            className="h-7 text-xs"
-                                                            disabled={savingBranch}
-                                                            onClick={() => handleSaveBranch(branch.id)}
-                                                        >
-                                                            {savingBranch ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
-                                                            Kaydet
-                                                        </Button>
-                                                    ) : (
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditBranch(branch)}>
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
+                                    <div key={branch.id}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <GitBranch className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-medium">{branch.branchName}</span>
+                                                {branch.sgk?.hasKullaniciAdi && branch.sgk?.hasIsyeriKodu && branch.sgk?.hasSistemSifresi && branch.sgk?.hasIsyeriSifresi ? (
+                                                    <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400">Tamam</Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">Eksik</Badge>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {editingBranchId === branch.id ? (
                                                     <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-destructive hover:text-destructive"
-                                                        onClick={() => setDeleteBranchId(branch.id)}
+                                                        variant="default"
+                                                        size="sm"
+                                                        className="h-7 text-xs"
+                                                        disabled={savingBranch}
+                                                        onClick={() => handleSaveBranch(branch.id)}
                                                     >
-                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                        {savingBranch ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+                                                        Kaydet
                                                     </Button>
-                                                </div>
+                                                ) : (
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditBranch(branch)}>
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                                    onClick={() => setDeleteBranchId(branch.id)}
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="px-4 pb-3 pt-0">
-                                            <div className="grid gap-2 sm:grid-cols-2">
-                                                {[
-                                                    { key: "kullaniciAdi", label: "Kullanıcı Adı" },
-                                                    { key: "isyeriKodu", label: "İşyeri Kodu" },
-                                                    { key: "sistemSifresi", label: "Sistem Şifresi" },
-                                                    { key: "isyeriSifresi", label: "İşyeri Şifresi" },
-                                                ].map(({ key, label }) => (
-                                                    <div key={key}>
-                                                        <label className="text-[11px] font-medium text-muted-foreground">{label}</label>
-                                                        <div className="flex mt-0.5 gap-1">
-                                                            <Input
-                                                                type={showPasswords[`${branch.id}_${key}`] ? "text" : "password"}
-                                                                value={editingBranchId === branch.id
-                                                                    ? (branchFormData[`${branch.id}_${key}`] ?? "")
-                                                                    : (branch.sgk?.[key] || "")}
-                                                                readOnly={editingBranchId !== branch.id}
-                                                                onChange={(e) => editingBranchId === branch.id && setBranchFormData(prev => ({
-                                                                    ...prev,
-                                                                    [`${branch.id}_${key}`]: e.target.value
-                                                                }))}
-                                                                className="flex-1 h-8 font-mono text-xs"
-                                                                placeholder={editingBranchId === branch.id ? label : "—"}
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8"
-                                                                onClick={() => togglePassword(`${branch.id}_${key}`)}
-                                                            >
-                                                                {showPasswords[`${branch.id}_${key}`] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                                                            </Button>
-                                                        </div>
+                                        </div>
+                                        <div className="grid gap-x-4 gap-y-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                                            {[
+                                                { key: "kullaniciAdi", label: "Kullanıcı Adı" },
+                                                { key: "isyeriKodu", label: "İşyeri Kodu" },
+                                                { key: "sistemSifresi", label: "Sistem Şifresi" },
+                                                { key: "isyeriSifresi", label: "İşyeri Şifresi" },
+                                            ].map(({ key, label }) => (
+                                                <div key={key}>
+                                                    <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                                                    <div className="flex mt-0.5 gap-1">
+                                                        <Input
+                                                            type={showPasswords[`${branch.id}_${key}`] ? "text" : "password"}
+                                                            value={editingBranchId === branch.id
+                                                                ? (branchFormData[`${branch.id}_${key}`] ?? "")
+                                                                : (branch.sgk?.[key] || "")}
+                                                            readOnly={editingBranchId !== branch.id}
+                                                            onChange={(e) => editingBranchId === branch.id && setBranchFormData(prev => ({
+                                                                ...prev,
+                                                                [`${branch.id}_${key}`]: e.target.value
+                                                            }))}
+                                                            className="flex-1 h-9 font-mono text-xs"
+                                                            placeholder={editingBranchId === branch.id ? label : "—"}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9"
+                                                            onClick={() => togglePassword(`${branch.id}_${key}`)}
+                                                        >
+                                                            {showPasswords[`${branch.id}_${key}`] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                                                        </Button>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="border-b mt-4" />
+                                    </div>
                                 ))}
                             </div>
                         )}
                     </TabsContent>
-                </ScrollArea>
+                </div>
             </Tabs>
 
-            {/* Branch Add Dialog */}
+            {/* Şube Ekle Dialog */}
             <Dialog open={branchDialogOpen} onOpenChange={setBranchDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -757,7 +776,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                 </DialogContent>
             </Dialog>
 
-            {/* First Branch Confirmation Dialog */}
+            {/* İlk Şube Onay Dialog */}
             <AlertDialog open={confirmFirstBranch} onOpenChange={setConfirmFirstBranch}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -776,7 +795,7 @@ export function CustomerDetailPanel({ customerId, onClose, onCustomerUpdate }: C
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Branch Delete Confirmation */}
+            {/* Şube Silme Onay */}
             <AlertDialog open={!!deleteBranchId} onOpenChange={(open) => !open && setDeleteBranchId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

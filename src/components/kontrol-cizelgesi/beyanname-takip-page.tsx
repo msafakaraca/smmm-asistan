@@ -8,10 +8,19 @@
  * URL parametreleri ile dönem seçimi destekler (?year=2025&month=11)
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { Icon } from "@iconify/react";
-import { ClipboardCheck } from "lucide-react";
+import {
+  ClipboardCheck,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Ban,
+  FileText,
+  FileCheck,
+} from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +43,14 @@ const aylar = [
   "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
   "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
 ];
+
+// Popover state tipi
+interface PopoverState {
+  customerId: string;
+  beyannameKod: string;
+  currentStatus: string;
+  anchorEl: HTMLElement;
+}
 
 export function BeyannameTakipPage() {
   const botResult = useBotResult();
@@ -74,6 +91,7 @@ export function BeyannameTakipPage() {
   const [editingUnvanValue, setEditingUnvanValue] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [popover, setPopover] = useState<PopoverState | null>(null);
 
   useEffect(() => {
     if (botResult.hasPendingResult) {
@@ -99,9 +117,20 @@ export function BeyannameTakipPage() {
         const aStatus = beyannameStatuses[a.id]?.[sortColumn]?.status || "bos";
         const bStatus = beyannameStatuses[b.id]?.[sortColumn]?.status || "bos";
 
-        const statusOrder = { verildi: 0, "3aylik": 1, bos: 2, muaf: 3 };
-        const aOrder = statusOrder[aStatus as keyof typeof statusOrder] ?? 2;
-        const bOrder = statusOrder[bStatus as keyof typeof statusOrder] ?? 2;
+        const statusOrder: Record<string, number> = {
+          onaylandi: 0,
+          verildi: 0,
+          dilekce_verildi: 1,
+          onay_bekliyor: 2,
+          dilekce_gonderilecek: 3,
+          verilmedi: 4,
+          bos: 5,
+          gonderilmeyecek: 6,
+          "3aylik": 2,
+          muaf: 6,
+        };
+        const aOrder = statusOrder[aStatus] ?? 5;
+        const bOrder = statusOrder[bStatus] ?? 5;
 
         return sortDirection === "asc" ? aOrder - bOrder : bOrder - aOrder;
       });
@@ -172,23 +201,50 @@ export function BeyannameTakipPage() {
     }
   }, [selectedYear, selectedMonth, setBeyannameStatuses]);
 
+  // Sol tık → popover aç (gonderilmeyecek hariç)
   const handleLeftClick = useCallback(
-    async (customerId: string, beyannameKod: string, currentStatus: string) => {
+    (customerId: string, beyannameKod: string, currentStatus: string) => {
       const customer = customers.find((c) => c.id === customerId);
       if (customer?.verilmeyecekBeyannameler?.includes(beyannameKod)) {
         return;
       }
+      if (currentStatus === "gonderilmeyecek") return;
 
-      const newStatus: DeclarationStatus = currentStatus === "verildi" ? "bos" : "verildi";
-      try {
-        await updateBeyannameStatus(customerId, beyannameKod, newStatus);
-      } catch {
-        toast.error("Güncelleme başarısız");
+      // Tıklanan hücreyi bul
+      const cell = document.querySelector(
+        `[data-cell="${customerId}-${beyannameKod}"]`
+      ) as HTMLElement;
+      if (!cell) {
+        // Fallback: data attribute yoksa eski toggle davranışı
+        const newStatus: DeclarationStatus = currentStatus === "verildi" || currentStatus === "onaylandi"
+          ? "bos"
+          : "verildi";
+        updateBeyannameStatus(customerId, beyannameKod, newStatus).catch(() => {
+          toast.error("Güncelleme başarısız");
+        });
+        return;
       }
+
+      setPopover({ customerId, beyannameKod, currentStatus, anchorEl: cell });
     },
     [customers, updateBeyannameStatus]
   );
 
+  // Popover'dan statü seçimi
+  const handlePopoverSelect = useCallback(
+    async (newStatus: DeclarationStatus) => {
+      if (!popover) return;
+      setPopover(null);
+      try {
+        await updateBeyannameStatus(popover.customerId, popover.beyannameKod, newStatus);
+      } catch {
+        toast.error("Güncelleme başarısız");
+      }
+    },
+    [popover, updateBeyannameStatus]
+  );
+
+  // Sağ tık: Gönderilmeyecek toggle
   const handleRightClick = useCallback(
     async (e: React.MouseEvent, customerId: string, beyannameKod: string) => {
       e.preventDefault();
@@ -289,8 +345,6 @@ export function BeyannameTakipPage() {
           table { width: 100%; border-collapse: collapse; font-size: 11px; }
           th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
           th { background: #f5f5f5; font-weight: bold; }
-          .bg-green-100 { background: #d1fae5 !important; }
-          .bg-zinc-600 { background: #52525b !important; color: white; }
           @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             @page { size: landscape; margin: 10mm; }
@@ -449,6 +503,16 @@ export function BeyannameTakipPage() {
         )}
       </div>
 
+      {/* Statü Popover */}
+      {popover && (
+        <StatusPopover
+          currentStatus={popover.currentStatus}
+          anchorEl={popover.anchorEl}
+          onSelect={handlePopoverSelect}
+          onClose={() => setPopover(null)}
+        />
+      )}
+
       {/* Footer Legend */}
       <div className="flex items-center justify-between gap-4 text-[10px] font-medium text-muted-foreground py-3 flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -460,17 +524,119 @@ export function BeyannameTakipPage() {
             GİB Senkronizasyonu
           </a>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-background border-2 border-border rounded" />
-            Sol Tık: Değiştir
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-700 dark:text-green-500" />
+            <span>Onaylandı</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-zinc-600 border-2 border-border rounded" />
-            Sağ Tık: Muaf/Var
+          <div className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Onay Bekliyor</span>
           </div>
+          <div className="flex items-center gap-1">
+            <XCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+            <span>Verilmedi</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Ban className="w-3.5 h-3.5 text-muted-foreground/50" />
+            <span>Gönderilmeyecek</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FileText className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
+            <span>Dilekçe</span>
+          </div>
+          <span className="text-muted-foreground/60">|</span>
+          <span>Sol tık: Durum | Sağ tık: Gönderilmeyecek</span>
         </div>
       </div>
     </div>
+  );
+}
+
+// Statü seçim popover bileşeni (portal tabanlı)
+interface StatusPopoverProps {
+  currentStatus: string;
+  anchorEl: HTMLElement;
+  onSelect: (status: DeclarationStatus) => void;
+  onClose: () => void;
+}
+
+function StatusPopover({ currentStatus, anchorEl, onSelect, onClose }: StatusPopoverProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const rect = anchorEl.getBoundingClientRect();
+    const el = ref.current;
+    if (!el) return;
+
+    let top = rect.bottom + 2;
+    let left = rect.left;
+
+    const popoverHeight = el.offsetHeight || 140;
+    const popoverWidth = el.offsetWidth || 140;
+    if (top + popoverHeight > window.innerHeight) {
+      top = rect.top - popoverHeight - 2;
+    }
+    if (left + popoverWidth > window.innerWidth) {
+      left = window.innerWidth - popoverWidth - 8;
+    }
+
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
+  }, [anchorEl]);
+
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  const options: { status: DeclarationStatus; label: string; icon: React.ReactNode }[] = [
+    { status: "verildi", label: "Gönderildi", icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-700 dark:text-green-500" /> },
+    { status: "verilmedi", label: "Gönderilmedi", icon: <XCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" /> },
+    { status: "dilekce_verildi", label: "Dilekçe Verildi", icon: <FileCheck className="w-3.5 h-3.5 text-purple-800 dark:text-purple-400" /> },
+  ];
+
+  return createPortal(
+    <div
+      ref={ref}
+      className="fixed z-[100] bg-popover border rounded-md shadow-lg py-1 min-w-[130px] animate-in fade-in-0 zoom-in-95 duration-100"
+    >
+      {options.map((opt) => (
+        <button
+          key={opt.status}
+          onClick={() => onSelect(opt.status)}
+          className={`w-full px-2.5 py-1.5 text-[11px] text-left hover:bg-accent transition-colors flex items-center gap-2 ${
+            currentStatus === opt.status ? "bg-accent font-medium" : ""
+          }`}
+        >
+          {opt.icon}
+          {opt.label}
+        </button>
+      ))}
+      {currentStatus !== "bos" && currentStatus !== "onay_bekliyor" && currentStatus !== "dilekce_gonderilecek" && (
+        <>
+          <div className="border-t my-0.5" />
+          <button
+            onClick={() => onSelect("bos")}
+            className="w-full px-2.5 py-1.5 text-[11px] text-left text-muted-foreground hover:bg-muted/50 transition-colors"
+          >
+            Temizle
+          </button>
+        </>
+      )}
+    </div>,
+    document.body
   );
 }

@@ -110,3 +110,7 @@ taskmanagement-ui.webp
 electron-bot/.chromium/
 scripts/turmob-decompiled/
 SUPABASE.txt
+
+# Vite build cache
+.vite/
+electron-bot/.vite/

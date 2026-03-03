@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
+import { decrypt } from "@/lib/crypto";
 import ExcelJS from "exceljs";
 
-// GET /api/sifreler/template?type=gib|sgk
+// Guvenli decrypt helper
+function safeDecrypt(value: string | null): string {
+  if (!value) return "";
+  try {
+    return decrypt(value) || "";
+  } catch {
+    return "";
+  }
+}
+
+// GET /api/sifreler/template?type=gib|sgk&filled=true
 // Excel sablonu olustur ve indir
+// filled=true: Mevcut sifreleri dolu olarak export eder
 export const GET = withAuth(async (req: NextRequest, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
+    const filled = searchParams.get("filled") === "true";
 
     // Tip kontrolu
     if (!type || !["gib", "sgk"].includes(type)) {
@@ -18,16 +31,30 @@ export const GET = withAuth(async (req: NextRequest, user) => {
       );
     }
 
+    // Select alanlarini belirle
+    const select: Record<string, boolean> = {
+      unvan: true,
+      vknTckn: true,
+    };
+
+    // Dolu export icin sifre alanlarini da cek
+    if (filled && type === "gib") {
+      select.gibKodu = true;
+      select.gibSifre = true;
+    } else if (filled && type === "sgk") {
+      select.sgkKullaniciAdi = true;
+      select.sgkIsyeriKodu = true;
+      select.sgkSistemSifresi = true;
+      select.sgkIsyeriSifresi = true;
+    }
+
     // Tum mukellefleri cek
     const customers = await prisma.customers.findMany({
       where: {
         tenantId: user.tenantId,
         status: "active",
       },
-      select: {
-        unvan: true,
-        vknTckn: true,
-      },
+      select,
       orderBy: [{ sortOrder: "asc" }, { unvan: "asc" }],
     });
 
@@ -64,17 +91,22 @@ export const GET = withAuth(async (req: NextRequest, user) => {
     };
 
     // Verileri ekle
-    customers.forEach((c) => {
+    customers.forEach((c: Record<string, unknown>) => {
       if (type === "gib") {
-        worksheet.addRow({ mukellef: c.unvan, vkn: c.vknTckn, kod: "", sifre: "" });
+        worksheet.addRow({
+          mukellef: c.unvan,
+          vkn: c.vknTckn,
+          kod: filled ? safeDecrypt(c.gibKodu as string | null) : "",
+          sifre: filled ? safeDecrypt(c.gibSifre as string | null) : "",
+        });
       } else {
         worksheet.addRow({
           mukellef: c.unvan,
           vkn: c.vknTckn,
-          kullanici: "",
-          isyeri: "",
-          sistem: "",
-          isyeriSifre: "",
+          kullanici: filled ? safeDecrypt(c.sgkKullaniciAdi as string | null) : "",
+          isyeri: filled ? safeDecrypt(c.sgkIsyeriKodu as string | null) : "",
+          sistem: filled ? safeDecrypt(c.sgkSistemSifresi as string | null) : "",
+          isyeriSifre: filled ? safeDecrypt(c.sgkIsyeriSifresi as string | null) : "",
         });
       }
     });
@@ -84,7 +116,8 @@ export const GET = withAuth(async (req: NextRequest, user) => {
 
     // Dosya adini olustur
     const date = new Date().toISOString().split("T")[0];
-    const filename = `${type.toUpperCase()}_Sifre_Sablonu_${date}.xlsx`;
+    const suffix = filled ? "Export" : "Sablonu";
+    const filename = `${type.toUpperCase()}_Sifre_${suffix}_${date}.xlsx`;
 
     // Response dondur
     return new NextResponse(buffer, {

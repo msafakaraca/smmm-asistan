@@ -18,25 +18,35 @@ const updateBeyannameTuruSchema = z.object({
     siraNo: z.number().int().min(0).optional(),
 });
 
-// En çok kullanılan beyanname türleri (varsayılan olarak aktif)
+// Hattat referanslı 23 beyanname türü (varsayılan olarak aktif)
 const DEFAULT_BEYANNAME_TURLERI = [
-    { kod: "KDV1", aciklama: "Katma Değer Vergisi Beyannamesi 1", kisaAd: "KDV1", kategori: "KDV", siraNo: 1 },
-    { kod: "KDV2", aciklama: "Katma Değer Vergisi Beyannamesi 2", kisaAd: "KDV2", kategori: "KDV", siraNo: 2 },
-    { kod: "KDV9015", aciklama: "Katma Değer Vergisi Tevkifatı", kisaAd: "KDV9015", kategori: "KDV", siraNo: 3 },
-    { kod: "MUHSGK", aciklama: "Muhtasar ve Prim Hizmet Beyannamesi", kisaAd: "MUH/SGK", kategori: "Muhtasar", siraNo: 4 },
-    { kod: "MUH", aciklama: "Muhtasar Beyanname", kisaAd: "MUH", kategori: "Muhtasar", siraNo: 5 },
-    { kod: "GELIR", aciklama: "Yıllık Gelir Vergisi Beyannamesi", kisaAd: "GV", kategori: "Gelir", siraNo: 6 },
-    { kod: "GGECICI", aciklama: "Gelir Geçici Vergi Beyannamesi", kisaAd: "GVG", kategori: "Gelir", siraNo: 7 },
-    { kod: "KURUMLAR", aciklama: "Kurumlar Vergisi Beyannamesi", kisaAd: "KV", kategori: "Kurumlar", siraNo: 8 },
-    { kod: "KGECICI", aciklama: "Kurum Geçici Vergi Beyannamesi", kisaAd: "KVG", kategori: "Kurumlar", siraNo: 9 },
-    { kod: "FORMBA", aciklama: "Form BA", kisaAd: "BA", kategori: "Formlar", siraNo: 10 },
-    { kod: "FORMBS", aciklama: "Form BS", kisaAd: "BS", kategori: "Formlar", siraNo: 11 },
-    { kod: "DAMGA", aciklama: "Damga Vergisi Beyannamesi", kisaAd: "DV", kategori: "Damga", siraNo: 12 },
-    { kod: "TURIZM", aciklama: "Turizm Payı Beyannamesi", kisaAd: "TURZ", kategori: "Diğer", siraNo: 13 },
-    { kod: "KONAKLAMA", aciklama: "Konaklama Vergisi Beyannamesi", kisaAd: "KONK", kategori: "Diğer", siraNo: 14 },
-    { kod: "BASIT", aciklama: "Basit Usul Ticari Kazanç Beyannamesi", kisaAd: "BASIT", kategori: "Gelir", siraNo: 15 },
-    { kod: "GMSI", aciklama: "Gayrimenkul Sermaye İradı Beyannamesi", kisaAd: "GMSI", kategori: "Gelir", siraNo: 16 },
+    { kod: "GELIR",      aciklama: "Gelir Vergisi Beyannamesi",                  kisaAd: "GV",      kategori: "Gelir",    siraNo: 1,  donemSecenekleri: ["yillik"] },
+    { kod: "KDV1",       aciklama: "KDV Beyannamesi 1",                          kisaAd: "KDV1",    kategori: "KDV",      siraNo: 2,  donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "KDV2",       aciklama: "KDV Beyannamesi 2",                          kisaAd: "KDV2",    kategori: "KDV",      siraNo: 3,  donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "DAMGA",      aciklama: "Damga Vergisi Beyannamesi",                  kisaAd: "DV",      kategori: "Damga",    siraNo: 4,  donemSecenekleri: ["aylik"] },
+    { kod: "GGECICI",    aciklama: "Gelir Geçici Vergi Beyannamesi",             kisaAd: "GVG",     kategori: "Gelir",    siraNo: 5,  donemSecenekleri: ["3aylik"] },
+    { kod: "KGECICI",    aciklama: "Kurum Geçici Vergi Beyannamesi",             kisaAd: "KVG",     kategori: "Kurumlar", siraNo: 6,  donemSecenekleri: ["3aylik"] },
+    { kod: "KURUMLAR",   aciklama: "Kurumlar Vergisi Beyannamesi",               kisaAd: "KV",      kategori: "Kurumlar", siraNo: 7,  donemSecenekleri: ["yillik"] },
+    { kod: "OTV",        aciklama: "ÖTV Beyannamesi",                            kisaAd: "ÖTV",     kategori: "ÖTV",      siraNo: 8,  donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "MUHSGK",     aciklama: "Muhtasar ve Prim Hizmet Beyannamesi",        kisaAd: "MUH/SGK", kategori: "Muhtasar", siraNo: 9,  donemSecenekleri: ["aylik", "3aylik", "dilekce"] },
+    { kod: "POSET",      aciklama: "Poşet Beyannamesi",                          kisaAd: "POŞET",   kategori: "Diğer",    siraNo: 10, donemSecenekleri: ["aylik", "3aylik", "6aylik"] },
+    { kod: "KDV4",       aciklama: "KDV Beyannamesi 4",                          kisaAd: "KDV4",    kategori: "KDV",      siraNo: 11, donemSecenekleri: ["aylik"] },
+    { kod: "BASIT",      aciklama: "Basit Usul Ticari Kazanç Beyannamesi",       kisaAd: "BASIT",   kategori: "Gelir",    siraNo: 12, donemSecenekleri: ["yillik"] },
+    { kod: "GELIR1001E", aciklama: "Gelir 1001E Beyannamesi",                    kisaAd: "1001E",   kategori: "Gelir",    siraNo: 13, donemSecenekleri: ["yillik"] },
+    { kod: "GMSI",       aciklama: "Gayrimenkul Sermaye İradı Beyannamesi",      kisaAd: "GMSI",    kategori: "Gelir",    siraNo: 14, donemSecenekleri: ["yillik"] },
+    { kod: "TURIZM",     aciklama: "Turizm Payı Beyannamesi",                    kisaAd: "TURZ",    kategori: "Diğer",    siraNo: 15, donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "MUHSGK2",    aciklama: "Muhtasar ve Prim Hizmet 2",                  kisaAd: "MUH2",    kategori: "Muhtasar", siraNo: 16, donemSecenekleri: ["aylik", "3aylik", "dilekce"] },
+    { kod: "OTV3B",      aciklama: "ÖTV 3B Beyannamesi",                         kisaAd: "ÖTV3B",   kategori: "ÖTV",      siraNo: 17, donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "OTV1",       aciklama: "ÖTV 1 Beyannamesi",                          kisaAd: "ÖTV1",    kategori: "ÖTV",      siraNo: 18, donemSecenekleri: ["15gunluk", "aylik", "3aylik"] },
+    { kod: "OTV3A",      aciklama: "ÖTV 3A Beyannamesi",                         kisaAd: "ÖTV3A",   kategori: "ÖTV",      siraNo: 19, donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "OTV4",       aciklama: "ÖTV 4 Beyannamesi",                          kisaAd: "ÖTV4",    kategori: "ÖTV",      siraNo: 20, donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "OIV",        aciklama: "ÖİV Beyannamesi",                            kisaAd: "ÖİV",     kategori: "Diğer",    siraNo: 21, donemSecenekleri: ["aylik"] },
+    { kod: "KONAKLAMA",  aciklama: "Konaklama Vergisi Beyannamesi",              kisaAd: "KONK",    kategori: "Diğer",    siraNo: 22, donemSecenekleri: ["aylik"] },
+    { kod: "KDV9015",    aciklama: "KDV Tevkifat Beyannamesi",                   kisaAd: "9015",    kategori: "KDV",      siraNo: 23, donemSecenekleri: ["aylik"] },
 ];
+
+// Eski türler — silmek yerine aktif: false yapılacak
+const DEPRECATED_KODLAR = ["FORMBA", "FORMBS", "MUH"];
 
 // GET - Tenant için aktif beyanname türlerini getir
 export async function GET(req: NextRequest) {
@@ -77,6 +87,8 @@ export async function GET(req: NextRequest) {
             // Mevcut tenant'lara yeni varsayılan türleri ekle (eksik olanları)
             const existingKods = new Set(turler.map(t => t.kod));
             const missingTypes = DEFAULT_BEYANNAME_TURLERI.filter(t => !existingKods.has(t.kod));
+            let needsRefresh = false;
+
             if (missingTypes.length > 0) {
                 const { randomUUID } = await import("crypto");
                 const now = new Date();
@@ -91,6 +103,53 @@ export async function GET(req: NextRequest) {
                     })),
                     skipDuplicates: true,
                 });
+                needsRefresh = true;
+            }
+
+            // Eski türleri (FORMBA, FORMBS, MUH) aktif: false yap
+            const deprecatedTurler = turler.filter(
+                t => DEPRECATED_KODLAR.includes(t.kod) && t.aktif
+            );
+            if (deprecatedTurler.length > 0) {
+                await prisma.beyanname_turleri.updateMany({
+                    where: { id: { in: deprecatedTurler.map(t => t.id) }, tenantId },
+                    data: { aktif: false },
+                });
+                needsRefresh = true;
+            }
+
+            // Mevcut türlerin donemSecenekleri boşsa DEFAULT'tan doldur
+            const defaultMap = new Map(DEFAULT_BEYANNAME_TURLERI.map(t => [t.kod, t]));
+            const emptyDonemTurler = turler.filter(
+                t => t.donemSecenekleri.length === 0 && defaultMap.has(t.kod)
+            );
+            for (const tur of emptyDonemTurler) {
+                const def = defaultMap.get(tur.kod)!;
+                await prisma.beyanname_turleri.update({
+                    where: { id: tur.id },
+                    data: {
+                        donemSecenekleri: def.donemSecenekleri,
+                        aciklama: def.aciklama,
+                        kisaAd: def.kisaAd,
+                        kategori: def.kategori,
+                    },
+                });
+                needsRefresh = true;
+            }
+
+            // Mevcut MUHSGK/MUHSGK2 türlerine "dilekce" seçeneği ekle (eksikse)
+            const muhsgkTurler = turler.filter(
+                t => (t.kod === "MUHSGK" || t.kod === "MUHSGK2") && !t.donemSecenekleri.includes("dilekce")
+            );
+            for (const tur of muhsgkTurler) {
+                await prisma.beyanname_turleri.update({
+                    where: { id: tur.id },
+                    data: { donemSecenekleri: [...tur.donemSecenekleri, "dilekce"] },
+                });
+                needsRefresh = true;
+            }
+
+            if (needsRefresh) {
                 turler = await prisma.beyanname_turleri.findMany({
                     where: { tenantId },
                     orderBy: { siraNo: "asc" }

@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import useSWR, { preload } from "swr"
+import { useRouter } from "next/navigation"
+import { preload } from "swr"
 import {
-    ColumnDef,
     ColumnFiltersState,
     SortingState,
     VisibilityState,
@@ -13,7 +13,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table"
-import { ChevronDown, Plus, Trash2, X, UserCheck, UserX } from "lucide-react"
+import { ChevronDown, Plus, Trash2, X, UserCheck, UserX, FileText } from "lucide-react"
 import { toast } from "@/components/ui/sonner"
 
 // Grupları arka planda önceden yükle
@@ -45,22 +45,16 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    Dialog,
-    DialogContent,
-} from "@/components/ui/dialog"
 
 import { Customer, columns } from "./columns"
 import Link from "next/link"
 import { ImportDialog } from "./import-dialog"
 import { ImportResultsDialog } from "./import-results-dialog"
 import { CustomerGroupsDialog } from "@/components/customer-groups/customer-groups-dialog"
-import { CustomerDetailPanel } from "./components/customer-detail-panel"
-import { EmptyState } from "./components/empty-state"
 import { Icon } from "@iconify/react"
-import { useMediaQuery } from "@/hooks/use-media-query"
 
 export function CustomerListClient() {
+    const router = useRouter()
     const [data, setData] = React.useState<Customer[]>([])
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -71,10 +65,6 @@ export function CustomerListClient() {
     const [deleteAllLoading, setDeleteAllLoading] = React.useState(false)
     const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "passive">("all")
     const [bulkStatusLoading, setBulkStatusLoading] = React.useState(false)
-
-    // Split-view state
-    const [selectedCustomerId, setSelectedCustomerId] = React.useState<string | null>(null)
-    const isDesktop = useMediaQuery("(min-width: 1024px)")
 
     // GİB Import Results Dialog State
     const [importResultsOpen, setImportResultsOpen] = React.useState(false)
@@ -211,17 +201,11 @@ export function CustomerListClient() {
             const result = await res.json()
             toast.success(`${result.count} mükellef silindi`)
             setRowSelection({})
-
-            // Seçili mükellef silindiyse seçimi kaldır
-            if (selectedCustomerId && selectedIds.includes(selectedCustomerId)) {
-                setSelectedCustomerId(null)
-            }
-
             fetchCustomers()
         } catch (error) {
             toast.error("Silme işlemi sırasında hata oluştu")
         }
-    }, [rowSelection, data, fetchCustomers, selectedCustomerId])
+    }, [rowSelection, data, fetchCustomers])
 
     // Toplu durum değiştirme
     const handleBulkStatus = React.useCallback(async (newStatus: "active" | "passive") => {
@@ -285,7 +269,6 @@ export function CustomerListClient() {
 
             toast.success(`${result.count} mükellef silindi`)
             setRowSelection({})
-            setSelectedCustomerId(null)
             fetchCustomers()
 
         } catch (error) {
@@ -308,17 +291,11 @@ export function CustomerListClient() {
             if (!res.ok) throw new Error("Silme işlemi başarısız");
 
             toast.success("Mükellef silindi");
-
-            // Seçili mükellef silindiyse seçimi kaldır
-            if (selectedCustomerId === id) {
-                setSelectedCustomerId(null)
-            }
-
             fetchCustomers();
         } catch (error) {
             toast.error("Silme işlemi sırasında hata oluştu");
         }
-    }, [fetchCustomers, selectedCustomerId]);
+    }, [fetchCustomers]);
 
     // SiraNo güncelleme
     const handleUpdateSiraNo = React.useCallback(async (id: string, value: string) => {
@@ -341,10 +318,10 @@ export function CustomerListClient() {
         }
     }, [fetchCustomers]);
 
-    // Satır tıklama - split-view için
+    // Satır tıklama → detay sayfasına git
     const handleRowClick = React.useCallback((customerId: string) => {
-        setSelectedCustomerId(customerId)
-    }, [])
+        router.push(`/dashboard/mukellefler/${customerId}`)
+    }, [router])
 
     // Memoize table configuration - Sayfalama kapalı, tüm veriler gösteriliyor
     const table = useReactTable({
@@ -389,11 +366,12 @@ export function CustomerListClient() {
             }
 
             toast.success(data.message || "Bot başlatıldı. Electron penceresini takip edin.")
+            // gibLoading, WebSocket'ten gelen gib:mukellef-import-complete veya
+            // gib:mukellef-import-error mesajlarıyla kapatılacak
 
         } catch (error) {
             console.error("GİB sync error:", error)
             toast.error("Bağlantı hatası")
-        } finally {
             setGibLoading(false)
         }
     }, [])
@@ -430,8 +408,14 @@ export function CustomerListClient() {
                     </Link>
                     <Button variant="outline" size="sm" className="h-8" onClick={handleGibSync} disabled={gibLoading}>
                         <Icon icon={gibLoading ? "solar:refresh-bold" : "solar:buildings-2-bold"} className={`mr-1.5 h-3.5 w-3.5 ${gibLoading ? "animate-spin" : ""}`} />
-                        {gibLoading ? "..." : "GİB"}
+                        {gibLoading ? "Çekiliyor..." : "Mükellefleri Çek"}
                     </Button>
+                    <Link href="/dashboard/mukellefler/beyannameler">
+                        <Button variant="outline" size="sm" className="h-8">
+                            <FileText className="mr-1.5 h-3.5 w-3.5" />
+                            Beyanname Türleri
+                        </Button>
+                    </Link>
                     <CustomerGroupsDialog
                         customers={data}
                         selectedCustomerIds={Object.keys(rowSelection).map(index => data[parseInt(index)]?.id).filter(Boolean)}
@@ -478,135 +462,97 @@ export function CustomerListClient() {
                 </div>
             </div>
 
-            {/* Split Panel Container */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sol Panel - Liste */}
-                <div className={`${isDesktop ? 'w-[60%]' : 'w-full'} border-r flex flex-col overflow-hidden`}>
-                    <div className="flex-1 overflow-auto scrollbar-thin">
-                        <Table className="table-fixed w-full">
-                            <TableHeader className="sticky top-0 bg-background z-10">
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => {
-                                            return (
-                                                <TableHead
-                                                    key={header.id}
-                                                    style={{ width: header.getSize() }}
-                                                    className={`px-1.5 py-2 ${header.column.id === 'unvan' ? 'text-left' : 'text-center'}`}
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </TableHead>
-                                            )
-                                        })}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={columns.length} className="h-24 text-center text-sm">
-                                            Yükleniyor...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : table.getRowModel().rows?.length ? (
-                                    table.getRowModel().rows.map((row) => {
-                                        const isSelected = selectedCustomerId === (row.original as any).id
-                                        const isPassive = (row.original as any).status === "passive"
-
+            {/* Liste */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto scrollbar-thin">
+                    <Table className="table-fixed w-full">
+                        <TableHeader className="sticky top-0 bg-background z-10">
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => {
                                         return (
-                                            <TableRow
-                                                key={row.id}
-                                                data-state={row.getIsSelected() && "selected"}
-                                                onClick={() => handleRowClick((row.original as any).id)}
-                                                className={`cursor-pointer transition-colors ${
-                                                    isSelected
-                                                        ? "bg-primary/10 hover:bg-primary/15 dark:bg-primary/20 dark:hover:bg-primary/25"
-                                                        : isPassive
-                                                            ? "bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30"
-                                                            : "hover:bg-muted/50"
-                                                }`}
+                                            <TableHead
+                                                key={header.id}
+                                                style={{ width: header.getSize() }}
+                                                className={`px-1.5 py-2 ${header.column.id === 'unvan' ? 'text-left' : 'text-center'}`}
                                             >
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <TableCell
-                                                        key={cell.id}
-                                                        style={{ width: cell.column.getSize() }}
-                                                        className={`px-1.5 py-1.5 overflow-hidden ${cell.column.id === 'unvan' ? 'text-left' : 'text-center'}`}
-                                                        onClick={(e) => {
-                                                            if (cell.column.id === 'select') {
-                                                                e.stopPropagation()
-                                                            }
-                                                        }}
-                                                    >
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </TableHead>
                                         )
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={columns.length}
-                                            className="h-24 text-center text-sm"
-                                        >
-                                            Kayıt bulunamadı.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                    })}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} className="h-24 text-center text-sm">
+                                        Yükleniyor...
+                                    </TableCell>
+                                </TableRow>
+                            ) : table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row) => {
+                                    const isPassive = (row.original as any).status === "passive"
 
-                    {/* Alt Bilgi Bar */}
-                    <div className="flex items-center justify-between px-3 py-1.5 border-t shrink-0 bg-background">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{table.getFilteredSelectedRowModel().rows.length} seçili</span>
-                            <span className="text-muted-foreground/60">•</span>
-                            <span>Toplam {table.getFilteredRowModel().rows.length} mükellef</span>
-                        </div>
-                    </div>
+                                    return (
+                                        <TableRow
+                                            key={row.id}
+                                            data-state={row.getIsSelected() && "selected"}
+                                            onClick={() => handleRowClick((row.original as any).id)}
+                                            className={`cursor-pointer transition-colors ${
+                                                isPassive
+                                                    ? "bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30"
+                                                    : "hover:bg-muted/50"
+                                            }`}
+                                        >
+                                            {row.getVisibleCells().map((cell) => (
+                                                <TableCell
+                                                    key={cell.id}
+                                                    style={{ width: cell.column.getSize() }}
+                                                    className={`px-1.5 py-1.5 overflow-hidden ${cell.column.id === 'unvan' ? 'text-left' : 'text-center'}`}
+                                                    onClick={(e) => {
+                                                        if (cell.column.id === 'select') {
+                                                            e.stopPropagation()
+                                                        }
+                                                    }}
+                                                >
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    )
+                                })
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={columns.length}
+                                        className="h-24 text-center text-sm"
+                                    >
+                                        Kayıt bulunamadı.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
 
-                {/* Sağ Panel - Detay (Desktop only) */}
-                {isDesktop && (
-                    <div className="w-[40%] overflow-hidden bg-muted/30">
-                        {selectedCustomerId ? (
-                            <CustomerDetailPanel
-                                customerId={selectedCustomerId}
-                                onCustomerUpdate={fetchCustomers}
-                            />
-                        ) : (
-                            <EmptyState
-                                customers={data}
-                                onSelectCustomer={setSelectedCustomerId}
-                            />
-                        )}
+                {/* Alt Bilgi Bar */}
+                <div className="flex items-center justify-between px-3 py-1.5 border-t shrink-0 bg-background">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{table.getFilteredSelectedRowModel().rows.length} seçili</span>
+                        <span className="text-muted-foreground/60">•</span>
+                        <span>Toplam {table.getFilteredRowModel().rows.length} mükellef</span>
                     </div>
-                )}
+                </div>
             </div>
-
-            {/* Mobil Detail Modal */}
-            {!isDesktop && (
-                <Dialog open={!!selectedCustomerId} onOpenChange={(open) => !open && setSelectedCustomerId(null)}>
-                    <DialogContent className="max-w-[95vw] h-[90vh] p-0 overflow-hidden">
-                        {selectedCustomerId && (
-                            <CustomerDetailPanel
-                                customerId={selectedCustomerId}
-                                onClose={() => setSelectedCustomerId(null)}
-                                onCustomerUpdate={fetchCustomers}
-                            />
-                        )}
-                    </DialogContent>
-                </Dialog>
-            )}
 
             {/* Bulk Actions Bar */}
             {Object.keys(rowSelection).length > 0 && (() => {

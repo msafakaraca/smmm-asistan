@@ -81,8 +81,9 @@ model beyanname_turleri {
   kisaAd    String?
   kategori  String?
   aktif     Boolean  @default(true)
-  siraNo    Int      @default(0)
-  tenantId  String   @db.Uuid
+  siraNo            Int      @default(0)
+  donemSecenekleri  String[] @default([])
+  tenantId          String   @db.Uuid
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tenants   tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -212,6 +213,7 @@ model customers {
   status                   String                   @default("active")
   notes                    String?
   verilmeyecekBeyannameler String[]                 @default([])
+  beyannameAyarlari        Json                     @default("{}")
   siraNo                   String?
   sozlesmeNo               String?
   sozlesmeTarihi           String?

@@ -8,7 +8,17 @@
 export type SyncStatus = "idle" | "running" | "success" | "error";
 
 // Beyanname durum tipleri
-export type DeclarationStatus = "bos" | "verildi" | "muaf" | "3aylik";
+export type DeclarationStatus =
+  | "bos"                    // Boş (henüz işlem yok)
+  | "onay_bekliyor"          // Sistem: beyannameAyarlari'nda var, bot henüz sorgulamadı
+  | "onaylandi"              // Sistem: GİB bot sorgulayıp doğruladı (+ dosya linkleri)
+  | "verildi"                // Kullanıcı: Manuel gönderildi işaretleme
+  | "verilmedi"              // Kullanıcı: Gönderilmedi işaretleme
+  | "gonderilmeyecek"        // Kalıcı: verilmeyecekBeyannameler'den (kilitli)
+  | "dilekce_gonderilecek"   // Sistem: beyannameAyarlari'nda "dilekce" seçilmiş
+  | "dilekce_verildi"        // Kullanıcı: Dilekçe verildi işaretleme
+  | "muaf"                   // Backward compatibility
+  | "3aylik";                // Backward compatibility
 
 // GIB'den gelen beyanname verisi
 export interface BeyannameData {

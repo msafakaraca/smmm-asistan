@@ -16,24 +16,58 @@ export async function GET(req: NextRequest) {
         const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString());
         const month = parseInt(searchParams.get("month") || (new Date().getMonth() + 1).toString());
 
-        // Dönem için tüm beyanname takip kayıtlarını getir
-        const takipRecords = await prisma.beyanname_takip.findMany({
-            where: {
-                tenantId,
-                year,
-                month
-            },
-            select: {
-                id: true,
-                customerId: true,
-                beyannameler: true  // Dinamik JSON alan
-            }
-        });
+        // Dönem için tüm beyanname takip kayıtlarını, müşteri bilgilerini ve beyanname türlerini paralel getir
+        const [takipRecords, activeCustomers, beyannameTurleri] = await Promise.all([
+            prisma.beyanname_takip.findMany({
+                where: { tenantId, year, month },
+                select: { id: true, customerId: true, beyannameler: true }
+            }),
+            prisma.customers.findMany({
+                where: { tenantId, status: "active" },
+                select: { id: true, verilmeyecekBeyannameler: true, beyannameAyarlari: true }
+            }),
+            prisma.beyanname_turleri.findMany({
+                where: { tenantId, aktif: true },
+                select: { kod: true }
+            })
+        ]);
 
         // customerId -> beyannameler map'e dönüştür
         const recordMap: Record<string, any> = {};
         for (const record of takipRecords) {
             recordMap[record.customerId] = record.beyannameler || {};
+        }
+
+        // Aktif beyanname türü kodlarını set'e çevir
+        const aktivTurKodlari = new Set(beyannameTurleri.map(t => t.kod));
+
+        // Her müşteri için varsayılan statüleri hesapla (kayıt olmayan hücreler için)
+        for (const customer of activeCustomers) {
+            const customerBeyannameler = recordMap[customer.id] || {};
+            const verilmeyecekler = (customer.verilmeyecekBeyannameler as string[]) || [];
+            const ayarlar = (customer.beyannameAyarlari as Record<string, string>) || {};
+            let hasDefaults = false;
+
+            for (const turKod of aktivTurKodlari) {
+                // Zaten kayıt varsa atla
+                if (customerBeyannameler[turKod]) continue;
+
+                if (verilmeyecekler.includes(turKod)) {
+                    customerBeyannameler[turKod] = { status: "gonderilmeyecek" };
+                    hasDefaults = true;
+                } else if (ayarlar[turKod] === "dilekce") {
+                    customerBeyannameler[turKod] = { status: "dilekce_gonderilecek" };
+                    hasDefaults = true;
+                } else if (ayarlar[turKod]) {
+                    customerBeyannameler[turKod] = { status: "onay_bekliyor" };
+                    hasDefaults = true;
+                }
+                // ayarlar'da yoksa "bos" kalır (frontend default)
+            }
+
+            if (hasDefaults) {
+                recordMap[customer.id] = customerBeyannameler;
+            }
         }
 
         return NextResponse.json(recordMap);

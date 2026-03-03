@@ -58,6 +58,18 @@ const navItems = [
         title: "Mükellefler",
         href: "/dashboard/mukellefler",
         icon: Users,
+        children: [
+            {
+                title: "Mükellef Listesi",
+                href: "/dashboard/mukellefler",
+                icon: Users,
+            },
+            {
+                title: "Beyanname Türleri",
+                href: "/dashboard/mukellefler/beyannameler",
+                icon: FileText,
+            },
+        ],
     },
     {
         title: "Beyanname İşlemleri",

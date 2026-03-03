@@ -73,6 +73,14 @@ export async function GET(
                 gibKodu: true,
                 gibSifre: true,
                 gibParola: true,
+                sgkKullaniciAdi: true,
+                sgkIsyeriKodu: true,
+                sgkSistemSifresi: true,
+                sgkIsyeriSifresi: true,
+                turmobKullaniciAdi: true,
+                turmobSifre: true,
+                edevletTckn: true,
+                edevletSifre: true,
             },
         });
 
@@ -87,6 +95,14 @@ export async function GET(
             gibKodu: customer.gibKodu ? decrypt(customer.gibKodu) : "",
             gibSifre: customer.gibSifre ? decrypt(customer.gibSifre) : "",
             gibParola: customer.gibParola ? decrypt(customer.gibParola) : "",
+            sgkKullaniciAdi: customer.sgkKullaniciAdi ? decrypt(customer.sgkKullaniciAdi) : "",
+            sgkIsyeriKodu: customer.sgkIsyeriKodu ? decrypt(customer.sgkIsyeriKodu) : "",
+            sgkSistemSifresi: customer.sgkSistemSifresi ? decrypt(customer.sgkSistemSifresi) : "",
+            sgkIsyeriSifresi: customer.sgkIsyeriSifresi ? decrypt(customer.sgkIsyeriSifresi) : "",
+            turmobKullaniciAdi: customer.turmobKullaniciAdi ? decrypt(customer.turmobKullaniciAdi) : "",
+            turmobSifre: customer.turmobSifre ? decrypt(customer.turmobSifre) : "",
+            edevletTckn: customer.edevletTckn ? decrypt(customer.edevletTckn) : "",
+            edevletSifre: customer.edevletSifre ? decrypt(customer.edevletSifre) : "",
         };
 
         // Audit log - viewing sensitive data

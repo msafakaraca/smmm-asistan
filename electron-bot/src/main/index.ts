@@ -13,7 +13,7 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import { WebSocketClient } from './ws-client';
 import { runEbeyannamePipeline, stopBot } from './ebeyanname-api';
-import { syncGibTaxpayers } from './gib-mukellef';
+import { syncMukellefsViaApi } from './ebeyan-mukellef-api';
 import { initDatabase, getSession, saveSession, clearSession } from './db';
 
 // Internal API token helper
@@ -385,10 +385,13 @@ function connectWebSocket(token: string) {
         console.log('[MAIN] Captcha API Key:', captchaApiKey ? 'Mevcut (' + captchaApiKey.substring(0, 6) + '...)' : 'Yok');
 
         try {
-            await syncGibTaxpayers({
+            const ocrSpaceApiKey = (data.ocrSpaceApiKey as string) || process.env.OCR_SPACE_API_KEY || '';
+
+            await syncMukellefsViaApi({
                 username: data.username as string,
                 password: data.password as string,
                 captchaApiKey: captchaApiKey,
+                ocrSpaceApiKey: ocrSpaceApiKey,
                 onProgress: (type: string, payload: any) => {
                     if (wsClient) {
                         if (type === 'progress') {

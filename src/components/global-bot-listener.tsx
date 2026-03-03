@@ -182,11 +182,12 @@ export function GlobalBotListener() {
                                 };
                                 setPendingResultRef.current(reportData);
 
-                                // Beyanname-kontrol sayfasındaysa yönlendirme yapma
+                                // Beyanname-kontrol veya mükellefler sayfasındaysa yönlendirme yapma
                                 const currentPath = window.location.pathname;
                                 const isOnBeyannameKontrol = currentPath.includes('/beyanname-kontrol');
+                                const isOnMukellefler = currentPath.includes('/mukellefler');
 
-                                if (!isOnBeyannameKontrol) {
+                                if (!isOnBeyannameKontrol && !isOnMukellefler) {
                                     const endDate = data.endDate || data.startDate;
                                     if (endDate) {
                                         const { year, month } = calculateTargetPeriod(endDate);

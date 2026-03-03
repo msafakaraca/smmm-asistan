@@ -172,27 +172,8 @@ export function useKontrolData(options: UseKontrolDataOptions = {}) {
     );
   }, [customers]);
 
-  // Veri içeren aktif beyanname türlerini filtrele
-  const activeBeyannameTurleri = useMemo(() => {
-    const columnsWithData = new Set<string>();
-
-    for (const customerId of Object.keys(beyannameStatuses)) {
-      const customerData = beyannameStatuses[customerId];
-      if (customerData) {
-        for (const [kod, data] of Object.entries(customerData)) {
-          if (data && (data.status === "verildi" || data.status === "bos")) {
-            columnsWithData.add(kod);
-          }
-        }
-      }
-    }
-
-    if (columnsWithData.size === 0) {
-      return beyannameTurleri;
-    }
-
-    return beyannameTurleri.filter((t) => columnsWithData.has(t.kod));
-  }, [beyannameTurleri, beyannameStatuses]);
+  // Tüm aktif beyanname türlerini döndür (eski filtre sütun kaybolmasına neden oluyordu)
+  const activeBeyannameTurleri = beyannameTurleri;
 
   // Müşteri ekleme
   const addCustomer = useCallback(
