@@ -3,11 +3,14 @@
 import { memo, useRef, useCallback, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BeyannameHeaderCell } from "./beyanname-header-cell";
 import { BeyannameDataCell } from "./beyanname-data-cell";
 import {
     DONEM_OPTIONS,
+    DONEM_SHORT_LABEL_MAP,
+    DONEM_COLORS,
     type BeyannameCustomer,
     type BeyannameTuru,
     type CategoryGroup,
@@ -140,7 +143,7 @@ export const BeyannameMatrix = memo(function BeyannameMatrix({
 
     // Sütun genişlikleri — kompakt tasarım
     const checkboxColWidth = 32;
-    const nameColWidth = 140;
+    const nameColWidth = 200;
     const minDataColWidth = 52;
     const minTotalWidth = checkboxColWidth + nameColWidth + allTurleri.length * minDataColWidth;
 
@@ -284,7 +287,7 @@ export const BeyannameMatrix = memo(function BeyannameMatrix({
             </div>
 
             {/* Özet istatistik */}
-            <div className="shrink-0 border-t px-4 py-1.5 text-xs text-muted-foreground bg-background overflow-x-auto">
+            <div className="shrink-0 border-t p-4 text-xs text-muted-foreground bg-background overflow-x-auto">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                     {allTurleri.map((tur) => (
                         <span key={tur.kod}>
@@ -327,19 +330,15 @@ function CellDropdown({ currentDonem, donemSecenekleri, anchorEl, onSelect, onCl
         const el = ref.current;
         if (!el) return;
 
-        // Dropdown'u butonun hemen altına, yatayda ortala
-        let top = rect.bottom + 2;
-        const dropdownWidth = el.offsetWidth || 100;
+        let top = rect.bottom + 4;
+        const dropdownWidth = el.offsetWidth || 140;
         let left = rect.left + (rect.width - dropdownWidth) / 2;
 
-        // Ekran dışına taşma kontrolü
-        const dropdownHeight = el.offsetHeight || 120;
+        const dropdownHeight = el.offsetHeight || 160;
         if (top + dropdownHeight > window.innerHeight) {
-            top = rect.top - dropdownHeight - 2;
+            top = rect.top - dropdownHeight - 4;
         }
-        if (left < 4) {
-            left = 4;
-        }
+        if (left < 4) left = 4;
         if (left + dropdownWidth > window.innerWidth) {
             left = window.innerWidth - dropdownWidth - 8;
         }
@@ -348,14 +347,10 @@ function CellDropdown({ currentDonem, donemSecenekleri, anchorEl, onSelect, onCl
         el.style.left = `${left}px`;
     }, [anchorEl]);
 
-    // Dış tıklama ile kapat
     useEffect(() => {
         const handleMouseDown = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                onClose();
-            }
+            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
         };
-        // Escape ile kapat
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
         };
@@ -370,27 +365,41 @@ function CellDropdown({ currentDonem, donemSecenekleri, anchorEl, onSelect, onCl
     return createPortal(
         <div
             ref={ref}
-            className="fixed z-[100] bg-popover border rounded-md shadow-lg py-1 min-w-[80px] animate-in fade-in-0 zoom-in-95 duration-100"
+            className="fixed z-[100] bg-popover/95 backdrop-blur-sm border border-border/60 rounded-lg shadow-xl py-1 min-w-[130px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150"
         >
-            {filteredOptions.map((opt) => (
-                <button
-                    key={opt.value}
-                    onClick={() => onSelect(opt.value as DonemType)}
-                    className={`w-full px-2.5 py-1 text-[11px] text-left hover:bg-accent transition-colors ${
-                        currentDonem === opt.value ? "bg-accent font-medium" : ""
-                    }`}
-                >
-                    {opt.label}
-                </button>
-            ))}
+            <div className="px-2 py-1 mb-0.5">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">Dönem Seçin</span>
+            </div>
+            {filteredOptions.map((opt) => {
+                const isActive = currentDonem === opt.value;
+                const colors = DONEM_COLORS[opt.value];
+                return (
+                    <button
+                        key={opt.value}
+                        onClick={() => onSelect(opt.value as DonemType)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-left transition-all duration-100 ${
+                            isActive
+                                ? `${colors.bg} ${colors.text} font-semibold`
+                                : `hover:bg-accent/60 text-foreground/80 ${colors.hoverBg}`
+                        }`}
+                    >
+                        <span className={`shrink-0 h-2 w-2 rounded-full ${colors.badge} ${isActive ? "" : "opacity-40"}`} />
+                        <span className="flex-1">{opt.label}</span>
+                        <span className={`text-[9px] font-bold ${isActive ? colors.text : "text-muted-foreground/50"}`}>
+                            {DONEM_SHORT_LABEL_MAP[opt.value]}
+                        </span>
+                    </button>
+                );
+            })}
             {currentDonem && (
                 <>
-                    <div className="border-t my-0.5" />
+                    <div className="border-t border-border/40 my-1 mx-2" />
                     <button
                         onClick={() => onSelect(null)}
-                        className="w-full px-2.5 py-1 text-[11px] text-left text-destructive hover:bg-destructive/10 transition-colors"
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-left text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors"
                     >
-                        Kaldır
+                        <X className="h-3 w-3 shrink-0" />
+                        <span>Kaldır</span>
                     </button>
                 </>
             )}

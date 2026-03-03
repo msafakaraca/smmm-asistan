@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
       icon: group.icon,
       sirketTipiFilter: group.sirketTipiFilter,
       beyannameTypes: group.beyannameTypes,
+      autoManaged: group.autoManaged,
+      beyannameTypeCode: group.beyannameTypeCode,
       memberCount: group._count.customer_group_members,
       members: [],
       createdAt: group.createdAt,

@@ -48,6 +48,9 @@ const DEFAULT_BEYANNAME_TURLERI = [
 // Eski türler — silmek yerine aktif: false yapılacak
 const DEPRECATED_KODLAR = ["FORMBA", "FORMBS", "MUH"];
 
+// "Vergi"/"VERGİ" kategorisindeki duplike türler — KONAKLAMA/TURIZM zaten "Diğer" altında var
+const VERGI_DUPLIKE_KODLAR = ["KONK", "TURZ"];
+
 // GET - Tenant için aktif beyanname türlerini getir
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -113,6 +116,18 @@ export async function GET(req: NextRequest) {
             if (deprecatedTurler.length > 0) {
                 await prisma.beyanname_turleri.updateMany({
                     where: { id: { in: deprecatedTurler.map(t => t.id) }, tenantId },
+                    data: { aktif: false },
+                });
+                needsRefresh = true;
+            }
+
+            // "Vergi"/"VERGİ" kategorisindeki duplike türleri (KONK, TURZ) deaktif et
+            const vergiDuplikeler = turler.filter(
+                t => VERGI_DUPLIKE_KODLAR.includes(t.kod) && t.aktif
+            );
+            if (vergiDuplikeler.length > 0) {
+                await prisma.beyanname_turleri.updateMany({
+                    where: { id: { in: vergiDuplikeler.map(t => t.id) }, tenantId },
                     data: { aktif: false },
                 });
                 needsRefresh = true;

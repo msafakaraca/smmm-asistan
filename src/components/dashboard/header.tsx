@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { LogOut, User, Building2, Loader2, Wifi, WifiOff } from "lucide-react";
+import { LogOut, User, Building2, Loader2, Wifi, WifiOff, Settings } from "lucide-react";
 
 interface DashboardHeaderProps {
     user: {
@@ -136,6 +136,12 @@ export const DashboardHeader = React.memo(function DashboardHeader({ user }: Das
                         <DropdownMenuItem>
                             <User className="mr-2 h-4 w-4" />
                             Profil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/dashboard/ayarlar">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Ayarlar
+                            </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

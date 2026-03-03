@@ -146,6 +146,7 @@ model customer_group_members {
   groupId         String          @db.Uuid
   customerId      String          @db.Uuid
   tenantId        String          @db.Uuid
+  source          String          @default("manual")
   addedAt         DateTime        @default(now())
   customers       customers       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   customer_groups customer_groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -169,6 +170,8 @@ model customer_groups {
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
   beyannameTypes         String[]                 @default([])
+  autoManaged            Boolean                  @default(false)
+  beyannameTypeCode      String?
   customer_group_members customer_group_members[]
   tenants                tenants                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

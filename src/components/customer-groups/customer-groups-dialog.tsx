@@ -33,6 +33,8 @@ interface CustomerGroup {
   icon?: string | null;
   sirketTipiFilter?: string | null;
   beyannameTypes?: string[];
+  autoManaged?: boolean;
+  beyannameTypeCode?: string | null;
   memberCount: number;
   members: CustomerGroupMember[];
   createdAt: string;
@@ -422,6 +424,12 @@ export function CustomerGroupsDialog({
                               <Badge variant="secondary" className="text-xs">
                                 {group.memberCount} üye
                               </Badge>
+                              {group.autoManaged && (
+                                <Badge variant="outline" className="text-xs bg-sky-50 text-sky-700 border-sky-200">
+                                  <Icon icon="solar:magic-stick-3-bold" className="w-3 h-3 mr-1" />
+                                  Otomatik
+                                </Badge>
+                              )}
                               {group.sirketTipiFilter && (
                                 <Badge variant="outline" className="text-xs">
                                   {group.sirketTipiFilter === "sahis" ? "Şahıs" :

@@ -29,6 +29,7 @@ export const StatsGrid = memo(function StatsGrid({ stats, loading = false }: Sta
       <StatsCard
         title="Toplam Müşteri"
         value={customers.total}
+        valueClassName="text-yellow-500"
         description={`${customers.firma} Firma, ${customers.sahis} Şahıs, ${customers.basitUsul} Basit Usul`}
         icon={Users}
         iconClassName="bg-blue-100 dark:bg-blue-900/30"

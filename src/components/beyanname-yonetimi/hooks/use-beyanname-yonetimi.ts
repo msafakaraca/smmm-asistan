@@ -34,6 +34,16 @@ export const DONEM_SHORT_LABEL_MAP: Record<DonemType, string> = {
     "dilekce": "D",
 };
 
+// Dönem renk paleti — hücre ve dropdown'larda kullanılır
+export const DONEM_COLORS: Record<DonemType, { bg: string; text: string; hoverBg: string; badge: string }> = {
+    "15gunluk": { bg: "bg-rose-100 dark:bg-rose-900/30", text: "text-rose-700 dark:text-rose-300", hoverBg: "hover:bg-rose-50 dark:hover:bg-rose-900/20", badge: "bg-rose-500" },
+    "aylik": { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300", hoverBg: "hover:bg-blue-50 dark:hover:bg-blue-900/20", badge: "bg-blue-500" },
+    "3aylik": { bg: "bg-violet-100 dark:bg-violet-900/30", text: "text-violet-700 dark:text-violet-300", hoverBg: "hover:bg-violet-50 dark:hover:bg-violet-900/20", badge: "bg-violet-500" },
+    "6aylik": { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-700 dark:text-amber-300", hoverBg: "hover:bg-amber-50 dark:hover:bg-amber-900/20", badge: "bg-amber-500" },
+    "yillik": { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-300", hoverBg: "hover:bg-emerald-50 dark:hover:bg-emerald-900/20", badge: "bg-emerald-500" },
+    "dilekce": { bg: "bg-slate-100 dark:bg-slate-800/50", text: "text-slate-700 dark:text-slate-300", hoverBg: "hover:bg-slate-50 dark:hover:bg-slate-800/30", badge: "bg-slate-500" },
+};
+
 // Kategori sırası
 const KATEGORI_SIRASI = ["KDV", "Gelir", "Kurumlar", "Muhtasar", "ÖTV", "Diğer", "Damga"];
 
@@ -125,11 +135,18 @@ export function useBeyannameYonetimi() {
         fetchData();
     }, [fetchData]);
 
+    // Kategori normalizasyonu — "Vergi"/"VERGİ" gibi bilinmeyen kategorileri "Diğer"e eşle
+    const normalizeKategori = (k: string | null) => {
+        if (!k) return "Diğer";
+        if (KATEGORI_SIRASI.includes(k)) return k;
+        return "Diğer";
+    };
+
     // Tüm aktif beyanname türleri — kategori sırasına göre, sonra siraNo'ya göre
     const allTurleri = useMemo(() => {
         return [...turler].sort((a, b) => {
-            const catA = a.kategori || "Diğer";
-            const catB = b.kategori || "Diğer";
+            const catA = normalizeKategori(a.kategori);
+            const catB = normalizeKategori(b.kategori);
             const ai = KATEGORI_SIRASI.indexOf(catA);
             const bi = KATEGORI_SIRASI.indexOf(catB);
             const catOrder = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
@@ -143,7 +160,7 @@ export function useBeyannameYonetimi() {
         const groups: { category: string; count: number }[] = [];
         let lastCat = "";
         for (const tur of allTurleri) {
-            const cat = tur.kategori || "Diğer";
+            const cat = normalizeKategori(tur.kategori);
             if (cat !== lastCat) {
                 groups.push({ category: cat, count: 1 });
                 lastCat = cat;
@@ -263,6 +280,22 @@ export function useBeyannameYonetimi() {
         });
     }, [selectedCustomerIds]);
 
+    // Tüm atanmış beyanname türlerini kaldır (seçili müşterilerden)
+    const bulkRemoveAll = useCallback(() => {
+        if (selectedCustomerIds.size === 0) {
+            toast.error("Lütfen önce mükellef seçin");
+            return;
+        }
+        setLocalAyarlar(prev => {
+            const next = new Map(prev);
+            for (const customerId of selectedCustomerIds) {
+                next.set(customerId, {});
+            }
+            return next;
+        });
+        toast.info(`${selectedCustomerIds.size} mükellefin tüm beyanname türleri kaldırıldı`);
+    }, [selectedCustomerIds]);
+
     // Kaydet — tüm dirty müşterileri tek istekte gönder
     const saveChanges = useCallback(async () => {
         if (dirtyCustomerIds.size === 0) return;
@@ -356,6 +389,7 @@ export function useBeyannameYonetimi() {
         updateCell,
         bulkAssign,
         bulkRemove,
+        bulkRemoveAll,
         saveChanges,
         refetch: fetchData,
     };

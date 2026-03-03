@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +37,7 @@ export function BeyannameYonetimiClient() {
         updateCell,
         bulkAssign,
         bulkRemove,
+        bulkRemoveAll,
         saveChanges,
     } = useBeyannameYonetimi();
 
@@ -75,19 +76,19 @@ export function BeyannameYonetimiClient() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Kısa etiket açıklaması */}
-                        <div className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground border rounded-md px-2.5 h-8">
-                            <span><span className="font-semibold text-foreground">A:</span> Aylık</span>
+                        {/* Kısa etiket açıklaması — renk kodlu */}
+                        <div className="hidden lg:flex items-center gap-1.5 text-xs border rounded-md px-2.5 h-8">
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-blue-600 dark:text-blue-400">A:</span><span className="text-muted-foreground">Aylık</span></span>
                             <span className="text-border">·</span>
-                            <span><span className="font-semibold text-foreground">3A:</span> 3 Aylık</span>
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-violet-600 dark:text-violet-400">3A:</span><span className="text-muted-foreground">3 Aylık</span></span>
                             <span className="text-border">·</span>
-                            <span><span className="font-semibold text-foreground">Y:</span> Yıllık</span>
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-emerald-600 dark:text-emerald-400">Y:</span><span className="text-muted-foreground">Yıllık</span></span>
                             <span className="text-border">·</span>
-                            <span><span className="font-semibold text-foreground">6A:</span> 6 Aylık</span>
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-amber-600 dark:text-amber-400">6A:</span><span className="text-muted-foreground">6 Aylık</span></span>
                             <span className="text-border">·</span>
-                            <span><span className="font-semibold text-foreground">15G:</span> 15 Günlük</span>
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-rose-600 dark:text-rose-400">15G:</span><span className="text-muted-foreground">15 Günlük</span></span>
                             <span className="text-border">·</span>
-                            <span><span className="font-semibold text-foreground">D:</span> Dilekçe</span>
+                            <span className="inline-flex items-center gap-1"><span className="font-bold text-slate-600 dark:text-slate-400">D:</span><span className="text-muted-foreground">Dilekçe</span></span>
                         </div>
                         <div className="relative">
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -109,6 +110,16 @@ export function BeyannameYonetimiClient() {
                                 <SelectItem value="basit_usul">Basit Usul</SelectItem>
                             </SelectContent>
                         </Select>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8"
+                            onClick={bulkRemoveAll}
+                            disabled={selectedCustomerIds.size === 0}
+                        >
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Tümünü Kaldır
+                        </Button>
                         <Button
                             size="sm"
                             className="h-8"

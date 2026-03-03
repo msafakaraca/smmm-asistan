@@ -65,6 +65,8 @@ export async function GET(
       icon: group.icon,
       sirketTipiFilter: group.sirketTipiFilter,
       beyannameTypes: group.beyannameTypes,
+      autoManaged: group.autoManaged,
+      beyannameTypeCode: group.beyannameTypeCode,
       memberCount: group._count.customer_group_members,
       members: group.customer_group_members.map((m) => ({
         id: m.customers.id,
