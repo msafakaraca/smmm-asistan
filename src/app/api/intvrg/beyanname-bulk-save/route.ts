@@ -170,16 +170,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Arşiv merge — arka planda (fire-and-forget)
+    // Arşiv merge — response öncesi await (serverless'ta bağlantı kopmasını önler)
     const savedItems = toSave.filter(
       (_, i) => saveResults[i].status === "fulfilled"
     );
     if (savedItems.length > 0) {
-      bulkArchiveMerge(user.tenantId, user.id, customerId, savedItems).catch(
-        (err) => {
-          console.error("[BULK-SAVE] Arşiv merge hatası:", err);
-        }
-      );
+      try {
+        await bulkArchiveMerge(user.tenantId, user.id, customerId, savedItems);
+      } catch (err) {
+        console.error("[BULK-SAVE] Arşiv merge hatası:", err);
+      }
     }
 
     const saved = results.filter((r) => r.saved).length;
@@ -194,6 +194,34 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Retry wrapper — geçici DB bağlantı hatalarında yeniden dener
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: unknown) {
+      const isRetryable =
+        error instanceof Error &&
+        ("code" in error &&
+          ((error as { code: string }).code === "P1001" ||
+            (error as { code: string }).code === "P1017" ||
+            (error as { code: string }).code === "P2024"));
+      if (!isRetryable || attempt === maxRetries) throw error;
+      console.warn(
+        `[BULK-SAVE] DB bağlantı hatası, ${attempt}/${maxRetries} deneme — ${delayMs * attempt}ms bekleniyor...`
+      );
+      await new Promise((r) => setTimeout(r, delayMs * attempt));
+    }
+  }
+  throw new Error("Retry limit aşıldı");
 }
 
 /**
@@ -234,7 +262,7 @@ async function bulkArchiveMerge(
     }));
 
     // upsert ile race condition önleme (P2002 hatası artık oluşmaz)
-    const record = await prisma.query_archives.upsert({
+    const record = await withRetry(() => prisma.query_archives.upsert({
       where: {
         tenantId_customerId_queryType_month_year: {
           tenantId,
@@ -264,7 +292,7 @@ async function bulkArchiveMerge(
       update: {
         lastQueriedAt: new Date(),
       },
-    });
+    }));
 
     // Upsert update path'inde (kayıt zaten varsa) merge gerekir
     const existingResults =
@@ -277,14 +305,14 @@ async function bulkArchiveMerge(
         ...existingResults,
         ...(toAdd as unknown as Record<string, unknown>[]),
       ];
-      await prisma.query_archives.update({
+      await withRetry(() => prisma.query_archives.update({
         where: { id: record.id },
         data: {
           resultData: merged as unknown as Prisma.InputJsonValue,
           totalCount: merged.length,
           queryCount: record.queryCount + 1,
         },
-      });
+      }));
     }
   }
 }
