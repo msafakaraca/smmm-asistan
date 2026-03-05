@@ -44,6 +44,7 @@ const securityHeaders = [
             "img-src 'self' data: https: blob:",
             "font-src 'self' data:",
             "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.iconify.design ws://localhost:3001 wss://localhost:3001",
+            "frame-src 'self' blob:",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",

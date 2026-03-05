@@ -3,6 +3,20 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
 
+// 3 aylık beyanname dönem bilgisi hesapla
+// Çeyreğin son ayında (3, 6, 9, 12) o çeyreğin bilgisini döner, diğer aylarda null (dönem dışı)
+// Not: Bot Ocak'ı sorguladığında Q4 beyannamelerini bulur ve Aralık satırına kaydeder.
+// Ocak satırında ise dönem_dışı görünür çünkü Ocak Q1'in parçasıdır (Q1 → Mart'ta aktif).
+function getQuarterInfo(month: number, year: number): { months: number[]; year: number; label: string } | null {
+    switch (month) {
+        case 3:  return { months: [1, 2, 3],    year,           label: `Oca-Şub-Mar ${year}` };
+        case 6:  return { months: [4, 5, 6],    year,           label: `Nis-May-Haz ${year}` };
+        case 9:  return { months: [7, 8, 9],    year,           label: `Tem-Ağu-Eyl ${year}` };
+        case 12: return { months: [10, 11, 12], year,           label: `Eki-Kas-Ara ${year}` };
+        default: return null;
+    }
+}
+
 // GET - Belirli dönemdeki beyanname takip verilerini getir (Dinamik JSON yapı)
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -41,6 +55,9 @@ export async function GET(req: NextRequest) {
         // Aktif beyanname türü kodlarını set'e çevir
         const aktivTurKodlari = new Set(beyannameTurleri.map(t => t.kod));
 
+        // Doğası gereği her zaman 3 aylık olan beyanname türleri
+        const HER_ZAMAN_3AYLIK = new Set(["GGECICI", "KGECICI"]);
+
         // Her müşteri için varsayılan statüleri hesapla (kayıt olmayan hücreler için)
         for (const customer of activeCustomers) {
             const customerBeyannameler = recordMap[customer.id] || {};
@@ -58,7 +75,22 @@ export async function GET(req: NextRequest) {
                 } else if (ayarlar[turKod] === "dilekce") {
                     customerBeyannameler[turKod] = { status: "dilekce_gonderilecek" };
                     hasDefaults = true;
+                } else if (ayarlar[turKod] === "3aylik" || HER_ZAMAN_3AYLIK.has(turKod)) {
+                    // 3 aylık beyanname dönem kontrolü (beyannameAyarlari'nda "3aylik" veya doğası gereği 3 aylık)
+                    const quarterInfo = getQuarterInfo(month, year);
+                    if (quarterInfo) {
+                        // Verilme ayı — aktif
+                        customerBeyannameler[turKod] = {
+                            status: "onay_bekliyor",
+                            meta: { donem: "3aylik", kapsam: quarterInfo.label }
+                        };
+                    } else {
+                        // Dönem dışı ay — pasif
+                        customerBeyannameler[turKod] = { status: "donem_disi" };
+                    }
+                    hasDefaults = true;
                 } else if (ayarlar[turKod]) {
+                    // aylik, yillik, vb. — mevcut davranış
                     customerBeyannameler[turKod] = { status: "onay_bekliyor" };
                     hasDefaults = true;
                 }

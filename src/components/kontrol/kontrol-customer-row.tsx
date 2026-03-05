@@ -15,6 +15,7 @@ import {
   Ban,
   FileText,
   FileCheck,
+  Minus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -287,13 +288,15 @@ function BeyannameCell({
     meta?.sgkTahakkukPath ||
     meta?.hizmetListesiPath;
 
-  const isLocked = status === "gonderilmeyecek";
+  const isLocked = status === "gonderilmeyecek" || status === "donem_disi";
   const isVerildi = status === "verildi" || status === "onaylandi";
 
   // Hücre tıklama title
-  const cellTitle = isLocked
-    ? "Gönderilmeyecek (kalıcı)"
-    : "Sol tık: Durum değiştir | Sağ tık: Gönderilmeyecek (kalıcı)";
+  const cellTitle = status === "donem_disi"
+    ? "3 Aylık — Bu ay dönem dışı"
+    : isLocked
+      ? "Gönderilmeyecek (kalıcı)"
+      : "Sol tık: Durum değiştir | Sağ tık: Gönderilmeyecek (kalıcı)";
 
   return (
     <td
@@ -303,9 +306,11 @@ function BeyannameCell({
       title={cellTitle}
       className={`
         border border-border text-center select-none h-8 transition-colors
-        ${isLocked
-          ? "cursor-not-allowed bg-muted/40"
-          : "cursor-pointer bg-background hover:bg-muted/50"
+        ${status === "donem_disi"
+          ? "cursor-not-allowed bg-muted/20"
+          : isLocked
+            ? "cursor-not-allowed bg-muted/40"
+            : "cursor-pointer bg-background hover:bg-muted/50"
         }
       `}
     >
@@ -417,8 +422,23 @@ function BeyannameCell({
         </div>
       )}
 
-      {/* Onay Bekliyor — Turuncu saat */}
-      {status === "onay_bekliyor" && (
+      {/* Onay Bekliyor — Turuncu saat (3 aylık ise "3A" badge + kapsam tooltip) */}
+      {status === "onay_bekliyor" && meta?.donem === "3aylik" && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center w-full h-full gap-0.5">
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">3A</span>
+                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              3 Aylık — {meta?.kapsam || "Dönem bilgisi yok"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {status === "onay_bekliyor" && meta?.donem !== "3aylik" && (
         <div className="flex items-center justify-center w-full h-full">
           <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         </div>
@@ -429,6 +449,23 @@ function BeyannameCell({
         <div className="flex items-center justify-center w-full h-full">
           <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
         </div>
+      )}
+
+      {/* Dönem Dışı — Gri pasif, tıklanamaz (3 aylık beyanname) */}
+      {status === "donem_disi" && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center w-full h-full gap-0.5">
+                <span className="text-[11px] font-bold text-red-400 dark:text-red-500">3A</span>
+                <Minus className="w-4 h-4 text-red-400 dark:text-red-500" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              <span className="text-red-500">3 Aylık — Bu ay dönem dışı</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Gönderilmeyecek — Gri ban (kilitli) */}

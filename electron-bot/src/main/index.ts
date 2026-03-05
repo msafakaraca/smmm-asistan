@@ -1379,6 +1379,333 @@ function connectWebSocket(token: string) {
     });
 
     // ═══════════════════════════════════════════════════════════════
+    // INTVRG Beyanname Pipeline — Sorgu + PDF İndirme (Tek Yıl)
+    // ═══════════════════════════════════════════════════════════════
+    wsClient.on('intvrg:beyanname-query-and-download', async (data: BotCommandData) => {
+        const customerName = data.customerName as string | undefined;
+        const requesterId = data.userId as string | undefined;
+
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] 📋 INTVRG Beyanname PIPELINE başlatılıyor...');
+        const maskedUserid = data.userid ? `${String(data.userid).slice(0, 3)}***${String(data.userid).slice(-2)}` : 'N/A';
+        console.log('[MAIN] Userid:', maskedUserid);
+        if (customerName) console.log('[MAIN] Mükellef:', customerName);
+        console.log('[MAIN] Dönem:', `${data.basAy}/${data.basYil} - ${data.bitAy}/${data.bitYil}`);
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        mainWindow?.webContents.send('bot:command', { type: 'intvrg-beyanname-pipeline-start', customerName });
+
+        // Duplicate guard
+        const queryKey = `pipeline-${data.userid}-${data.basAy}${data.basYil}-${data.bitAy}${data.bitYil}`;
+        if (activeBeyannameQueries.has(queryKey)) {
+            wsClient?.send('intvrg:beyanname-error', {
+                error: 'Bu mükellef için zaten bir beyanname sorgulaması devam ediyor',
+                errorCode: 'QUERY_IN_PROGRESS',
+                customerName,
+                requesterId,
+            });
+            return;
+        }
+        activeBeyannameQueries.set(queryKey, true);
+
+        // 5 dakika timeout
+        const PIPELINE_TIMEOUT_MS = 5 * 60 * 1000;
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), PIPELINE_TIMEOUT_MS)
+        );
+
+        const skipBeyoids = (data.savedBeyoids as string[]) || [];
+
+        try {
+            const { queryAndDownloadPipeline } = await import('./intvrg-beyanname-api');
+
+            const pipelineWork = async () => {
+                if (!wsClient?.connected) {
+                    throw new Error('WebSocket bağlantısı kopmuş');
+                }
+
+                wsClient?.send('intvrg:beyanname-progress', {
+                    status: 'Beyanname pipeline başlatılıyor...',
+                    customerName, phase: 'login', requesterId,
+                });
+
+                return await queryAndDownloadPipeline(
+                    {
+                        userid: data.userid as string,
+                        password: data.password as string,
+                        vkn: data.vkn as string,
+                        basAy: data.basAy as string,
+                        basYil: data.basYil as string,
+                        bitAy: data.bitAy as string,
+                        bitYil: data.bitYil as string,
+                        captchaApiKey: data.captchaApiKey as string,
+                        ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
+                    },
+                    skipBeyoids,
+                    {
+                        onProgress: (status) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-progress', { status, customerName, requesterId });
+                            }
+                        },
+                        onResults: (beyannameler) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-results', { beyannameler, customerName, requesterId });
+                                wsClient.send('intvrg:beyanname-complete', {
+                                    success: true,
+                                    totalCount: beyannameler.length,
+                                    customerName,
+                                    requesterId,
+                                });
+                            }
+                        },
+                        onPdfResult: (pdfData) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-bulk-pdf-result', { ...pdfData, customerName, requesterId });
+                            }
+                        },
+                        onPdfSkip: (skipData) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-bulk-pdf-skip', { ...skipData, customerName, requesterId });
+                            }
+                        },
+                        onComplete: (stats) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-pipeline-complete', { ...stats, customerName, requesterId });
+                            }
+                        },
+                    },
+                );
+            };
+
+            const result = await Promise.race([pipelineWork(), timeoutPromise]) as Awaited<ReturnType<typeof queryAndDownloadPipeline>>;
+
+            // IVD token cache
+            if (result.ivdToken && data.vkn) {
+                ivdTokenCache.set(data.vkn as string, {
+                    token: result.ivdToken,
+                    timestamp: Date.now(),
+                });
+                console.log(`[INTVRG-TOKEN] IVD token cache'lendi (pipeline): VKN=${(data.vkn as string).substring(0, 4)}***`);
+            }
+
+            if (!result.success) {
+                wsClient?.send('intvrg:beyanname-error', {
+                    error: result.error || 'Pipeline başarısız',
+                    errorCode: 'PIPELINE_FAILED',
+                    customerName,
+                    requesterId,
+                });
+            }
+        } catch (e: any) {
+            let errorCode = 'UNKNOWN_ERROR';
+            let errorMessage = e.message || 'Beyanname pipeline hatası';
+
+            if (e.message === 'TIMEOUT') {
+                errorCode = 'TIMEOUT';
+                errorMessage = 'Sorgulama zaman aşımına uğradı (5 dakika). Lütfen tekrar deneyin.';
+            } else if (e.message?.startsWith('AUTH_FAILED')) {
+                errorCode = 'AUTH_FAILED';
+                errorMessage = 'GİB giriş başarısız: ' + e.message.replace('AUTH_FAILED: ', '');
+            } else if (e.message?.startsWith('CAPTCHA_FAILED') || e.message?.startsWith('CAPTCHA_SERVICE_DOWN')) {
+                errorCode = 'CAPTCHA_FAILED';
+                errorMessage = e.message.includes('SERVICE_DOWN')
+                    ? 'Captcha çözüm servisleri şu anda erişilemez.'
+                    : 'Captcha çözülemedi: ' + e.message.replace('CAPTCHA_FAILED: ', '');
+            } else if (e.message?.startsWith('GIB_MAINTENANCE')) {
+                errorCode = 'GIB_MAINTENANCE';
+                errorMessage = 'GİB şu anda bakımda. Lütfen daha sonra tekrar deneyin.';
+            } else if (e.message?.startsWith('IVD_TOKEN_FAILED') || e.message?.startsWith('IVD_SESSION_EXPIRED')) {
+                errorCode = 'IVD_ERROR';
+                errorMessage = 'İnternet Vergi Dairesi oturumu açılamadı. Lütfen tekrar deneyin.';
+            } else if (e.message?.includes('ECONNREFUSED') || e.message?.includes('network') || e.message?.includes('fetch')) {
+                errorCode = 'NETWORK_ERROR';
+                errorMessage = 'GİB sunucusuna bağlanılamadı. İnternet bağlantınızı kontrol edin.';
+            }
+
+            wsClient?.send('intvrg:beyanname-error', {
+                error: errorMessage, errorCode, customerName, requesterId,
+            });
+        } finally {
+            activeBeyannameQueries.delete(queryKey);
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTVRG Beyanname Pipeline — Çoklu Yıl Sorgu + PDF İndirme
+    // ═══════════════════════════════════════════════════════════════
+    wsClient.on('intvrg:beyanname-multi-query-and-download', async (data: BotCommandData) => {
+        const customerName = data.customerName as string | undefined;
+        const requesterId = data.userId as string | undefined;
+
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] 📋 INTVRG Beyanname ÇOKLU YIL PIPELINE başlatılıyor...');
+        const maskedUserid = data.userid ? `${String(data.userid).slice(0, 3)}***${String(data.userid).slice(-2)}` : 'N/A';
+        console.log('[MAIN] Userid:', maskedUserid);
+        if (customerName) console.log('[MAIN] Mükellef:', customerName);
+        console.log('[MAIN] Dönem:', `${data.basAy}/${data.basYil} - ${data.bitAy}/${data.bitYil}`);
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        mainWindow?.webContents.send('bot:command', { type: 'intvrg-beyanname-multi-pipeline-start', customerName });
+
+        // Duplicate guard
+        const queryKey = `pipeline-multi-${data.userid}-${data.basAy}${data.basYil}-${data.bitAy}${data.bitYil}`;
+        if (activeBeyannameQueries.has(queryKey)) {
+            wsClient?.send('intvrg:beyanname-error', {
+                error: 'Bu mükellef için zaten bir beyanname sorgulaması devam ediyor',
+                errorCode: 'QUERY_IN_PROGRESS',
+                customerName,
+                requesterId,
+            });
+            return;
+        }
+        activeBeyannameQueries.set(queryKey, true);
+
+        // Dinamik timeout: chunk başına 3 dakika
+        const startYear = parseInt(data.basYil as string, 10);
+        const endYear = parseInt(data.bitYil as string, 10);
+        const chunkCount = endYear - startYear + 1;
+        const MULTI_PIPELINE_TIMEOUT_MS = chunkCount * 3 * 60 * 1000;
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), MULTI_PIPELINE_TIMEOUT_MS)
+        );
+
+        const skipBeyoids = (data.savedBeyoids as string[]) || [];
+
+        try {
+            const { queryAndDownloadPipelineMultiYear } = await import('./intvrg-beyanname-api');
+
+            const pipelineWork = async () => {
+                if (!wsClient?.connected) {
+                    throw new Error('WebSocket bağlantısı kopmuş');
+                }
+
+                wsClient?.send('intvrg:beyanname-multi-progress', {
+                    chunkIndex: 0,
+                    totalChunks: chunkCount,
+                    year: String(startYear),
+                    status: 'Çoklu yıl pipeline başlatılıyor...',
+                    customerName,
+                    requesterId,
+                });
+
+                return await queryAndDownloadPipelineMultiYear(
+                    {
+                        userid: data.userid as string,
+                        password: data.password as string,
+                        vkn: data.vkn as string,
+                        basAy: data.basAy as string,
+                        basYil: data.basYil as string,
+                        bitAy: data.bitAy as string,
+                        bitYil: data.bitYil as string,
+                        captchaApiKey: data.captchaApiKey as string,
+                        ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
+                    },
+                    skipBeyoids,
+                    {
+                        onProgress: (status) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-progress', { status, customerName, requesterId });
+                            }
+                        },
+                        onResults: () => {
+                            // Multi-year'da her chunk results geldiğinde onChunkResults ile tablo güncellenir
+                        },
+                        onChunkProgress: (ci, tc, year, status) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-multi-progress', {
+                                    chunkIndex: ci, totalChunks: tc, year, status,
+                                    customerName, requesterId,
+                                });
+                            }
+                        },
+                        onChunkResults: (ci, tc, year, beyannameler) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-multi-chunk-results', {
+                                    chunkIndex: ci, totalChunks: tc, year, beyannameler,
+                                    customerName, requesterId,
+                                });
+                            }
+                        },
+                        onPdfResult: (pdfData) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-bulk-pdf-result', { ...pdfData, customerName, requesterId });
+                            }
+                        },
+                        onPdfSkip: (skipData) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-bulk-pdf-skip', { ...skipData, customerName, requesterId });
+                            }
+                        },
+                        onComplete: (stats) => {
+                            if (wsClient?.connected) {
+                                wsClient.send('intvrg:beyanname-multi-complete', {
+                                    success: true,
+                                    totalCount: stats.totalQueried,
+                                    customerName,
+                                    requesterId,
+                                });
+                                wsClient.send('intvrg:beyanname-pipeline-complete', { ...stats, customerName, requesterId });
+                            }
+                        },
+                    },
+                );
+            };
+
+            const result = await Promise.race([pipelineWork(), timeoutPromise]) as Awaited<ReturnType<typeof queryAndDownloadPipelineMultiYear>>;
+
+            // IVD token cache
+            if (result.ivdToken && data.vkn) {
+                ivdTokenCache.set(data.vkn as string, {
+                    token: result.ivdToken,
+                    timestamp: Date.now(),
+                });
+                console.log(`[INTVRG-TOKEN] IVD token cache'lendi (multi-pipeline): VKN=${(data.vkn as string).substring(0, 4)}***`);
+            }
+
+            if (!result.success) {
+                wsClient?.send('intvrg:beyanname-error', {
+                    error: result.error || 'Çoklu yıl pipeline başarısız',
+                    errorCode: 'PIPELINE_FAILED',
+                    customerName,
+                    requesterId,
+                });
+            }
+        } catch (e: any) {
+            let errorCode = 'UNKNOWN_ERROR';
+            let errorMessage = e.message || 'Çoklu yıl beyanname pipeline hatası';
+
+            if (e.message === 'TIMEOUT') {
+                errorCode = 'TIMEOUT';
+                errorMessage = `Sorgulama zaman aşımına uğradı (${chunkCount * 3} dakika). Lütfen tekrar deneyin.`;
+            } else if (e.message?.startsWith('AUTH_FAILED')) {
+                errorCode = 'AUTH_FAILED';
+                errorMessage = 'GİB giriş başarısız: ' + e.message.replace('AUTH_FAILED: ', '');
+            } else if (e.message?.startsWith('CAPTCHA_FAILED') || e.message?.startsWith('CAPTCHA_SERVICE_DOWN')) {
+                errorCode = 'CAPTCHA_FAILED';
+                errorMessage = e.message.includes('SERVICE_DOWN')
+                    ? 'Captcha çözüm servisleri şu anda erişilemez.'
+                    : 'Captcha çözülemedi: ' + e.message.replace('CAPTCHA_FAILED: ', '');
+            } else if (e.message?.startsWith('GIB_MAINTENANCE')) {
+                errorCode = 'GIB_MAINTENANCE';
+                errorMessage = 'GİB şu anda bakımda. Lütfen daha sonra tekrar deneyin.';
+            } else if (e.message?.startsWith('IVD_TOKEN_FAILED') || e.message?.startsWith('IVD_SESSION_EXPIRED')) {
+                errorCode = 'IVD_ERROR';
+                errorMessage = 'İnternet Vergi Dairesi oturumu açılamadı. Lütfen tekrar deneyin.';
+            } else if (e.message?.includes('ECONNREFUSED') || e.message?.includes('network') || e.message?.includes('fetch')) {
+                errorCode = 'NETWORK_ERROR';
+                errorMessage = 'GİB sunucusuna bağlanılamadı. İnternet bağlantınızı kontrol edin.';
+            }
+
+            wsClient?.send('intvrg:beyanname-error', {
+                error: errorMessage, errorCode, customerName, requesterId,
+            });
+        } finally {
+            activeBeyannameQueries.delete(queryKey);
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
     // INTVRG Beyanname PDF Görüntüleme Handler
     // ═══════════════════════════════════════════════════════════════
     wsClient.on('intvrg:beyanname-pdf', async (data: BotCommandData) => {
@@ -1444,6 +1771,143 @@ function connectWebSocket(token: string) {
                 requesterId,
             });
         }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTVRG Toplu Beyanname Sorgulama Handler
+    // ═══════════════════════════════════════════════════════════════
+
+    let isBulkRunning = false;
+
+    wsClient.on('intvrg:beyanname-bulk-start', async (data: BotCommandData) => {
+        const requesterId = data.userId as string | undefined;
+
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] 📦 INTVRG Toplu Beyanname Sorgulama başlatılıyor...');
+        const customers = data.customers as Array<{
+            customerId: string; customerName: string;
+            userid: string; password: string; vkn: string;
+            savedBeyoids: string[];
+        }>;
+        console.log(`[MAIN] ${customers?.length || 0} mükellef`);
+        console.log(`[MAIN] Dönem: ${data.basAy}/${data.basYil} - ${data.bitAy}/${data.bitYil}`);
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        if (isBulkRunning) {
+            wsClient?.send('intvrg:beyanname-bulk-error', {
+                error: 'Zaten bir toplu sorgulama devam ediyor',
+                errorCode: 'BULK_IN_PROGRESS',
+                requesterId,
+            });
+            return;
+        }
+
+        if (!customers || customers.length === 0) {
+            wsClient?.send('intvrg:beyanname-bulk-error', {
+                error: 'Sorgulanacak mükellef bulunamadı',
+                errorCode: 'NO_CUSTOMERS',
+                requesterId,
+            });
+            return;
+        }
+
+        isBulkRunning = true;
+        mainWindow?.webContents.send('bot:command', {
+            type: 'intvrg-beyanname-bulk-start',
+            totalCustomers: customers.length,
+        });
+
+        try {
+            const { queryBeyannamelerBulk } = await import('./intvrg-beyanname-api');
+
+            await queryBeyannamelerBulk(
+                customers,
+                {
+                    basAy: data.basAy as string,
+                    basYil: data.basYil as string,
+                    bitAy: data.bitAy as string,
+                    bitYil: data.bitYil as string,
+                },
+                data.captchaApiKey as string,
+                data.ocrSpaceApiKey as string | undefined,
+                {
+                    onProgress: (current, total, status) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-progress', {
+                                current, total, status, requesterId,
+                            });
+                        }
+                    },
+                    onCustomerStart: (customerId, customerName, index, total) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-customer-start', {
+                                customerId, customerName, index, total, requesterId,
+                            });
+                        }
+                        mainWindow?.webContents.send('bot:command', {
+                            type: 'intvrg-beyanname-bulk-customer',
+                            customerName, index, total,
+                        });
+                    },
+                    onCustomerResults: (customerId, customerName, beyannameler) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-customer-results', {
+                                customerId, customerName,
+                                beyannameCount: beyannameler.length,
+                                requesterId,
+                            });
+                        }
+                    },
+                    onPdfResult: (customerId, pdfData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-customer-pdf', {
+                                customerId, ...pdfData, requesterId,
+                            });
+                        }
+                    },
+                    onCustomerComplete: (customerId, customerName, stats) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-customer-complete', {
+                                customerId, customerName, ...stats, requesterId,
+                            });
+                        }
+                    },
+                    onCustomerError: (customerId, customerName, error) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-customer-error', {
+                                customerId, customerName, error, requesterId,
+                            });
+                        }
+                    },
+                    onAllComplete: (summary) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:beyanname-bulk-all-complete', {
+                                ...summary, requesterId,
+                            });
+                        }
+                        mainWindow?.webContents.send('bot:command', {
+                            type: 'intvrg-beyanname-bulk-complete',
+                            ...summary,
+                        });
+                    },
+                },
+            );
+        } catch (e: any) {
+            console.error('[MAIN] Toplu beyanname sorgulama hatası:', e.message);
+            wsClient?.send('intvrg:beyanname-bulk-error', {
+                error: e.message || 'Toplu sorgulama hatası',
+                errorCode: 'BULK_ERROR',
+                requesterId,
+            });
+        } finally {
+            isBulkRunning = false;
+        }
+    });
+
+    wsClient.on('intvrg:beyanname-bulk-cancel', async () => {
+        console.log('[MAIN] 🛑 Toplu beyanname sorgulama iptal ediliyor...');
+        const { cancelBulkQuery } = await import('./intvrg-beyanname-api');
+        cancelBulkQuery();
     });
 
     // ═══════════════════════════════════════════════════════════════

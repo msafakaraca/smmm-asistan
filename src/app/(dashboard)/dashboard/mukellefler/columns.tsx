@@ -132,9 +132,9 @@ const sirketTipiOrder: Record<string, number> = {
 export const columns: ColumnDef<Customer>[] = [
     {
         id: "select",
-        size: 32,
-        minSize: 32,
-        maxSize: 32,
+        size: 24,
+        minSize: 24,
+        maxSize: 24,
         header: ({ table }) => (
             <Checkbox
                 checked={
@@ -159,9 +159,9 @@ export const columns: ColumnDef<Customer>[] = [
     },
     {
         accessorKey: "siraNo",
-        size: 45,
-        minSize: 45,
-        maxSize: 45,
+        size: 32,
+        minSize: 32,
+        maxSize: 32,
         header: ({ column }) => (
             <Button
                 variant="ghost"

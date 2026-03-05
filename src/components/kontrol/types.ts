@@ -17,6 +17,7 @@ export type DeclarationStatus =
   | "gonderilmeyecek"        // Kalıcı: verilmeyecekBeyannameler'den (kilitli)
   | "dilekce_gonderilecek"   // Sistem: beyannameAyarlari'nda "dilekce" seçilmiş
   | "dilekce_verildi"        // Kullanıcı: Dilekçe verildi işaretleme
+  | "donem_disi"             // 3 aylık beyanname: bu ay dönem dışı (pasif)
   | "muaf"                   // Backward compatibility
   | "3aylik";                // Backward compatibility
 
@@ -38,6 +39,7 @@ export interface Customer {
   siraNo?: string | null;
   sortOrder?: number;
   verilmeyecekBeyannameler?: string[];
+  beyannameAyarlari?: Record<string, string>;
 }
 
 // Beyanname türü
@@ -70,6 +72,7 @@ export interface BeyannameStatusMeta {
   yuklemeZamani?: string;
   unvan?: string;
   donem?: string;
+  kapsam?: string;          // 3 aylık beyanname kapsam bilgisi (örn: "Oca-Şub-Mar 2026")
   beyannamePath?: string;
   tahakkukPath?: string;
   sgkTahakkukPath?: string;

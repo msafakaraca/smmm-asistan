@@ -33,6 +33,11 @@ interface BeyannameGroupListProps {
   pdfLoading: string | null;
   onViewPdf: (beyoid: string) => void;
   selectedCustomerId: string;
+  downloadedBeyoids?: Set<string>;
+  isPipelineActive?: boolean;
+  saveProgress?: { saved: number; skipped: number; failed: number; total: number };
+  onHoverStart?: (item: BeyannameItem) => void;
+  unavailableBeyoids?: Set<string>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -72,21 +77,46 @@ interface BeyannameItemCardProps {
   item: BeyannameItem;
   pdfLoading: string | null;
   onViewPdf: (beyoid: string) => void;
+  isDownloaded: boolean;
+  showProgress: boolean;
+  onHoverStart?: (item: BeyannameItem) => void;
+  isUnavailable?: boolean;
 }
 
 const BeyannameItemCard = memo(function BeyannameItemCard({
   item,
   pdfLoading,
   onViewPdf,
+  isDownloaded,
+  showProgress,
+  onHoverStart,
+  isUnavailable = false,
 }: BeyannameItemCardProps) {
   const isLoadingPdf = pdfLoading === item.beyoid;
   const hasBeyoid = !!item.beyoid;
+  const isClickable = hasBeyoid && !isUnavailable;
   const isDuzeltme = !!item.aciklama?.trim();
-
   return (
-    <div className="flex items-center gap-3 rounded-md border bg-card px-3 py-2 transition-colors hover:bg-accent/30">
+    <div
+      className={`flex items-center gap-3 rounded-md border border-l-2 px-3 py-2 transition-colors ${
+        isUnavailable
+          ? "border-l-slate-300 bg-slate-50/60 dark:border-l-slate-600 dark:bg-slate-950/20 opacity-50"
+          : "border-l-blue-400 bg-blue-50/60 dark:border-l-blue-500 dark:bg-blue-950/20"
+      } ${
+        isClickable
+          ? "hover:bg-blue-100/80 dark:hover:bg-blue-950/40 cursor-pointer active:scale-[0.99]"
+          : isUnavailable
+            ? "cursor-not-allowed"
+            : "hover:bg-blue-100/50 dark:hover:bg-blue-950/30"
+      }`}
+      onClick={() => {
+        if (isClickable && !isLoadingPdf) onViewPdf(item.beyoid);
+      }}
+      onMouseEnter={() => isClickable && onHoverStart?.(item)}
+      title={isUnavailable ? "PDF mevcut değil — sorgulama sayfasından tekrar sorgulayın" : hasBeyoid ? `${item.turAdi} - ${formatDonem(item.donem)} PDF görüntüle` : undefined}
+    >
       {/* Dönem */}
-      <span className="text-sm font-medium whitespace-nowrap min-w-[70px]">
+      <span className={`text-sm font-medium whitespace-nowrap min-w-[70px] ${isUnavailable ? "text-slate-400 dark:text-slate-500" : "text-blue-700 dark:text-blue-300"}`}>
         {formatDonem(item.donem)}
       </span>
 
@@ -110,22 +140,42 @@ const BeyannameItemCard = memo(function BeyannameItemCard({
       {/* Boşluk dolgusu */}
       <div className="flex-1" />
 
-      {/* PDF Butonu */}
-      <button
-        type="button"
-        disabled={!hasBeyoid || isLoadingPdf}
-        title={hasBeyoid ? "PDF görüntüle" : "PDF mevcut değil"}
-        className="inline-flex items-center justify-center h-7 w-7 rounded-full shrink-0 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 active:scale-95 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
-        onClick={() => {
-          if (hasBeyoid) onViewPdf(item.beyoid);
-        }}
+      {/* PDF mevcut değil etiketi */}
+      {isUnavailable && (
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+          PDF yok
+        </span>
+      )}
+
+      {/* İndirme durumu çubuğu */}
+      {showProgress && !isUnavailable && (
+        <div className="w-5 h-1.5 bg-muted rounded-full overflow-hidden shrink-0">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              isDownloaded ? "w-full bg-emerald-500" : "w-0"
+            }`}
+          />
+        </div>
+      )}
+
+      {/* PDF İkonu */}
+      <span
+        className={`inline-flex items-center justify-center h-7 w-7 rounded-full shrink-0 transition-all duration-200 ${
+          isUnavailable
+            ? "text-slate-300 dark:text-slate-600"
+            : isDownloaded
+              ? "text-emerald-500"
+              : hasBeyoid
+                ? "text-blue-500"
+                : "text-muted-foreground/30"
+        }`}
       >
         {isLoadingPdf ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : (
           <Eye className="h-3.5 w-3.5" />
         )}
-      </button>
+      </span>
     </div>
   );
 });
@@ -140,6 +190,10 @@ interface TypeGroupSectionProps {
   onToggle: () => void;
   pdfLoading: string | null;
   onViewPdf: (beyoid: string) => void;
+  downloadedBeyoids: Set<string>;
+  showProgress: boolean;
+  onHoverStart?: (item: BeyannameItem) => void;
+  unavailableBeyoids: Set<string>;
 }
 
 const TypeGroupSection = memo(function TypeGroupSection({
@@ -148,7 +202,20 @@ const TypeGroupSection = memo(function TypeGroupSection({
   onToggle,
   pdfLoading,
   onViewPdf,
+  downloadedBeyoids,
+  showProgress,
+  onHoverStart,
+  unavailableBeyoids,
 }: TypeGroupSectionProps) {
+  const downloadedInGroup = useMemo(() => {
+    if (!showProgress) return 0;
+    return group.items.filter((item) => downloadedBeyoids.has(item.beyoid)).length;
+  }, [group.items, downloadedBeyoids, showProgress]);
+
+  const totalInGroup = group.items.length;
+  const progressPercent = totalInGroup > 0 ? (downloadedInGroup / totalInGroup) * 100 : 0;
+  const allDone = downloadedInGroup === totalInGroup && totalInGroup > 0;
+
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       {/* Tür başlığı — tıklanabilir */}
@@ -169,9 +236,27 @@ const TypeGroupSection = memo(function TypeGroupSection({
           {group.turAdi}
         </span>
         <div className="flex-1" />
-        <span className="text-[11px] text-muted-foreground shrink-0">
-          {group.items.length} beyanname
-        </span>
+        {/* Sağ taraf: progress + sayaç — sabit genişlik ile hizalı */}
+        <div className="flex items-center shrink-0 w-[220px] gap-2">
+          {showProgress && (
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    allDone ? "bg-emerald-500" : "bg-blue-500"
+                  }`}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className={`text-xs font-mono font-semibold w-[44px] text-left ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                {downloadedInGroup}/{totalInGroup}
+              </span>
+            </div>
+          )}
+          <span className="text-[11px] text-muted-foreground ml-auto">
+            {group.items.length} beyanname
+          </span>
+        </div>
       </button>
 
       {/* Kartlar — sadece açıkken */}
@@ -183,6 +268,10 @@ const TypeGroupSection = memo(function TypeGroupSection({
               item={item}
               pdfLoading={pdfLoading}
               onViewPdf={onViewPdf}
+              isDownloaded={downloadedBeyoids.has(item.beyoid)}
+              showProgress={showProgress}
+              onHoverStart={onHoverStart}
+              isUnavailable={unavailableBeyoids.has(item.beyoid)}
             />
           ))}
         </div>
@@ -217,7 +306,14 @@ export default memo(function BeyannameGroupList({
   pdfLoading,
   onViewPdf,
   selectedCustomerId,
+  downloadedBeyoids = new Set<string>(),
+  isPipelineActive = false,
+  saveProgress = { saved: 0, skipped: 0, failed: 0, total: 0 },
+  onHoverStart,
+  unavailableBeyoids = new Set<string>(),
 }: BeyannameGroupListProps) {
+  // Progress göster: pipeline aktif veya bazı PDF'ler indirilmiş
+  const showProgress = isPipelineActive || saveProgress.saved + saveProgress.skipped > 0;
   // Yıl → Tür → Beyanname şeklinde grupla
   const yearGroups = useMemo((): YearGroup[] => {
     const yearMap = new Map<string, Map<string, TypeGroup>>();
@@ -300,6 +396,10 @@ export default memo(function BeyannameGroupList({
                   onToggle={() => toggleGroup(key)}
                   pdfLoading={pdfLoading}
                   onViewPdf={handleViewPdf}
+                  downloadedBeyoids={downloadedBeyoids}
+                  showProgress={showProgress}
+                  onHoverStart={onHoverStart}
+                  unavailableBeyoids={unavailableBeyoids}
                 />
               );
             })}

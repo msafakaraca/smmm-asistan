@@ -140,6 +140,54 @@ export async function GET(req: NextRequest) {
 }
 
 /**
+ * DELETE /api/query-archives
+ * Toplu arşiv silme (test amaçlı)
+ *
+ * Query params:
+ * - queryType (zorunlu): "beyanname"|"tahsilat"|"edefter"|"earsiv"|"pos"|"okc"|"etebligat"
+ * - customerId (opsiyonel): Belirli müşterinin arşivlerini sil
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getUserWithProfile();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const queryType = searchParams.get("queryType");
+
+    if (!queryType) {
+      return NextResponse.json(
+        { error: "queryType parametresi zorunludur" },
+        { status: 400 }
+      );
+    }
+
+    const customerId = searchParams.get("customerId");
+
+    const result = await prisma.query_archives.deleteMany({
+      where: {
+        tenantId: user.tenantId,
+        queryType,
+        ...(customerId && { customerId }),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    console.error("[QUERY-ARCHIVES] DELETE hatası:", error);
+    return NextResponse.json(
+      { error: "Arşiv kayıtları silinirken hata oluştu" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/query-archives
  * Arşiv kaydı oluştur veya merge et
  *
@@ -181,8 +229,70 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!existing) {
-      // Yeni kayıt oluştur
+    // mergeAndReturn: mevcut kayıtla birleştir
+    const mergeAndReturn = async (record: NonNullable<typeof existing>) => {
+      const existingData = (record.resultData as unknown[]) || [];
+      let uniqueNewResults = newResults as unknown[];
+      let addedCount = newResults.length;
+
+      if (dedupKey && dedupKey.length > 0) {
+        const existingKeys = new Set(
+          existingData.map((item: unknown) => {
+            const rec = item as Record<string, unknown>;
+            return dedupKey.map((k: string) => String(rec[k] ?? "")).join("|");
+          })
+        );
+
+        uniqueNewResults = (newResults as unknown[]).filter((item: unknown) => {
+          const rec = item as Record<string, unknown>;
+          const key = dedupKey
+            .map((k: string) => String(rec[k] ?? ""))
+            .join("|");
+          return !existingKeys.has(key);
+        });
+        addedCount = uniqueNewResults.length;
+      }
+
+      const mergedData = [...existingData, ...uniqueNewResults];
+      const existingHistory = (record.queryHistory as Array<Record<string, unknown>>) || [];
+
+      const archive = await prisma.query_archives.update({
+        where: { id: record.id },
+        data: {
+          resultData: mergedData as unknown as Prisma.InputJsonValue,
+          resultMeta: meta
+            ? (meta as Prisma.InputJsonValue)
+            : record.resultMeta
+              ? (record.resultMeta as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
+          queryHistory: [
+            ...existingHistory,
+            {
+              date: new Date().toISOString(),
+              params: queryParams || {},
+              addedCount,
+            },
+          ] as unknown as Prisma.InputJsonValue,
+          totalCount: mergedData.length,
+          queryCount: record.queryCount + 1,
+          lastQueriedAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        action: "merged" as const,
+        id: archive.id,
+        totalCount: archive.totalCount,
+        addedCount,
+      });
+    };
+
+    if (existing) {
+      return mergeAndReturn(existing);
+    }
+
+    // Yeni kayıt oluştur — race condition'a karşı try-catch
+    try {
       const archive = await prisma.query_archives.create({
         data: {
           customerId,
@@ -210,64 +320,29 @@ export async function POST(req: NextRequest) {
         totalCount: archive.totalCount,
         addedCount: newResults.length,
       });
-    }
-
-    // Merge: mevcut kayıtla birleştir
-    const existingData = (existing.resultData as unknown[]) || [];
-    let uniqueNewResults = newResults as unknown[];
-    let addedCount = newResults.length;
-
-    if (dedupKey && dedupKey.length > 0) {
-      // dedupKey'e göre mevcut kayıtlardaki değerleri topla
-      const existingKeys = new Set(
-        existingData.map((item: unknown) => {
-          const record = item as Record<string, unknown>;
-          return dedupKey.map((k: string) => String(record[k] ?? "")).join("|");
-        })
-      );
-
-      uniqueNewResults = (newResults as unknown[]).filter((item: unknown) => {
-        const record = item as Record<string, unknown>;
-        const key = dedupKey
-          .map((k: string) => String(record[k] ?? ""))
-          .join("|");
-        return !existingKeys.has(key);
-      });
-      addedCount = uniqueNewResults.length;
-    }
-
-    const mergedData = [...existingData, ...uniqueNewResults];
-    const existingHistory = (existing.queryHistory as Array<Record<string, unknown>>) || [];
-
-    const archive = await prisma.query_archives.update({
-      where: { id: existing.id },
-      data: {
-        resultData: mergedData as unknown as Prisma.InputJsonValue,
-        resultMeta: meta
-          ? (meta as Prisma.InputJsonValue)
-          : existing.resultMeta
-            ? (existing.resultMeta as Prisma.InputJsonValue)
-            : Prisma.JsonNull,
-        queryHistory: [
-          ...existingHistory,
-          {
-            date: new Date().toISOString(),
-            params: queryParams || {},
-            addedCount,
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        // Race condition: başka istek aynı anda create etti → merge yap
+        const raceExisting = await prisma.query_archives.findUnique({
+          where: {
+            tenantId_customerId_queryType_month_year: {
+              tenantId: user.tenantId,
+              customerId,
+              queryType,
+              month,
+              year,
+            },
           },
-        ] as unknown as Prisma.InputJsonValue,
-        totalCount: mergedData.length,
-        queryCount: existing.queryCount + 1,
-        lastQueriedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json({
-      action: "merged" as const,
-      id: archive.id,
-      totalCount: archive.totalCount,
-      addedCount,
-    });
+        });
+        if (raceExisting) {
+          return mergeAndReturn(raceExisting);
+        }
+      }
+      throw err;
+    }
   } catch (error) {
     console.error("[QUERY-ARCHIVES] POST hatası:", error);
     return NextResponse.json(

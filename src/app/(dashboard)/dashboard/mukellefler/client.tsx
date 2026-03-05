@@ -410,10 +410,10 @@ export function CustomerListClient() {
                         <Icon icon={gibLoading ? "solar:refresh-bold" : "solar:buildings-2-bold"} className={`mr-1.5 h-3.5 w-3.5 ${gibLoading ? "animate-spin" : ""}`} />
                         {gibLoading ? "Çekiliyor..." : "Mükellefleri Çek"}
                     </Button>
-                    <Link href="/dashboard/mukellefler/beyannameler">
+                    <Link href="/dashboard/mukellefler/beyanname-turu-yonetimi">
                         <Button variant="outline" size="sm" className="h-8">
                             <FileText className="mr-1.5 h-3.5 w-3.5" />
-                            Beyanname Türleri
+                            Beyanname Türleri Yönetimi
                         </Button>
                     </Link>
                     <CustomerGroupsDialog

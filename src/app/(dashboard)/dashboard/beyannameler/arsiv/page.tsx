@@ -1,12 +1,42 @@
-"use client";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import BeyannameArsivClient from "@/components/beyannameler/beyanname-arsiv-client";
 
-import dynamic from "next/dynamic";
+interface MinimalCustomer {
+  id: string;
+  unvan: string;
+  kisaltma: string | null;
+  vknTckn: string;
+}
 
-const BeyannameArsivClient = dynamic(
-  () => import("@/components/beyannameler/beyanname-arsiv-client"),
-  { ssr: false }
-);
+export default async function BeyannameArsivPage() {
+  const session = await auth();
+  if (!session?.user?.tenantId) redirect("/login");
 
-export default function BeyannameArsivPage() {
-  return <BeyannameArsivClient />;
+  const raw = await prisma.customers.findMany({
+    where: { tenantId: session.user.tenantId },
+    select: {
+      id: true,
+      unvan: true,
+      kisaltma: true,
+      vknTckn: true,
+      sirketTipi: true,
+      siraNo: true,
+    },
+    orderBy: [
+      { sirketTipi: "asc" },
+      { siraNo: "asc" },
+      { unvan: "asc" },
+    ],
+  });
+
+  const customers: MinimalCustomer[] = raw.map((c) => ({
+    id: c.id,
+    unvan: c.unvan,
+    kisaltma: c.kisaltma,
+    vknTckn: c.vknTckn,
+  }));
+
+  return <BeyannameArsivClient initialCustomers={customers} />;
 }

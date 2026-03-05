@@ -83,7 +83,9 @@ export async function downloadFile(path: string) {
  * @returns Signed URL
  */
 export async function getSignedUrl(path: string, expiresIn: number = 3600) {
-  const supabase = await createClient();
+  // Admin client kullan — dosyalar adminUploadFile ile yüklendiğinden
+  // user-scoped client RLS nedeniyle erişemeyebilir
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)

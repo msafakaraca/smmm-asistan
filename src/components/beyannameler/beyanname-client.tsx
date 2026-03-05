@@ -20,6 +20,11 @@ import {
   Check,
   FileDown,
   Archive,
+  Users,
+  Square,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -40,7 +45,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useBeyannameQuery } from "./hooks/use-beyanname-query";
 import type { BeyannameItem } from "./hooks/use-beyanname-query";
+import { useBulkQuery } from "./hooks/use-bulk-query";
 import BeyannameGroupList from "./beyanname-group-list";
+import PdfPreviewDialog from "./pdf-preview-dialog";
+import BeyannameBulkQueryDialog from "./beyanname-bulk-query-dialog";
 import { useQueryArchives, type OverlapInfo } from "@/components/query-archive/hooks/use-query-archives";
 import ArchiveOverlapDialog from "@/components/query-archive/archive-overlap-dialog";
 import { toast } from "sonner";
@@ -55,6 +63,17 @@ interface Customer {
   kisaltma: string | null;
   vknTckn: string;
   hasGibCredentials: boolean;
+  lastBeyannameQueryAt: string | null;
+}
+
+interface BeyannameClientProps {
+  initialCustomers?: {
+    id: string;
+    unvan: string;
+    kisaltma: string | null;
+    vknTckn: string;
+    hasGibCredentials: boolean;
+  }[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -67,6 +86,14 @@ const MONTHS_TR = [
 ];
 
 const YEARS = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+
+/** Tarih formatı: ISO string → "15.02.2026 14:30" */
+function formatQueryDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    + " " + d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
 
 /** Dönem formatı: "202501202503" → "01/2025-03/2025", "202501" → "01/2025-01/2025" */
 function formatDonemSlash(donem: string): string {
@@ -206,14 +233,23 @@ function exportToPdf(beyannameler: BeyannameItem[], customerName: string, sorguD
 // Component
 // ═══════════════════════════════════════════════════════════════════════════
 
-export default function BeyannameClient() {
-  // Mükellef listesi
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [customersLoading, setCustomersLoading] = useState(true);
+export default function BeyannameClient({ initialCustomers }: BeyannameClientProps) {
+  // Mükellef listesi — server-side'dan geliyorsa anında hazır
+  const [customers, setCustomers] = useState<Customer[]>(() =>
+    (initialCustomers || []).map((c) => ({
+      ...c,
+      lastBeyannameQueryAt: null,
+    }))
+  );
+  const [customersLoading, setCustomersLoading] = useState(!initialCustomers);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const statusLoadedRef = useRef(false);
+
+  // Kaydedilmiş beyoid'ler (pre-load — pipeline skip mekanizması için)
+  const [savedBeyoids, setSavedBeyoids] = useState<string[]>([]);
 
   // Dönem
   const defaultPeriod = useMemo(() => getDefaultPeriod(), []);
@@ -237,19 +273,53 @@ export default function BeyannameClient() {
     clearResults,
     viewPdf,
     showArchiveData,
+    pdfPreview,
+    closePdfPreview,
+    downloadedBeyoids,
+    isPipelineActive,
+    saveProgress,
   } = useBeyannameQuery();
+
+  // Tüm indirilen beyoid'leri birleştir (önceden kaydedilmiş + yeni indirilen)
+  const allDownloadedBeyoids = useMemo(() => {
+    const set = new Set<string>(savedBeyoids);
+    for (const b of downloadedBeyoids) set.add(b);
+    return set;
+  }, [savedBeyoids, downloadedBeyoids]);
+
+  // Toplu sorgulama
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const bulkQuery = useBulkQuery();
+
+  const handleBulkStart = useCallback(
+    (customerIds: string[]) => {
+      bulkQuery.startBulkQuery(customerIds, basAy, basYil, bitAy, bitYil);
+    },
+    [bulkQuery, basAy, basYil, bitAy, bitYil]
+  );
+
+  // Geçen süre formatı
+  const formatElapsed = useCallback((seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m > 0 ? `${m}dk ${s}s` : `${s}s`;
+  }, []);
 
   // Arşiv overlap state
   const [overlapOpen, setOverlapOpen] = useState(false);
   const [overlapInfo, setOverlapInfo] = useState<OverlapInfo | null>(null);
   const { checkOverlap, loadArchiveDetail } = useQueryArchives();
 
-  // Mükellef listesi yükle
+  // Fallback: initialCustomers yoksa client-side yükle
   useEffect(() => {
+    if (initialCustomers) return;
     async function loadCustomers() {
       try {
         const res = await fetch("/api/customers?fields=minimal");
-        if (!res.ok) return;
+        if (!res.ok) {
+          toast.error("Mükellef listesi yüklenemedi");
+          return;
+        }
         const data = await res.json();
         const mapped: Customer[] = (data || []).map((c: { id: string; unvan: string; kisaltma: string | null; vknTckn: string; hasGibCredentials: boolean }) => ({
           id: c.id,
@@ -257,6 +327,7 @@ export default function BeyannameClient() {
           kisaltma: c.kisaltma,
           vknTckn: c.vknTckn,
           hasGibCredentials: c.hasGibCredentials,
+          lastBeyannameQueryAt: null,
         }));
         setCustomers(mapped);
       } catch {
@@ -266,7 +337,37 @@ export default function BeyannameClient() {
       }
     }
     loadCustomers();
-  }, []);
+  }, [initialCustomers]);
+
+  // Sorgulama durumlarını arka planda yükle (combobox'ı bloklamaz)
+  useEffect(() => {
+    if (customersLoading || statusLoadedRef.current || customers.length === 0) return;
+    statusLoadedRef.current = true;
+    fetch("/api/query-archives/customer-status?queryType=beyanname")
+      .then((r) => (r.ok ? r.json() : { statuses: {} }))
+      .then((data) => {
+        const statuses: Record<string, string> = data.statuses || {};
+        setCustomers((prev) =>
+          prev.map((c) => ({
+            ...c,
+            lastBeyannameQueryAt: statuses[c.id] || c.lastBeyannameQueryAt,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, [customersLoading, customers.length]);
+
+  // Mükellef seçildiğinde kaydedilmiş beyoid'leri yükle
+  useEffect(() => {
+    if (!selectedCustomerId) {
+      setSavedBeyoids([]);
+      return;
+    }
+    fetch(`/api/intvrg/beyanname-saved-beyoids?customerId=${selectedCustomerId}`)
+      .then((r) => (r.ok ? r.json() : { beyoids: [] }))
+      .then((data) => setSavedBeyoids(data.beyoids || []))
+      .catch(() => setSavedBeyoids([]));
+  }, [selectedCustomerId]);
 
   // Filtrelenmiş mükellefler
   const filteredCustomers = useMemo(() => {
@@ -349,8 +450,8 @@ export default function BeyannameClient() {
       return;
     }
 
-    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil);
-  }, [selectedCustomerId, selectedCustomer, basAy, basYil, bitAy, bitYil, startQuery, checkOverlap]);
+    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil, savedBeyoids);
+  }, [selectedCustomerId, selectedCustomer, basAy, basYil, bitAy, bitYil, startQuery, checkOverlap, savedBeyoids]);
 
   // Arşivden göster (overlap dialog'dan)
   const handleShowFromArchive = useCallback(async () => {
@@ -369,8 +470,8 @@ export default function BeyannameClient() {
   const handleRequery = useCallback(async () => {
     setOverlapOpen(false);
     setOverlapInfo(null);
-    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil);
-  }, [selectedCustomerId, basAy, basYil, bitAy, bitYil, startQuery]);
+    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil, savedBeyoids);
+  }, [selectedCustomerId, basAy, basYil, bitAy, bitYil, startQuery, savedBeyoids]);
 
   // Temizle
   const handleClear = useCallback(() => {
@@ -394,7 +495,7 @@ export default function BeyannameClient() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                disabled={isLoading || customersLoading}
+                disabled={isLoading}
                 className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => setComboboxOpen(true)}
               >
@@ -402,7 +503,10 @@ export default function BeyannameClient() {
                   {customersLoading
                     ? "Yükleniyor..."
                     : selectedCustomer
-                      ? (selectedCustomer.kisaltma || selectedCustomer.unvan)
+                      ? <>
+                          {selectedCustomer.kisaltma || selectedCustomer.unvan}
+                          <span className="text-rose-600 dark:text-rose-400"> · {selectedCustomer.vknTckn}</span>
+                        </>
                       : "Mükellef ara veya seçin..."
                   }
                 </span>
@@ -411,7 +515,7 @@ export default function BeyannameClient() {
             </PopoverTrigger>
             <PopoverContent
               className="p-0"
-              style={{ width: "var(--radix-popover-trigger-width)" }}
+              style={{ width: "var(--radix-popover-trigger-width)", minWidth: 600 }}
               align="start"
             >
               <div className="p-2">
@@ -425,7 +529,12 @@ export default function BeyannameClient() {
                 />
               </div>
               <div className="max-h-[360px] overflow-y-auto">
-                {filteredCustomers.length === 0 ? (
+                {customersLoading ? (
+                  <div className="py-4 px-3 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Mükellefler yükleniyor...
+                  </div>
+                ) : filteredCustomers.length === 0 ? (
                   <div className="py-4 px-3 text-center text-sm text-muted-foreground">
                     {customerSearch ? "Sonuç bulunamadı" : "Mükellef yok"}
                   </div>
@@ -434,7 +543,7 @@ export default function BeyannameClient() {
                     <button
                       key={c.id}
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                      className="grid grid-cols-[16px_1fr_1px_100px_1px_110px_1px_110px] w-full items-center gap-x-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
                       onClick={() => {
                         setSelectedCustomerId(c.id);
                         setCustomerSearch("");
@@ -442,17 +551,31 @@ export default function BeyannameClient() {
                       }}
                     >
                       <Check
-                        className={`h-4 w-4 shrink-0 ${
+                        className={`h-4 w-4 ${
                           selectedCustomerId === c.id ? "opacity-100" : "opacity-0"
                         }`}
                       />
-                      <span className="truncate">{c.kisaltma || c.unvan}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        ({c.vknTckn})
+                      <span className="truncate text-sm text-left">
+                        {c.kisaltma || c.unvan}
+                        {!c.hasGibCredentials && (
+                          <span className="text-[10px] text-destructive font-medium ml-1">GİB eksik</span>
+                        )}
                       </span>
-                      {!c.hasGibCredentials && (
-                        <span className="text-xs text-destructive shrink-0">GİB eksik</span>
-                      )}
+                      <span className="h-4 bg-border" />
+                      <span className="text-xs font-mono text-rose-500 dark:text-rose-400 text-right">
+                        {c.vknTckn}
+                      </span>
+                      <span className="h-4 bg-border" />
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.lastBeyannameQueryAt ? "bg-emerald-500 dark:bg-emerald-400" : "bg-slate-300 dark:bg-zinc-600"}`} />
+                        <span className={`text-[11px] whitespace-nowrap ${c.lastBeyannameQueryAt ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                          {c.lastBeyannameQueryAt ? "Sorgulandı" : "Sorgulanmamış"}
+                        </span>
+                      </span>
+                      <span className="h-4 bg-border" />
+                      <span className={`text-[11px] text-right whitespace-nowrap ${c.lastBeyannameQueryAt ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                        {c.lastBeyannameQueryAt ? formatQueryDate(c.lastBeyannameQueryAt) : "—"}
+                      </span>
                     </button>
                   ))
                 )}
@@ -541,6 +664,14 @@ export default function BeyannameClient() {
                   </>
                 )}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setBulkDialogOpen(true)}
+                disabled={isLoading || customersLoading || customers.length === 0 || bulkQuery.status === "running"}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Toplu Sorgula
+              </Button>
               <Link href="/dashboard/beyannameler/arsiv">
                 <Button variant="outline">
                   <Archive className="mr-2 h-4 w-4" />
@@ -578,6 +709,112 @@ export default function BeyannameClient() {
           </div>
         </div>
       </div>
+
+      {/* Toplu Sorgulama Progress / Sonuç Paneli */}
+      {bulkQuery.status === "running" && (
+        <div className="rounded-lg border bg-blue-50 p-4 dark:bg-blue-950/30 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-300">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Toplu Sorgulama ({bulkQuery.currentIndex + 1}/{bulkQuery.totalCount})
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatElapsed(bulkQuery.elapsedSeconds)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                onClick={bulkQuery.cancelBulkQuery}
+              >
+                <Square className="mr-1 h-3 w-3" />
+                İptal
+              </Button>
+            </div>
+          </div>
+          {/* İlerleme çubuğu */}
+          <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2">
+            <div
+              className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.round(((bulkQuery.currentIndex + 1) / bulkQuery.totalCount) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-blue-600 dark:text-blue-400">{bulkQuery.progressMessage}</p>
+          {/* Anlık müşteri sonuçları */}
+          {bulkQuery.customerResults.length > 0 && (
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+              {bulkQuery.customerResults.map((r) => (
+                <div key={r.customerId} className="flex items-center gap-2 text-xs">
+                  {r.success ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  )}
+                  <span className="truncate">{r.customerName}</span>
+                  {r.success ? (
+                    <span className="text-muted-foreground ml-auto shrink-0">
+                      {r.beyannameCount} beyanname, {r.pdfDownloaded} PDF
+                      {r.pdfSkipped > 0 && ` (${r.pdfSkipped} daha önce sorgulanmış)`}
+                    </span>
+                  ) : r.error ? (
+                    <span className="text-destructive ml-auto shrink-0 truncate max-w-[200px]">
+                      {r.error}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {(bulkQuery.status === "completed" || bulkQuery.status === "cancelled") && bulkQuery.customerResults.length > 0 && (
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              {bulkQuery.status === "cancelled" ? (
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              )}
+              {bulkQuery.progressMessage}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {formatElapsed(bulkQuery.elapsedSeconds)}
+              </span>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={bulkQuery.resetBulkQuery}>
+                <X className="mr-1 h-3 w-3" />
+                Kapat
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-1 max-h-[300px] overflow-y-auto">
+            {bulkQuery.customerResults.map((r) => (
+              <div key={r.customerId} className="flex items-center gap-2 text-sm py-1 border-b last:border-0">
+                {r.success ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                )}
+                <span className="truncate flex-1">{r.customerName}</span>
+                {r.success ? (
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {r.beyannameCount} beyanname · {r.pdfDownloaded} PDF kaydedildi
+                    {r.pdfSkipped > 0 && ` · ${r.pdfSkipped} daha önce sorgulanmış`}
+                  </span>
+                ) : (
+                  <span className="text-xs text-destructive shrink-0 truncate max-w-[250px]">
+                    {r.error}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Yıl Filtresi */}
       {beyannameler.length > 0 && availableYears.length > 0 && (
@@ -730,10 +967,20 @@ export default function BeyannameClient() {
           onViewPdf={(beyoid: string) => {
             if (selectedCustomerId) {
               const item = beyannameler.find((b) => b.beyoid === beyoid);
-              viewPdf(selectedCustomerId, beyoid, item ? `${item.turAdi} - ${formatDonemSlash(item.donem)}` : "Beyanname");
+              const customerName = selectedCustomer?.kisaltma || selectedCustomer?.unvan || "";
+              viewPdf(
+                selectedCustomerId,
+                beyoid,
+                item ? `${item.turAdi} - ${formatDonemSlash(item.donem)}` : "Beyanname",
+                item ? formatDonemSlash(item.donem) : "",
+                customerName
+              );
             }
           }}
           selectedCustomerId={selectedCustomerId}
+          downloadedBeyoids={allDownloadedBeyoids}
+          isPipelineActive={isPipelineActive}
+          saveProgress={saveProgress}
         />
       )}
 
@@ -756,6 +1003,22 @@ export default function BeyannameClient() {
           </p>
         </div>
       )}
+
+      {/* PDF Önizleme Dialog */}
+      <PdfPreviewDialog data={pdfPreview} onClose={closePdfPreview} />
+
+      {/* Toplu Sorgulama Dialog */}
+      <BeyannameBulkQueryDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        customers={customers}
+        basAy={basAy}
+        basYil={basYil}
+        bitAy={bitAy}
+        bitYil={bitYil}
+        onStart={handleBulkStart}
+        isRunning={bulkQuery.status === "running"}
+      />
 
       {/* Arşiv Overlap Dialog */}
       <ArchiveOverlapDialog
