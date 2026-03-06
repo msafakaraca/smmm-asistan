@@ -112,6 +112,11 @@ const navItems = [
         icon: MailOpen,
     },
     {
+        title: "SGK Sorgulama",
+        href: "/dashboard/sgk-sorgulama",
+        icon: Building2,
+    },
+    {
         title: "E-Defter Kontrol",
         href: "/dashboard/e-defter-kontrol",
         icon: BookCheck,

@@ -2577,6 +2577,130 @@ function connectWebSocket(token: string) {
     });
 
     // ═══════════════════════════════════════════════════════════════
+    // SGK E-Bildirge Sorgulama + PDF İndirme Handler
+    // ═══════════════════════════════════════════════════════════════
+
+    const activeSgkEbildirgeQueries = new Map<string, boolean>();
+
+    wsClient.on('sgk:ebildirge-query-and-download', async (data: BotCommandData) => {
+        const customerName = data.customerName as string | undefined;
+        const requesterId = data.requesterId as string | undefined;
+
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] SGK E-Bildirge sorgulama + PDF indirme başlatılıyor...');
+        const maskedUser = data.credentials
+            ? `${String((data.credentials as any).kullaniciAdi).slice(0, 3)}***`
+            : 'N/A';
+        console.log('[MAIN] Kullanıcı:', maskedUser);
+        if (customerName) console.log('[MAIN] Mükellef:', customerName);
+        console.log('[MAIN] Dönem:', `${data.startMonth}/${data.startYear} - ${data.endMonth}/${data.endYear}`);
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        mainWindow?.webContents.send('bot:command', { type: 'sgk-ebildirge-start', customerName });
+
+        // Aynı mükellef için aktif sorgu kontrolü
+        const queryKey = `sgk-ebildirge-${(data.credentials as any)?.kullaniciAdi}-${data.startMonth}${data.startYear}-${data.endMonth}${data.endYear}`;
+        if (activeSgkEbildirgeQueries.has(queryKey)) {
+            wsClient?.send('sgk:ebildirge-error', {
+                error: 'Bu işyeri için zaten bir SGK E-Bildirge sorgulaması devam ediyor',
+                errorCode: 'QUERY_IN_PROGRESS',
+                customerName,
+                requesterId,
+            });
+            return;
+        }
+        activeSgkEbildirgeQueries.set(queryKey, true);
+
+        // 5 dakika global timeout
+        const QUERY_TIMEOUT_MS = 5 * 60 * 1000;
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), QUERY_TIMEOUT_MS)
+        );
+
+        try {
+            const { sgkEbildirgeQueryAndDownload } = await import('./sgk-ebildirge-api');
+
+            const queryWork = () => {
+                if (!wsClient?.connected) {
+                    throw new Error('WebSocket bağlantısı kopmuş');
+                }
+
+                return sgkEbildirgeQueryAndDownload({
+                    credentials: data.credentials as any,
+                    startMonth: data.startMonth as number,
+                    startYear: data.startYear as number,
+                    endMonth: data.endMonth as number,
+                    endYear: data.endYear as number,
+                    captchaApiKey: data.captchaApiKey as string | undefined,
+                    ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
+                    downloadPdfs: data.downloadPdfs !== false,
+                    onProgress: (progressData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-progress', {
+                                ...progressData, customerName, requesterId,
+                            });
+                        }
+                    },
+                    onResults: (resultsData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-results', {
+                                ...resultsData, customerName, requesterId,
+                            });
+                        }
+                    },
+                    onPdfResult: (pdfData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-pdf-result', {
+                                ...pdfData, customerName, requesterId,
+                            });
+                        }
+                    },
+                    onPdfSkip: (skipData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-pdf-skip', {
+                                ...skipData, customerName, requesterId,
+                            });
+                        }
+                    },
+                    onComplete: (completeData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-pipeline-complete', {
+                                ...completeData, customerName, requesterId,
+                            });
+                        }
+                    },
+                    onError: (errorData) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('sgk:ebildirge-error', {
+                                ...errorData, customerName, requesterId,
+                            });
+                        }
+                    },
+                });
+            };
+
+            await Promise.race([queryWork(), timeoutPromise]);
+        } catch (e: any) {
+            let errorCode = 'UNKNOWN_ERROR';
+            let errorMessage = e.message || 'SGK E-Bildirge sorgulama hatası';
+
+            if (e.message === 'TIMEOUT') {
+                errorCode = 'TIMEOUT';
+                errorMessage = 'SGK sorgulaması zaman aşımına uğradı (5 dakika). Lütfen tekrar deneyin.';
+            } else if (e.message?.includes('ECONNREFUSED') || e.message?.includes('network') || e.message?.includes('fetch')) {
+                errorCode = 'NETWORK_ERROR';
+                errorMessage = 'SGK sunucusuna bağlanılamadı. İnternet bağlantınızı kontrol edin.';
+            }
+
+            wsClient?.send('sgk:ebildirge-error', {
+                error: errorMessage, errorCode, customerName, requesterId,
+            });
+        } finally {
+            activeSgkEbildirgeQueries.delete(queryKey);
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
     // E-Defter Paket Kontrol Handler
     // ═══════════════════════════════════════════════════════════════
 

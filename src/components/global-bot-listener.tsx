@@ -226,6 +226,19 @@ export function GlobalBotListener() {
                             setBotRunningRef.current(true);
                             setBotStatusRef.current('running');
 
+                        } else if (message.type === "sgk:ebildirge-progress") {
+                            // SGK E-Bildirge ilerleme — global log'a ekle
+                            const sgkData = message.data;
+                            const sgkMsg = sgkData?.status || sgkData?.message || "";
+                            if (sgkMsg) {
+                                setLiveMessageRef.current(sgkMsg, "progress");
+                            }
+
+                        } else if (message.type === "sgk:ebildirge-error") {
+                            // SGK E-Bildirge hata
+                            const sgkError = message.data?.error || "SGK sorgulama hatası";
+                            setLiveMessageRef.current(`SGK Hata: ${sgkError}`, "error");
+
                         } else if (message.type === "electron:status") {
                             const connected = message.data?.connected === true;
                             setElectronConnectedRef.current(connected);
