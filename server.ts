@@ -471,7 +471,6 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
 
     case 'sgk:ebildirge-progress':
     case 'sgk:ebildirge-results':
-    case 'sgk:ebildirge-complete':
     case 'sgk:ebildirge-error':
     case 'sgk:ebildirge-pdf-result':
     case 'sgk:ebildirge-pdf-skip':

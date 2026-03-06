@@ -114,13 +114,6 @@ export async function POST(req: NextRequest) {
       filename = `${baseFilename}.pdf`;
       fileIndex = 0;
     } else {
-      // Aynı bildirgeRefNo ile kaydedilmiş mi kontrol et (tam eşleşme)
-      const exactMatch = existingDocs.find((doc) => {
-        // Dosya adından refNo çıkartılamaz, bildirgeRefNo bazlı duplicate'ı
-        // ayrı bir check ile yapıyoruz
-        return false; // Sadece dosya adı bazlı duplicate kontrolü
-      });
-
       // Bir sonraki index'i hesapla
       const maxIndex = existingDocs.reduce((max, doc) => {
         const idx = doc.fileIndex ?? 0;
@@ -132,39 +125,65 @@ export async function POST(req: NextRequest) {
 
     // 7. Base64 -> Buffer
     const buffer = Buffer.from(pdfBase64, "base64");
+    console.log(`[SGK-STREAM-SAVE] PDF boyutu: ${(buffer.length / 1024).toFixed(1)} KB — ${bildirgeRefNo} (${fileCategory})`);
 
     // 8. Supabase Storage path oluştur ve yükle
     const storagePath = generateStoragePath(user.tenantId, customerId, year, month, filename);
 
-    // 9. Paralel: Storage upload + Document metadata kaydet
+    // 9. Önce Storage upload (retry destekli), sonra DB kaydı
     const categoryLabel = fileCategory === "SGK_TAHAKKUK" ? "SGK Tahakkuk" : "Hizmet Listesi";
     const originalName = `${categoryLabel} - ${belgeMahiyeti || belgeTuru} ${monthPadded}/${year}${fileIndex && fileIndex > 0 ? ` (${fileIndex + 1})` : ""}`;
 
-    const [, docResult] = await Promise.all([
-      // A) Supabase Storage'a yükle
-      adminUploadFile(storagePath, buffer, "application/pdf"),
+    // Retry ile upload
+    const MAX_UPLOAD_RETRIES = 3;
+    let uploadSuccess = false;
+    let lastUploadError: Error | null = null;
 
-      // B) Document metadata kaydet
-      prisma.documents.create({
-        data: {
-          name: filename,
-          originalName,
-          type: "pdf",
-          mimeType: "application/pdf",
-          size: buffer.length,
-          path: storagePath,
-          storage: "supabase",
-          year,
-          month,
-          vknTckn: customer.vknTckn,
-          beyannameTuru: belgeTuru,
-          fileCategory,
-          fileIndex,
-          customerId,
-          tenantId: user.tenantId,
-        },
-      }),
-    ]);
+    for (let attempt = 1; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
+      try {
+        await adminUploadFile(storagePath, buffer, "application/pdf");
+        uploadSuccess = true;
+        break;
+      } catch (uploadError) {
+        lastUploadError = uploadError as Error;
+        console.warn(
+          `[SGK-STREAM-SAVE] Upload deneme ${attempt}/${MAX_UPLOAD_RETRIES} başarısız: ${(uploadError as Error).message?.substring(0, 200)}`
+        );
+        if (attempt < MAX_UPLOAD_RETRIES) {
+          // Exponential backoff: 2s, 4s
+          await new Promise((r) => setTimeout(r, 2000 * attempt));
+        }
+      }
+    }
+
+    if (!uploadSuccess) {
+      console.error(`[SGK-STREAM-SAVE] Upload tamamen başarısız (${MAX_UPLOAD_RETRIES} deneme): ${lastUploadError?.message?.substring(0, 300)}`);
+      return NextResponse.json(
+        { error: `Supabase Storage upload başarısız: ${lastUploadError?.message?.substring(0, 100)}` },
+        { status: 502 }
+      );
+    }
+
+    // Upload başarılı → DB kaydı oluştur
+    const docResult = await prisma.documents.create({
+      data: {
+        name: filename,
+        originalName,
+        type: "pdf",
+        mimeType: "application/pdf",
+        size: buffer.length,
+        path: storagePath,
+        storage: "supabase",
+        year,
+        month,
+        vknTckn: customer.vknTckn,
+        beyannameTuru: belgeTuru,
+        fileCategory,
+        fileIndex,
+        customerId,
+        tenantId: user.tenantId,
+      },
+    });
 
     return NextResponse.json({
       success: true,

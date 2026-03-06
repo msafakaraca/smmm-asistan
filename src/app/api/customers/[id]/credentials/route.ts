@@ -42,6 +42,10 @@ const credentialsUpdateSchema = z.object({
     gibKodu: z.string().max(100).optional(),
     gibSifre: z.string().max(100).optional(),
     gibParola: z.string().max(100).optional(),
+    sgkKullaniciAdi: z.string().max(100).optional(),
+    sgkIsyeriKodu: z.string().max(100).optional(),
+    sgkSistemSifresi: z.string().max(100).optional(),
+    sgkIsyeriSifresi: z.string().max(100).optional(),
     turmobKullaniciAdi: z.string().max(100).optional(),
     turmobSifre: z.string().max(100).optional(),
     edevletTckn: z.string().refine(
@@ -153,7 +157,7 @@ export async function PUT(
             );
         }
 
-        const { gibKodu, gibSifre, gibParola, turmobKullaniciAdi, turmobSifre, edevletTckn, edevletSifre } = validationResult.data;
+        const { gibKodu, gibSifre, gibParola, sgkKullaniciAdi, sgkIsyeriKodu, sgkSistemSifresi, sgkIsyeriSifresi, turmobKullaniciAdi, turmobSifre, edevletTckn, edevletSifre } = validationResult.data;
 
         // Musterinin var oldugunu ve tenant'a ait oldugunu kontrol et
         const customer = await prisma.customers.findUnique({
@@ -172,6 +176,10 @@ export async function PUT(
             gibKodu?: string | null;
             gibSifre?: string | null;
             gibParola?: string | null;
+            sgkKullaniciAdi?: string | null;
+            sgkIsyeriKodu?: string | null;
+            sgkSistemSifresi?: string | null;
+            sgkIsyeriSifresi?: string | null;
             turmobKullaniciAdi?: string | null;
             turmobSifre?: string | null;
             edevletTckn?: string | null;
@@ -186,6 +194,18 @@ export async function PUT(
         }
         if (gibParola !== undefined) {
             updateData.gibParola = gibParola ? encrypt(gibParola) : null;
+        }
+        if (sgkKullaniciAdi !== undefined) {
+            updateData.sgkKullaniciAdi = sgkKullaniciAdi ? encrypt(sgkKullaniciAdi) : null;
+        }
+        if (sgkIsyeriKodu !== undefined) {
+            updateData.sgkIsyeriKodu = sgkIsyeriKodu ? encrypt(sgkIsyeriKodu) : null;
+        }
+        if (sgkSistemSifresi !== undefined) {
+            updateData.sgkSistemSifresi = sgkSistemSifresi ? encrypt(sgkSistemSifresi) : null;
+        }
+        if (sgkIsyeriSifresi !== undefined) {
+            updateData.sgkIsyeriSifresi = sgkIsyeriSifresi ? encrypt(sgkIsyeriSifresi) : null;
         }
         if (turmobKullaniciAdi !== undefined) {
             updateData.turmobKullaniciAdi = turmobKullaniciAdi ? encrypt(turmobKullaniciAdi) : null;

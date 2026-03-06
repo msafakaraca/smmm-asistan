@@ -196,30 +196,26 @@ function exportToPdf(bildirgeler: BildirgeItem[], customerName: string, sorguDon
 // İşyeri Bilgileri Alt Bileşeni
 // ═══════════════════════════════════════════════════════════════════════════
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div>
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <p className="font-medium truncate">{value || "—"}</p>
+    <div className={className}>
+      <span className="text-xs text-muted-foreground block mb-0.5">{label}</span>
+      <p className="font-medium text-sm leading-snug break-words">{value || "—"}</p>
     </div>
   );
 }
 
 function IsyeriInfoPanel({ info }: { info: IsyeriInfo }) {
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+    <div className="rounded-lg border bg-card p-5 shadow-sm">
+      <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
         <Building2 className="h-4 w-4" />
         İşyeri Bilgileri
       </h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
         <InfoItem label="Sicil No" value={info.sicilNo} />
         <InfoItem label="Ünvan" value={info.unvan} />
         <InfoItem label="İşyeri Tipi" value={info.isyeriTipi} />
-        <InfoItem label="Prim Oranı" value={info.primOran ? `%${info.primOran}` : ""} />
-        <InfoItem label="SGM" value={info.sgmKodAd} />
-        <InfoItem label="Kapsama Alınış" value={info.kanunKapsaminaAlinis} />
-        {info.adres && <InfoItem label="Adres" value={info.adres} />}
       </div>
     </div>
   );
@@ -257,8 +253,10 @@ export default function SgkClient() {
     saveProgress,
     isPipelineActive,
     downloadedRefNos,
+    pdfDocumentIds,
     startQuery,
     clearResults,
+    openPdf,
   } = useSgkQuery();
 
   // Mükellef listesini yükle
@@ -678,13 +676,27 @@ export default function SgkClient() {
                       <td className="px-3 py-2 text-center">
                         <div className="flex justify-center gap-1">
                           {b.hasTahakkukPdf && (
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" title="Tahakkuk Fişi">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 text-xs ${pdfDocumentIds[`${b.bildirgeRefNo}_SGK_TAHAKKUK`] ? "text-emerald-600 hover:text-emerald-700" : ""}`}
+                              title="Tahakkuk Fişi"
+                              disabled={!pdfDocumentIds[`${b.bildirgeRefNo}_SGK_TAHAKKUK`]}
+                              onClick={() => openPdf(b.bildirgeRefNo, "tahakkuk")}
+                            >
                               <FileText className="h-3.5 w-3.5 mr-1" />
                               T
                             </Button>
                           )}
                           {b.hasHizmetPdf && (
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" title="Hizmet Listesi">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 text-xs ${pdfDocumentIds[`${b.bildirgeRefNo}_HIZMET_LISTESI`] ? "text-emerald-600 hover:text-emerald-700" : ""}`}
+                              title="Hizmet Listesi"
+                              disabled={!pdfDocumentIds[`${b.bildirgeRefNo}_HIZMET_LISTESI`]}
+                              onClick={() => openPdf(b.bildirgeRefNo, "hizmet")}
+                            >
                               <FileText className="h-3.5 w-3.5 mr-1" />
                               H
                             </Button>

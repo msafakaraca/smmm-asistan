@@ -2632,7 +2632,6 @@ function connectWebSocket(token: string) {
                     endMonth: data.endMonth as number,
                     endYear: data.endYear as number,
                     captchaApiKey: data.captchaApiKey as string | undefined,
-                    ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
                     downloadPdfs: data.downloadPdfs !== false,
                     onProgress: (progressData) => {
                         if (wsClient?.connected) {

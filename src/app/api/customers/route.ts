@@ -60,6 +60,8 @@ export async function GET(request: Request) {
                     edevletSifre: true,
                     turmobKullaniciAdi: true,
                     turmobSifre: true,
+                    sgkKullaniciAdi: true,
+                    sgkSistemSifresi: true,
                 },
                 orderBy: [
                     { sirketTipi: 'asc' },
@@ -79,6 +81,7 @@ export async function GET(request: Request) {
                 hasGibCredentials: !!(c.gibKodu && c.gibSifre),
                 hasEdevletCredentials: !!(c.edevletTckn && c.edevletSifre),
                 hasTurmobCredentials: !!(c.turmobKullaniciAdi && c.turmobSifre),
+                hasSgkCredentials: !!(c.sgkKullaniciAdi && c.sgkSistemSifresi),
             }));
 
             return NextResponse.json(customersWithFlags);

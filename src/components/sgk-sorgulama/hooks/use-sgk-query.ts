@@ -32,10 +32,6 @@ export interface BildirgeItem {
 export interface IsyeriInfo {
   sicilNo: string;
   unvan: string;
-  adres: string;
-  sgmKodAd: string;
-  kanunKapsaminaAlinis: string;
-  primOran: string;
   isyeriTipi: string;
 }
 
@@ -58,6 +54,7 @@ interface SgkQueryState {
   saveProgress: { saved: number; skipped: number; failed: number; total: number };
   downloadedRefNos: string[];
   isPipelineActive: boolean;
+  pdfDocumentIds: Record<string, string>;
 }
 
 export interface UseSgkQueryReturn extends SgkQueryState {
@@ -65,6 +62,7 @@ export interface UseSgkQueryReturn extends SgkQueryState {
   clearResults: () => void;
   pdfPreview: PdfPreviewInfo | null;
   closePdfPreview: () => void;
+  openPdf: (bildirgeRefNo: string, type: "tahakkuk" | "hizmet") => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -75,14 +73,13 @@ type Action =
   | { type: "QUERY_START" }
   | { type: "PROGRESS"; payload: { status: string; customerName?: string } }
   | { type: "RESULTS"; payload: { bildirgeler: BildirgeItem[]; isyeriInfo: IsyeriInfo | null } }
-  | { type: "COMPLETE"; payload: { totalCount: number } }
   | { type: "ERROR"; payload: { error: string; errorCode: string } }
   | { type: "CLEAR" }
   | { type: "PDF_LOADING"; payload: { refNo: string } }
   | { type: "PDF_DONE" }
   | { type: "PIPELINE_PDF_PROGRESS"; payload: { downloadedCount: number; totalCount: number; fileCategory: string; bildirgeRefNo: string } }
   | { type: "PIPELINE_COMPLETE"; payload: { totalDownloaded: number; totalFailed: number; totalSkipped: number } }
-  | { type: "STREAM_SAVE_RESULT"; payload: { bildirgeRefNo: string; saved?: boolean; skipped?: boolean; success?: boolean } }
+  | { type: "STREAM_SAVE_RESULT"; payload: { bildirgeRefNo: string; fileCategory?: string; documentId?: string; saved?: boolean; skipped?: boolean; success?: boolean } }
   | { type: "ALL_SAVES_COMPLETE" };
 
 const initialState: SgkQueryState = {
@@ -97,6 +94,7 @@ const initialState: SgkQueryState = {
   saveProgress: { saved: 0, skipped: 0, failed: 0, total: 0 },
   downloadedRefNos: [],
   isPipelineActive: false,
+  pdfDocumentIds: {},
 };
 
 function reducer(state: SgkQueryState, action: Action): SgkQueryState {
@@ -122,14 +120,6 @@ function reducer(state: SgkQueryState, action: Action): SgkQueryState {
         ...state,
         bildirgeler: action.payload.bildirgeler,
         isyeriInfo: action.payload.isyeriInfo,
-      };
-
-    case "COMPLETE":
-      return {
-        ...state,
-        isLoading: false,
-        queryDone: true,
-        progress: { status: "Sorgulama tamamlandı", customerName: state.progress.customerName },
       };
 
     case "ERROR":
@@ -176,10 +166,14 @@ function reducer(state: SgkQueryState, action: Action): SgkQueryState {
     case "STREAM_SAVE_RESULT": {
       const sp = { ...state.saveProgress };
       const newDownloaded = [...state.downloadedRefNos];
+      const newDocIds = { ...state.pdfDocumentIds };
 
       if (action.payload.saved || action.payload.success) {
         sp.saved++;
         newDownloaded.push(action.payload.bildirgeRefNo);
+        if (action.payload.documentId && action.payload.fileCategory) {
+          newDocIds[`${action.payload.bildirgeRefNo}_${action.payload.fileCategory}`] = action.payload.documentId;
+        }
       } else if (action.payload.skipped) {
         sp.skipped++;
         newDownloaded.push(action.payload.bildirgeRefNo);
@@ -191,6 +185,7 @@ function reducer(state: SgkQueryState, action: Action): SgkQueryState {
         ...state,
         saveProgress: sp,
         downloadedRefNos: newDownloaded,
+        pdfDocumentIds: newDocIds,
       };
     }
 
@@ -200,6 +195,7 @@ function reducer(state: SgkQueryState, action: Action): SgkQueryState {
         ...state,
         isPipelineActive: false,
         isLoading: false,
+        queryDone: true,
         progress: {
           status: `Tamamlandı: ${sp.saved} PDF kaydedildi${sp.skipped > 0 ? `, ${sp.skipped} atlandı` : ""}${sp.failed > 0 ? `, ${sp.failed} başarısız` : ""}`,
           customerName: state.progress.customerName,
@@ -223,61 +219,98 @@ export function useSgkQuery(): UseSgkQueryReturn {
   const userIdRef = useRef<string | null>(null);
   const pendingQueryRef = useRef<{ customerId: string } | null>(null);
 
-  // Aktif stream save sayacı
-  const activeSavesRef = useRef(0);
+  // Pipeline state refs
   const pipelineCompleteRef = useRef(false);
+
+  // Bildirge listesi ref (WS handler'dan erişim için)
+  const bildirgeRef = useRef<BildirgeItem[]>([]);
+  const pdfCountRef = useRef(0);
+
+  // Bulk save: PDF'leri kısa debounce ile toplayıp toplu gönder
+  interface PdfSaveItem {
+    pdfBase64: string;
+    bildirgeRefNo: string;
+    belgeTuru: string;
+    belgeMahiyeti: string;
+    hizmetDonem: string;
+    fileCategory: string;
+  }
+  const pdfBufferRef = useRef<PdfSaveItem[]>([]);
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeBulkSavesRef = useRef(0);
 
   // PDF dialog state
   const [pdfPreview, setPdfPreview] = useState<PdfPreviewInfo | null>(null);
 
-  // Pipeline tamamlandığında ve tüm save'ler bittiyse final dispatch
-  const checkAllSavesComplete = useCallback(() => {
-    if (pipelineCompleteRef.current && activeSavesRef.current <= 0) {
+  // Pipeline + tüm save'ler bittiyse final dispatch
+  const checkAllDone = useCallback(() => {
+    if (pipelineCompleteRef.current && activeBulkSavesRef.current <= 0 && pdfBufferRef.current.length === 0) {
       dispatch({ type: "ALL_SAVES_COMPLETE" });
     }
   }, []);
 
-  // Fire-and-forget stream save
-  const streamSavePdf = useCallback(
-    (data: {
-      customerId: string;
-      pdfBase64: string;
-      bildirgeRefNo: string;
-      belgeTuru: string;
-      belgeMahiyeti: string;
-      hizmetDonem: string;
-      fileCategory: string;
-    }) => {
-      activeSavesRef.current++;
+  // Bulk save gönder — fire-and-forget
+  const fireBulkSave = useCallback(
+    (customerId: string, batch: PdfSaveItem[]) => {
+      if (batch.length === 0) return;
+      activeBulkSavesRef.current++;
 
-      fetch("/api/sgk/ebildirge-stream-save", {
+      fetch("/api/sgk/ebildirge-bulk-save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ customerId, items: batch }),
       })
         .then((r) => r.json())
-        .then((result) => {
-          dispatch({
-            type: "STREAM_SAVE_RESULT",
-            payload: {
-              bildirgeRefNo: data.bildirgeRefNo,
-              saved: result.success && !result.skipped,
-              skipped: result.skipped,
-            },
-          });
+        .then((data) => {
+          if (data.results && Array.isArray(data.results)) {
+            for (const result of data.results) {
+              dispatch({
+                type: "STREAM_SAVE_RESULT",
+                payload: {
+                  bildirgeRefNo: result.bildirgeRefNo,
+                  fileCategory: result.fileCategory,
+                  documentId: result.documentId,
+                  saved: result.success && !result.skipped,
+                  skipped: result.skipped,
+                },
+              });
+            }
+          }
         })
         .catch(() => {
-          dispatch({
-            type: "STREAM_SAVE_RESULT",
-            payload: { bildirgeRefNo: data.bildirgeRefNo },
-          });
+          for (const item of batch) {
+            dispatch({
+              type: "STREAM_SAVE_RESULT",
+              payload: { bildirgeRefNo: item.bildirgeRefNo, fileCategory: item.fileCategory },
+            });
+          }
         })
         .finally(() => {
-          activeSavesRef.current--;
-          checkAllSavesComplete();
+          activeBulkSavesRef.current--;
+          checkAllDone();
         });
     },
-    [checkAllSavesComplete]
+    [checkAllDone]
+  );
+
+  // PDF geldiğinde buffer'a ekle, 150ms debounce ile toplu gönder
+  const FLUSH_DEBOUNCE = 150;
+
+  const bufferPdf = useCallback(
+    (customerId: string, item: PdfSaveItem) => {
+      pdfBufferRef.current.push(item);
+
+      // Debounce: 150ms içinde yeni PDF gelirse timer sıfırlanır, gelmezse flush
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = setTimeout(() => {
+        flushTimerRef.current = null;
+        if (pdfBufferRef.current.length > 0) {
+          const batch = pdfBufferRef.current.splice(0);
+          fireBulkSave(customerId, batch);
+        }
+      }, FLUSH_DEBOUNCE);
+    },
+    [fireBulkSave]
   );
 
   // Cleanup
@@ -337,6 +370,7 @@ export function useSgkQuery(): UseSgkQueryReturn {
 
               case "sgk:ebildirge-results":
                 if (data.bildirgeler && Array.isArray(data.bildirgeler)) {
+                  bildirgeRef.current = data.bildirgeler;
                   dispatch({
                     type: "RESULTS",
                     payload: {
@@ -345,16 +379,6 @@ export function useSgkQuery(): UseSgkQueryReturn {
                     },
                   });
                 }
-                break;
-
-              case "sgk:ebildirge-complete":
-                dispatch({
-                  type: "COMPLETE",
-                  payload: { totalCount: data.totalCount || 0 },
-                });
-                toast.success(
-                  `${data.customerName || "Mükellef"} için ${data.totalCount || 0} bildirge bulundu`
-                );
                 break;
 
               case "sgk:ebildirge-error":
@@ -370,54 +394,78 @@ export function useSgkQuery(): UseSgkQueryReturn {
                 break;
 
               case "sgk:ebildirge-pdf-result": {
+                // Electron bot'tan gelen alanlar: bildirgeRefNo, tip, donem, pdfBase64, fileName, success
+                const fileCategory = data.tip === "tahakkuk" ? "SGK_TAHAKKUK" : "HIZMET_LISTESI";
+                const bildirge = bildirgeRef.current.find(
+                  (b: BildirgeItem) => b.bildirgeRefNo === data.bildirgeRefNo
+                );
+
+                // PDF sayacını artır
+                pdfCountRef.current++;
+                const totalPdfCount = bildirgeRef.current.reduce((count: number, b: BildirgeItem) => {
+                  if (b.hasTahakkukPdf) count++;
+                  if (b.hasHizmetPdf) count++;
+                  return count;
+                }, 0);
+
                 // Progress güncelle
                 dispatch({
                   type: "PIPELINE_PDF_PROGRESS",
                   payload: {
-                    downloadedCount: data.downloadedCount || 0,
-                    totalCount: data.totalCount || 0,
-                    fileCategory: data.fileCategory || "",
+                    downloadedCount: pdfCountRef.current,
+                    totalCount: totalPdfCount,
+                    fileCategory,
                     bildirgeRefNo: data.bildirgeRefNo || "",
                   },
                 });
 
-                // Fire-and-forget stream save
+                // PDF buffer'a ekle — 150ms debounce ile toplu kaydedilecek
                 const customerId = pendingQueryRef.current?.customerId || "";
                 if (data.pdfBase64 && customerId) {
-                  streamSavePdf({
-                    customerId,
+                  bufferPdf(customerId, {
                     pdfBase64: data.pdfBase64,
                     bildirgeRefNo: data.bildirgeRefNo || "",
-                    belgeTuru: data.belgeTuru || "",
-                    belgeMahiyeti: data.belgeMahiyeti || "",
-                    hizmetDonem: data.hizmetDonem || "",
-                    fileCategory: data.fileCategory || "",
+                    belgeTuru: bildirge?.belgeTuru || "",
+                    belgeMahiyeti: bildirge?.belgeMahiyeti || "",
+                    hizmetDonem: data.donem || "",
+                    fileCategory,
                   });
                 }
                 break;
               }
 
               case "sgk:ebildirge-pdf-skip":
-                console.log(`[SGK-PDF] Atlandı: ${data.bildirgeRefNo} — ${data.error}`);
+                console.log(`[SGK-PDF] Atlandı: ${data.bildirgeRefNo} (${data.tip}) — ${data.reason || data.error || "bilinmeyen neden"}`);
                 break;
 
               case "sgk:ebildirge-pipeline-complete": {
+                // Electron bot'tan gelen alanlar: success, totalBildirgeler, totalPdfs, downloadedPdfs, failedPdfs
                 dispatch({
                   type: "PIPELINE_COMPLETE",
                   payload: {
-                    totalDownloaded: data.totalDownloaded || 0,
-                    totalFailed: data.totalFailed || 0,
-                    totalSkipped: data.totalSkipped || 0,
+                    totalDownloaded: data.downloadedPdfs || 0,
+                    totalFailed: data.failedPdfs || 0,
+                    totalSkipped: 0,
                   },
                 });
 
                 pipelineCompleteRef.current = true;
+
+                // Kalan buffer'ı hemen flush et (debounce beklemeden)
+                if (flushTimerRef.current) { clearTimeout(flushTimerRef.current); flushTimerRef.current = null; }
+                const cId = pendingQueryRef.current?.customerId || "";
+                if (pdfBufferRef.current.length > 0) {
+                  const batch = pdfBufferRef.current.splice(0);
+                  fireBulkSave(cId, batch);
+                }
+
                 // Tüm save'ler bittiyse hemen tamamla
-                if (activeSavesRef.current <= 0) {
+                if (activeBulkSavesRef.current <= 0) {
                   dispatch({ type: "ALL_SAVES_COMPLETE" });
                   pendingQueryRef.current = null;
-                  const msg = data.totalDownloaded > 0
-                    ? `${data.totalDownloaded} SGK PDF'i kaydedildi`
+                  const downloaded = data.downloadedPdfs || 0;
+                  const msg = downloaded > 0
+                    ? `${downloaded} SGK PDF'i kaydedildi`
                     : "Tüm SGK PDF'leri zaten mevcut";
                   toast.success(msg);
                 }
@@ -456,7 +504,7 @@ export function useSgkQuery(): UseSgkQueryReturn {
         wsRef.current.close();
       }
     };
-  }, [streamSavePdf]);
+  }, [bufferPdf, fireBulkSave]);
 
   const startQuery = useCallback(
     async (customerId: string, basAy: string, basYil: string, bitAy: string, bitYil: string) => {
@@ -465,7 +513,11 @@ export function useSgkQuery(): UseSgkQueryReturn {
       dispatch({ type: "QUERY_START" });
       pendingQueryRef.current = { customerId };
       pipelineCompleteRef.current = false;
-      activeSavesRef.current = 0;
+      activeBulkSavesRef.current = 0;
+      pdfBufferRef.current = [];
+      if (flushTimerRef.current) { clearTimeout(flushTimerRef.current); flushTimerRef.current = null; }
+      pdfCountRef.current = 0;
+      bildirgeRef.current = [];
 
       try {
         const response = await fetch("/api/sgk/ebildirge", {
@@ -510,11 +562,27 @@ export function useSgkQuery(): UseSgkQueryReturn {
     setPdfPreview(null);
   }, [pdfPreview?.blobUrl]);
 
+  const openPdf = useCallback(
+    (bildirgeRefNo: string, type: "tahakkuk" | "hizmet") => {
+      const fileCategory = type === "tahakkuk" ? "SGK_TAHAKKUK" : "HIZMET_LISTESI";
+      const key = `${bildirgeRefNo}_${fileCategory}`;
+      const documentId = state.pdfDocumentIds[key];
+
+      if (documentId) {
+        window.open(`/api/files/view?id=${documentId}`, "_blank");
+      } else {
+        toast.error("PDF henüz kaydedilmedi veya bulunamadı");
+      }
+    },
+    [state.pdfDocumentIds]
+  );
+
   return {
     ...state,
     startQuery,
     clearResults,
     pdfPreview,
     closePdfPreview,
+    openPdf,
   };
 }
