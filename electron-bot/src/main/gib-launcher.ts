@@ -10,9 +10,13 @@ import type { Browser, Page } from 'puppeteer';
 import { screen, BrowserWindow } from 'electron';
 import { exec } from 'child_process';
 import { getChromiumPath } from './chromium-path';
+import { solveCaptchaLocal } from './captcha-local';
 
 // Aktif browser instance - memory leak önleme
 let activeBrowser: Browser | null = null;
+// Hazır sayfa — gib:prepare ile önceden açılır, gib:launch gelince kullanılır
+let preparedPage: Page | null = null;
+let prepareInProgress = false;
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -75,7 +79,56 @@ const GIB_CONFIG = {
     BETWEEN_INPUTS: 50,
     POPUP_OPEN: 500,
     PAGE_TRANSITION: 800,
-  }
+  },
+
+  CAPTCHA: {
+    MAX_RETRY: 5,
+    // Captcha görseli selector'ları (GİB MUI React form)
+    IMAGE_SELECTORS: [
+      'img[alt*="captcha" i]',
+      'img[alt*="Captcha" i]',
+      'img[alt*="güvenlik" i]',
+      'img[alt*="doğrulama" i]',
+      'img.captcha-image',
+      'img[src*="captcha"]',
+      'img[src^="data:image"]',
+      '.captcha img',
+      '#captchaImage',
+    ],
+    // Captcha input selector'ları
+    INPUT_SELECTORS: [
+      'input#dk',
+      'input[name="dk"]',
+      'input[id="dk"]',
+      'input#captchaInput',
+      'input[name="captcha"]',
+      'input[name="captchaInput"]',
+      'input[placeholder*="güvenlik" i]',
+      'input[placeholder*="doğrulama" i]',
+      'input[placeholder*="Güvenlik" i]',
+      'input[placeholder*="Doğrulama" i]',
+      'input[placeholder*="kodu" i]',
+      'input[placeholder*="Kod" i]',
+    ],
+    // Login butonu selector'ları
+    BUTTON_SELECTORS: [
+      'button[type="submit"]',
+      'button.login-button',
+      'button.MuiButton-containedPrimary',
+      'button.MuiButton-root[type="submit"]',
+      'button:has(span:contains("Giriş"))',
+      'button span',
+    ],
+    // Captcha yenile butonu selector'ları
+    REFRESH_SELECTORS: [
+      'button[aria-label*="yenile" i]',
+      'button[aria-label*="refresh" i]',
+      'button.captcha-refresh',
+      'img[alt*="yenile" i]',
+      '.refresh-captcha',
+      'svg[data-testid="RefreshIcon"]',
+    ],
+  },
 };
 
 /**
@@ -94,7 +147,7 @@ const APP_CONFIG: Record<GibApplication, {
   ivd: {
     imgAlt: 'İnternet Vergi Dairesi',
     text: 'İnternet Vergi Dairesi',
-    apiEndpoint: '/apigateway/auth/tdvd/invd-login',
+    apiEndpoint: '/apigateway/auth/tdvd/intvrg-login',
     displayName: 'İnternet Vergi Dairesi',
   },
   interaktifvd: {
@@ -310,6 +363,114 @@ async function cleanupPreviousBrowser(): Promise<void> {
       console.log('[GIB-LAUNCHER] Önceki tarayıcı zaten kapalı');
     }
     activeBrowser = null;
+    preparedPage = null;
+  }
+}
+
+/**
+ * ⚡ Puppeteer'ı önceden başlat ve login sayfasını yükle.
+ * gib:prepare sinyali ile çağrılır — credentials gelmeden tarayıcı hazır olur.
+ */
+export async function prepareGibBrowser(
+  onProgress: (status: string) => void,
+): Promise<void> {
+  // Zaten hazırlık yapılıyorsa veya hazır sayfa varsa atla
+  if (prepareInProgress) {
+    console.log('[GIB-LAUNCHER] ⚡ Hazırlık zaten devam ediyor, atlanıyor');
+    return;
+  }
+  if (preparedPage && activeBrowser?.connected) {
+    console.log('[GIB-LAUNCHER] ⚡ Tarayıcı zaten hazır');
+    return;
+  }
+
+  prepareInProgress = true;
+  const t0 = Date.now();
+
+  try {
+    await cleanupPreviousBrowser();
+
+    onProgress('⚡ Tarayıcı başlatılıyor...');
+
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
+    const chromiumPath = getChromiumPath();
+
+    // Electron penceresi minimize
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow && mainWindow.isVisible() && !mainWindow.isMinimized()) {
+      mainWindow.minimize();
+    }
+
+    const browser = await puppeteer.launch({
+      headless: false,
+      defaultViewport: null,
+      executablePath: chromiumPath,
+      ignoreDefaultArgs: ['--enable-automation'],
+      args: [
+        '--start-maximized',
+        '--window-position=0,0',
+        `--window-size=${width},${height}`,
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=CalculateNativeWinOcclusion',
+        '--no-first-run',
+        '--disable-hang-monitor',
+        '--force-device-scale-factor=1',
+        '--new-window',
+        '--disable-session-crashed-bubble',
+        '--disable-infobars',
+        '--disable-extensions',
+        '--disable-component-extensions-with-background-pages',
+      ],
+    });
+
+    activeBrowser = browser;
+
+    browser.on('disconnected', () => {
+      if (activeBrowser === browser) {
+        activeBrowser = null;
+        preparedPage = null;
+      }
+    });
+
+    const pages = await browser.pages();
+    const page = pages[0] || await browser.newPage();
+
+    // CDP maximize
+    try {
+      const session = await page.target().createCDPSession();
+      const { windowId } = await session.send('Browser.getWindowForTarget');
+      await session.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal' } });
+      await new Promise(r => setTimeout(r, 100));
+      await session.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'maximized' } });
+      await session.detach();
+    } catch { /* ignore */ }
+
+    const browserPid = browser.process()?.pid;
+    await page.bringToFront();
+    await bringBrowserWindowToFront(browserPid);
+
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+
+    // Login sayfasını yükle — credentials geldiğinde form hazır olacak
+    onProgress('⚡ GİB giriş sayfası yükleniyor...');
+    await page.goto(GIB_CONFIG.LOGIN_URL, {
+      waitUntil: 'domcontentloaded',
+      timeout: GIB_CONFIG.TIMEOUTS.PAGE_LOAD,
+    });
+
+    preparedPage = page;
+    console.log(`[GIB-LAUNCHER] ⚡ Tarayıcı hazır! (${Date.now() - t0}ms)`);
+    onProgress('⚡ Tarayıcı hazır, giriş bilgileri bekleniyor...');
+
+  } catch (e) {
+    console.error('[GIB-LAUNCHER] ⚡ Prepare hatası:', e);
+  } finally {
+    prepareInProgress = false;
   }
 }
 
@@ -362,6 +523,287 @@ async function fillInput(page: Page, selectors: string[], value: string, fieldNa
 
   console.warn(`[GIB-LAUNCHER] ⚠️ ${fieldName} input bulunamadı!`);
   return false;
+}
+
+/**
+ * Sayfadaki captcha görselini base64 olarak al.
+ * img src data:image veya canvas ile çıkarım yapar.
+ */
+async function extractCaptchaImage(page: Page): Promise<string | null> {
+  const selectors = GIB_CONFIG.CAPTCHA.IMAGE_SELECTORS;
+
+  for (const selector of selectors) {
+    try {
+      const el = await page.$(selector);
+      if (!el) continue;
+
+      // img elementinin src'sini al
+      const src = await page.evaluate(
+        (imgEl) => {
+          if (!imgEl || imgEl.tagName !== 'IMG') return null;
+          const img = imgEl as HTMLImageElement;
+          // data:image base64 ise direkt döndür
+          if (img.src?.startsWith('data:image')) {
+            return img.src;
+          }
+          // Blob URL veya normal URL ise canvas ile çıkar
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            if (canvas.width === 0 || canvas.height === 0) return null;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png');
+          } catch {
+            return null;
+          }
+        },
+        el,
+      );
+
+      if (src && src.length > 100) {
+        console.log(`[GIB-LAUNCHER] Captcha görseli bulundu (${selector})`);
+        return src;
+      }
+    } catch {
+      // Sonraki selector'ı dene
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Captcha yenile butonuna tıkla
+ */
+async function refreshCaptcha(page: Page): Promise<boolean> {
+  const selectors = GIB_CONFIG.CAPTCHA.REFRESH_SELECTORS;
+
+  for (const selector of selectors) {
+    try {
+      const el = await page.$(selector);
+      if (!el) continue;
+
+      // Tıklama öncesi parent button'u bul (SVG icon olabilir)
+      const clicked = await page.evaluate((s: string) => {
+        const element = document.querySelector(s);
+        if (!element) return false;
+        // Element veya en yakın button parent'ına tıkla
+        const btn = element.closest('button') || element.closest('[role="button"]') || element;
+        (btn as HTMLElement).click();
+        return true;
+      }, selector);
+
+      if (clicked) {
+        console.log(`[GIB-LAUNCHER] Captcha yenilendi (${selector})`);
+        await new Promise(r => setTimeout(r, 1000)); // Yeni captcha yüklenmesini bekle
+        return true;
+      }
+    } catch {
+      // Sonraki selector'ı dene
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Login butonuna tıkla
+ */
+async function clickLoginButton(page: Page): Promise<boolean> {
+  const selectors = GIB_CONFIG.CAPTCHA.BUTTON_SELECTORS;
+
+  // Önce normal selector'ları dene
+  for (const selector of selectors) {
+    try {
+      const el = await page.$(selector);
+      if (!el) continue;
+
+      await el.click();
+      console.log(`[GIB-LAUNCHER] Login butonuna tıklandı (${selector})`);
+      return true;
+    } catch {
+      // Sonraki selector'ı dene
+    }
+  }
+
+  // Fallback: "Giriş" veya "GİRİŞ" metnini içeren butonu bul
+  const clicked = await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    for (const btn of buttons) {
+      const text = (btn.textContent || '').trim().toLowerCase();
+      if (text.includes('giriş') || text.includes('giris') || text === 'gir') {
+        btn.click();
+        return true;
+      }
+    }
+    // Span içinde "Giriş" yazısı olan butonları da kontrol et
+    const spans = Array.from(document.querySelectorAll('button span'));
+    for (const span of spans) {
+      const text = (span.textContent || '').trim().toLowerCase();
+      if (text.includes('giriş') || text.includes('giris')) {
+        const btn = span.closest('button');
+        if (btn) {
+          (btn as HTMLElement).click();
+          return true;
+        }
+      }
+    }
+    return false;
+  });
+
+  if (clicked) {
+    console.log('[GIB-LAUNCHER] Login butonuna tıklandı (text fallback)');
+    return true;
+  }
+
+  console.warn('[GIB-LAUNCHER] ⚠️ Login butonu bulunamadı!');
+  return false;
+}
+
+/**
+ * Login sonrası sonuç kontrolü.
+ * URL değişimini dinler — sabit bekleme yok.
+ * URL değiştiyse başarılı, değişmediyse hata mesajını okur.
+ */
+async function checkLoginError(page: Page): Promise<{ hasError: boolean; isCaptchaError: boolean; message: string }> {
+  // URL değişimini bekle (max 3s) — sabit sleep yok
+  try {
+    await page.waitForFunction(
+      () => {
+        const url = window.location.pathname;
+        return !url.includes('/login') && !url.includes('/portal/login');
+      },
+      { timeout: 3000 }
+    );
+    // URL değişti → başarılı giriş
+    return { hasError: false, isCaptchaError: false, message: '' };
+  } catch {
+    // URL değişmedi → hata var, sayfadaki mesajı oku
+  }
+
+  const errorInfo = await page.evaluate(() => {
+    const errorSelectors = [
+      '.MuiAlert-message', '.MuiAlert-root', '.MuiSnackbar-root',
+      '.error-message', '.login-error', '[role="alert"]',
+      '.MuiFormHelperText-root.Mui-error', '.MuiTypography-colorError',
+    ];
+    for (const sel of errorSelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const text = (el.textContent || '').trim();
+        if (text.length > 0) return text;
+      }
+    }
+    return '';
+  });
+
+  if (!errorInfo) {
+    return { hasError: false, isCaptchaError: false, message: '' };
+  }
+
+  const lower = errorInfo.toLowerCase();
+  const isCaptchaError = lower.includes('captcha') || lower.includes('güvenlik kodu') ||
+    lower.includes('guvenlik kodu') || lower.includes('doğrulama kodu') ||
+    lower.includes('dogrulama kodu') || lower.includes('hatalı kod') || lower.includes('hatali kod');
+
+  return { hasError: true, isCaptchaError, message: errorInfo };
+}
+
+/**
+ * Sayfadaki captcha'yı otomatik çöz ve giriş yap.
+ * ddddocr lokal ONNX model kullanır (~10ms).
+ * Başarısız olursa yeni captcha ister ve tekrar dener (max MAX_RETRY).
+ */
+async function solveCaptchaAndLogin(
+  page: Page,
+  onProgress: (status: string) => void,
+): Promise<{ success: boolean; error?: string }> {
+  const maxRetry = GIB_CONFIG.CAPTCHA.MAX_RETRY;
+
+  for (let attempt = 1; attempt <= maxRetry; attempt++) {
+    onProgress(`Doğrulama kodu çözülüyor (${attempt}/${maxRetry})...`);
+
+    // 1. Captcha görselini sayfadan çek
+    const captchaBase64 = await extractCaptchaImage(page);
+    if (!captchaBase64) {
+      console.log(`[GIB-LAUNCHER] Captcha görseli bulunamadı (deneme ${attempt})`);
+      if (attempt < maxRetry) {
+        // Captcha görseli henüz yüklenmemiş olabilir, bekle
+        await new Promise(r => setTimeout(r, 500));
+        continue;
+      }
+      return { success: false, error: 'Captcha görseli sayfada bulunamadı' };
+    }
+
+    // 2. ddddocr ile çöz
+    const cleanBase64 = captchaBase64.replace(/^data:image\/\w+;base64,/, '');
+    const solution = await solveCaptchaLocal(cleanBase64);
+
+    if (!solution) {
+      console.log(`[GIB-LAUNCHER] Captcha çözülemedi (deneme ${attempt})`);
+      if (attempt < maxRetry) {
+        await refreshCaptcha(page);
+        continue;
+      }
+      return { success: false, error: 'Captcha çözülemedi' };
+    }
+
+    console.log(`[GIB-LAUNCHER] Captcha çözüldü: ${solution} (deneme ${attempt})`);
+    onProgress(`Doğrulama kodu girildi: ${solution}`);
+
+    // 3. Captcha input'una yaz
+    const captchaFilled = await fillInput(
+      page,
+      GIB_CONFIG.CAPTCHA.INPUT_SELECTORS,
+      solution,
+      'Doğrulama kodu',
+    );
+
+    if (!captchaFilled) {
+      console.log(`[GIB-LAUNCHER] Captcha input bulunamadı (deneme ${attempt})`);
+      if (attempt < maxRetry) {
+        await new Promise(r => setTimeout(r, 300));
+        continue;
+      }
+      return { success: false, error: 'Doğrulama kodu alanı bulunamadı' };
+    }
+
+    // 4. Login butonuna tıkla
+    await new Promise(r => setTimeout(r, 100)); // React state güncellemesini bekle
+    const loginClicked = await clickLoginButton(page);
+
+    if (!loginClicked) {
+      return { success: false, error: 'Giriş butonu bulunamadı' };
+    }
+
+    // 5. Login sonucu kontrol et
+    const errorCheck = await checkLoginError(page);
+
+    if (!errorCheck.hasError) {
+      // Başarılı giriş!
+      onProgress('✅ Giriş başarılı!');
+      return { success: true };
+    }
+
+    if (errorCheck.isCaptchaError) {
+      console.log(`[GIB-LAUNCHER] Captcha hatası: ${errorCheck.message} (deneme ${attempt})`);
+      onProgress(`Doğrulama kodu hatalı, yeniden deneniyor (${attempt}/${maxRetry})...`);
+      if (attempt < maxRetry) {
+        // Captcha'yı yenile ve tekrar dene
+        await refreshCaptcha(page);
+        continue;
+      }
+    } else {
+      // Captcha dışı hata (yanlış şifre, vb.)
+      console.log(`[GIB-LAUNCHER] Giriş hatası: ${errorCheck.message}`);
+      return { success: false, error: errorCheck.message };
+    }
+  }
+
+  return { success: false, error: `${maxRetry} denemede captcha çözülemedi` };
 }
 
 /**
@@ -636,7 +1078,90 @@ async function handleVergiLevhasi(
 }
 
 /**
- * GİB uygulamasını başlatan ana fonksiyon
+ * GİB login akışı — form doldur + captcha çöz + giriş yap.
+ * Tarayıcıdaki login sayfasında otomatik giriş yapar.
+ */
+async function performGibLogin(
+  page: Page,
+  userid: string,
+  password: string,
+  onProgress: (status: string) => void,
+  skipPageLoad = false,
+): Promise<{ success: boolean; error?: string }> {
+  if (!skipPageLoad) {
+    onProgress('GİB giriş sayfası yükleniyor...');
+    await page.goto(GIB_CONFIG.LOGIN_URL, {
+      waitUntil: 'domcontentloaded',
+      timeout: GIB_CONFIG.TIMEOUTS.PAGE_LOAD,
+    });
+  }
+
+  // Form yüklenmesini bekle
+  try {
+    await page.waitForSelector('input#userid', { timeout: 5000, visible: true });
+  } catch {
+    await new Promise(r => setTimeout(r, GIB_CONFIG.DELAYS.FORM_READY));
+  }
+
+  onProgress('Giriş bilgileri dolduruluyor...');
+
+  const useridSelectors = [
+    'input#userid', 'input[id="userid"]', 'input[name="userid"]',
+    '.MuiInputBase-input[name="userid"]', '.MuiOutlinedInput-input[name="userid"]',
+    'input[placeholder*="T.C. Kimlik"]', 'input[placeholder*="Vergi Kimlik"]',
+    'input[placeholder*="Kullanıcı Kodu"]', 'input[formcontrolname="userid"]', '#mat-input-0',
+  ];
+
+  const passwordSelectors = [
+    'input#sifre', 'input[id="sifre"]', 'input[name="sifre"]',
+    'input[type="password"][name="sifre"]', 'input[type="password"][id="sifre"]',
+    '.MuiInputBase-input[name="sifre"]', '.MuiOutlinedInput-input[type="password"]',
+    'input[placeholder*="Şifrenizi yazınız"]', 'input[placeholder*="şifre"]',
+    'input[formcontrolname="sifre"]', 'input[type="password"]',
+  ];
+
+  // Kullanıcı adı ve şifre paralel doldur
+  const [useridFilled, passwordFilled] = await Promise.all([
+    fillInput(page, useridSelectors, userid, 'Kullanıcı adı'),
+    fillInput(page, passwordSelectors, password, 'Şifre'),
+  ]);
+
+  if (!useridFilled || !passwordFilled) {
+    onProgress('⚠️ Form alanları bulunamadı. Lütfen manuel olarak doldurun.');
+    return { success: false, error: 'Form alanları bulunamadı' };
+  }
+
+  onProgress('✅ Bilgiler girildi! Doğrulama kodu çözülüyor...');
+
+  // Captcha görselinin render edilmesini bekle (minimal)
+  await new Promise(r => setTimeout(r, 200));
+
+  // Otomatik captcha çözümü + login
+  const captchaResult = await solveCaptchaAndLogin(page, onProgress);
+
+  if (!captchaResult.success) {
+    onProgress(`⚠️ Otomatik giriş başarısız: ${captchaResult.error || 'Bilinmeyen hata'}. Manuel giriş bekleniyor...`);
+
+    // Manuel giriş bekle (3 dakika)
+    try {
+      await page.waitForFunction(
+        () => {
+          const url = window.location.pathname;
+          return !url.includes('/login') && !url.includes('/portal/login');
+        },
+        { timeout: GIB_CONFIG.TIMEOUTS.LOGIN_WAIT }
+      );
+    } catch {
+      return { success: false, error: 'Giriş süresi doldu' };
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * GİB uygulamasını başlatan ana fonksiyon.
+ * prepareGibBrowser ile önceden hazırlanmış tarayıcı varsa kullanır.
  */
 export async function launchGibApplication(options: GibLaunchOptions): Promise<GibLaunchResult> {
   const { userid, password, application, targetPage, customerName, vergiLevhasiYil, vergiLevhasiDil, onProgress } = options;
@@ -650,206 +1175,112 @@ export async function launchGibApplication(options: GibLaunchOptions): Promise<G
   let page: Page | null = null;
 
   try {
-    // Önceki browser'ı temizle
-    await cleanupPreviousBrowser();
+    const t0 = Date.now();
 
-    onProgress('Tarayıcı başlatılıyor...');
+    // ⚡ Hazır tarayıcı varsa kullan (gib:prepare ile önceden açılmış)
+    if (preparedPage && activeBrowser?.connected) {
+      browser = activeBrowser;
+      page = preparedPage;
+      preparedPage = null; // Tüketildi
+      console.log(`[GIB-LAUNCHER] ⚡ Hazır tarayıcı kullanıldı! (${Date.now() - t0}ms)`);
 
-    // Dinamik ekran boyutunu al
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width, height } = primaryDisplay.workAreaSize;
-
-    // Paketlenmiş Chromium yolunu al
-    const chromiumPath = getChromiumPath();
-    console.log(`[GIB-LAUNCHER] Chromium path: ${chromiumPath || 'Puppeteer varsayılanı'}`);
-
-    // ⚡ KRİTİK: Sadece görünür ve minimize olmayan pencereyi minimize et
-    // Gizli pencereye minimize() çağrıldığında Windows önce pencereyi gösterir!
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow && mainWindow.isVisible() && !mainWindow.isMinimized()) {
-      console.log('[GIB-LAUNCHER] Electron penceresi minimize ediliyor...');
-      mainWindow.minimize();
-      await new Promise(r => setTimeout(r, 300)); // Minimize animasyonu için bekle
-    }
-
-    // Puppeteer'ın paketlenmiş Chromium'unu kullan
-    browser = await puppeteer.launch({
-      headless: false,
-      defaultViewport: null,
-      executablePath: chromiumPath,
-      ignoreDefaultArgs: ['--enable-automation'],
-      args: [
-        '--start-maximized',
-        '--window-position=0,0',
-        `--window-size=${width},${height}`,
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=CalculateNativeWinOcclusion',
-        '--no-first-run',
-        '--disable-hang-monitor',
-        '--force-device-scale-factor=1',
-        '--new-window',
-        '--disable-session-crashed-bubble',
-        '--disable-infobars',
-        '--disable-extensions',
-        '--disable-component-extensions-with-background-pages',
-      ],
-    });
-
-    // Browser process ID'sini al (PowerShell için)
-    const browserPid = browser.process()?.pid;
-    console.log(`[GIB-LAUNCHER] Chromium başlatıldı, PID: ${browserPid}`);
-
-    // Aktif browser'ı kaydet
-    activeBrowser = browser;
-
-    // Browser kapanınca referansı temizle
-    browser.on('disconnected', () => {
-      console.log('[GIB-LAUNCHER] Tarayıcı kapandı');
-      if (activeBrowser === browser) {
-        activeBrowser = null;
+      // Hazır sayfa zaten login sayfasında — direkt form doldur
+      onProgress('⚡ Giriş bilgileri dolduruluyor...');
+      const loginResult = await performGibLogin(page, userid, password, onProgress, true);
+      if (!loginResult.success) {
+        return { success: false, browserOpen: true, error: loginResult.error };
       }
-    });
+      console.log(`[GIB-LAUNCHER] ⚡ Hazır tarayıcı + login tamamlandı (${Date.now() - t0}ms)`);
 
-    // Yeni sayfa aç
-    const pages = await browser.pages();
-    page = pages[0] || await browser.newPage();
+    } else {
+      // Hazırlık yapılmadı veya prepare henüz bitmedi — bekle veya normal başlat
 
-    // CDP ile pencereyi ön plana getir (agresif yöntem)
-    try {
-      const session = await page.target().createCDPSession();
-      const { windowId } = await session.send('Browser.getWindowForTarget');
+      // Prepare devam ediyorsa kısa bekle (max 3s)
+      if (prepareInProgress) {
+        console.log('[GIB-LAUNCHER] ⏳ Prepare devam ediyor, bekleniyor...');
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 100));
+          if (preparedPage && activeBrowser?.connected) {
+            browser = activeBrowser;
+            page = preparedPage;
+            preparedPage = null;
+            console.log(`[GIB-LAUNCHER] ⚡ Prepare tamamlandı, hazır tarayıcı kullanılıyor (${Date.now() - t0}ms)`);
+            break;
+          }
+        }
+      }
 
-      // 1. Önce normal state'e getir (minimize'dan çıkarmak için)
-      await session.send('Browser.setWindowBounds', {
-        windowId,
-        bounds: { windowState: 'normal' }
-      });
+      if (page) {
+        // Prepare bekleme sonucu hazır sayfa geldi
+        onProgress('⚡ Giriş bilgileri dolduruluyor...');
+        const loginResult = await performGibLogin(page, userid, password, onProgress, true);
+        if (!loginResult.success) {
+          return { success: false, browserOpen: true, error: loginResult.error };
+        }
+        console.log(`[GIB-LAUNCHER] ⚡ Beklenen prepare + login tamamlandı (${Date.now() - t0}ms)`);
+      } else {
+        // Normal soğuk başlangıç
+        await cleanupPreviousBrowser();
+        onProgress('Tarayıcı başlatılıyor...');
 
-      // Kısa delay
-      await new Promise(r => setTimeout(r, 200));
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width, height } = primaryDisplay.workAreaSize;
+        const chromiumPath = getChromiumPath();
 
-      // 2. Sonra maximize et
-      await session.send('Browser.setWindowBounds', {
-        windowId,
-        bounds: { windowState: 'maximized' }
-      });
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow && mainWindow.isVisible() && !mainWindow.isMinimized()) {
+          mainWindow.minimize();
+        }
 
-      await session.detach();
-      console.log('[GIB-LAUNCHER] ✅ Pencere maximize edildi (CDP)');
-    } catch (e) {
-      console.warn('[GIB-LAUNCHER] CDP maximize başarısız:', e);
-    }
+        browser = await puppeteer.launch({
+          headless: false,
+          defaultViewport: null,
+          executablePath: chromiumPath,
+          ignoreDefaultArgs: ['--enable-automation'],
+          args: [
+            '--start-maximized', '--window-position=0,0', `--window-size=${width},${height}`,
+            '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding',
+            '--disable-features=CalculateNativeWinOcclusion', '--no-first-run',
+            '--disable-hang-monitor', '--force-device-scale-factor=1', '--new-window',
+            '--disable-session-crashed-bubble', '--disable-infobars',
+            '--disable-extensions', '--disable-component-extensions-with-background-pages',
+          ],
+        });
 
-    // Sayfayı ön plana getir
-    await page.bringToFront();
+        const browserPid = browser.process()?.pid;
+        console.log(`[GIB-LAUNCHER] Chromium başlatıldı (${Date.now() - t0}ms), PID: ${browserPid}`);
 
-    // Windows API ile pencereyi OS seviyesinde ön plana getir (3 deneme)
-    for (let i = 0; i < 3; i++) {
-      await bringBrowserWindowToFront(browserPid);
-      await new Promise(r => setTimeout(r, 300));
-    }
+        activeBrowser = browser;
+        browser.on('disconnected', () => {
+          if (activeBrowser === browser) { activeBrowser = null; preparedPage = null; }
+        });
 
-    // User agent ayarla
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+        const pages = await browser.pages();
+        page = pages[0] || await browser.newPage();
 
-    // Automation detection bypass
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
+        try {
+          const session = await page.target().createCDPSession();
+          const { windowId } = await session.send('Browser.getWindowForTarget');
+          await session.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal' } });
+          await new Promise(r => setTimeout(r, 100));
+          await session.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'maximized' } });
+          await session.detach();
+        } catch { /* ignore */ }
 
-    onProgress('GİB giriş sayfası yükleniyor...');
+        await page.bringToFront();
+        await bringBrowserWindowToFront(browserPid);
 
-    // Login sayfasına git
-    await page.goto(GIB_CONFIG.LOGIN_URL, {
-      waitUntil: 'domcontentloaded',
-      timeout: GIB_CONFIG.TIMEOUTS.PAGE_LOAD,
-    });
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+        await page.evaluateOnNewDocument(() => {
+          Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        });
 
-    // Pencereyi ön plana getir (sayfa yüklendikten sonra)
-    await page.bringToFront();
-
-    // Windows API ile pencereyi OS seviyesinde ön plana getir (tekrar)
-    await bringBrowserWindowToFront(browserPid);
-
-    // Form elementini bekle (hızlı)
-    try {
-      await page.waitForSelector('input#userid', { timeout: 5000, visible: true });
-      console.log('[GIB-LAUNCHER] ✅ Login form yüklendi');
-    } catch {
-      await new Promise(r => setTimeout(r, GIB_CONFIG.DELAYS.FORM_READY));
-    }
-
-    onProgress('Giriş bilgileri dolduruluyor...');
-
-    // Userid selectors - GİB MUI (Material-UI) React form
-    const useridSelectors = [
-      'input#userid',
-      'input[id="userid"]',
-      'input[name="userid"]',
-      '.MuiInputBase-input[name="userid"]',
-      '.MuiOutlinedInput-input[name="userid"]',
-      'input[placeholder*="T.C. Kimlik"]',
-      'input[placeholder*="Vergi Kimlik"]',
-      'input[placeholder*="Kullanıcı Kodu"]',
-      'input[formcontrolname="userid"]',
-      '#mat-input-0',
-    ];
-
-    // Password selectors - GİB MUI (Material-UI) React form
-    const passwordSelectors = [
-      'input#sifre',
-      'input[id="sifre"]',
-      'input[name="sifre"]',
-      'input[type="password"][name="sifre"]',
-      'input[type="password"][id="sifre"]',
-      '.MuiInputBase-input[name="sifre"]',
-      '.MuiOutlinedInput-input[type="password"]',
-      'input[placeholder*="Şifrenizi yazınız"]',
-      'input[placeholder*="şifre"]',
-      'input[formcontrolname="sifre"]',
-      'input[type="password"]',
-    ];
-
-    // Kullanıcı adı ve şifre AYNI ANDA gir (paralel - çok hızlı)
-    const [useridFilled, passwordFilled] = await Promise.all([
-      fillInput(page, useridSelectors, userid, 'Kullanıcı adı'),
-      fillInput(page, passwordSelectors, password, 'Şifre'),
-    ]);
-
-    if (!useridFilled || !passwordFilled) {
-      onProgress('⚠️ Form alanları bulunamadı. Lütfen manuel olarak doldurun.');
-      return { success: false, browserOpen: true, error: 'Form alanları bulunamadı' };
-    }
-
-    // Doğrulama kodu bekleniyor
-    onProgress('✅ Bilgiler girildi! Doğrulama kodunu girin ve giriş yapın.');
-
-    // Login bekle - URL değişimini dinle
-    let loginSuccessful = false;
-    try {
-      await page.waitForFunction(
-        () => {
-          const url = window.location.pathname;
-          return url.includes('/dashboard') ||
-                 url.includes('/portal/main') ||
-                 url.includes('/home') ||
-                 (!url.includes('/login') && !url.includes('/portal/login'));
-        },
-        { timeout: GIB_CONFIG.TIMEOUTS.LOGIN_WAIT }
-      );
-      loginSuccessful = true;
-    } catch {
-      onProgress('⏰ Süre doldu (3 dk). Tarayıcı açık, manuel devam edebilirsiniz.');
-      return {
-        success: false,
-        browserOpen: true,
-        error: 'Giriş süresi doldu. Manuel devam edebilirsiniz.'
-      };
-    }
-
-    if (!loginSuccessful) {
-      return { success: false, browserOpen: true, error: 'Login başarısız' };
+        const loginResult = await performGibLogin(page, userid, password, onProgress);
+        if (!loginResult.success) {
+          return { success: false, browserOpen: true, error: loginResult.error };
+        }
+        console.log(`[GIB-LAUNCHER] ✅ Soğuk başlangıç + login tamamlandı (${Date.now() - t0}ms)`);
+      }
     }
 
     // Hedef sayfa varsa (borç sorgulama, vergi levhası, vb.) doğrudan oraya git
@@ -887,71 +1318,80 @@ export async function launchGibApplication(options: GibLaunchOptions): Promise<G
         onProgress(`⚠️ ${targetConfig.displayName} açılamadı. Dashboard'dan manuel geçiş yapabilirsiniz.`);
       }
     } else {
-      // Hedef sayfa yoksa normal uygulama akışını takip et
+      // Hedef sayfa yoksa API ile redirect URL al ve yeni sekmede aç
       onProgress(`✅ Giriş başarılı! ${appConfig.displayName}'ye yönlendiriliyor...`);
 
       try {
         let appOpened = false;
 
-        // Yöntem 1: API ile yönlendirme (varsa)
+        // API ile yönlendirme — Bearer token dahil
         if (appConfig.apiEndpoint) {
           const apiResult = await page.evaluate(async (apiUrl: string) => {
             try {
+              // Token'ı localStorage/sessionStorage'dan al
+              const token = localStorage.getItem('token') ||
+                            localStorage.getItem('accessToken') ||
+                            sessionStorage.getItem('token') ||
+                            sessionStorage.getItem('accessToken') || '';
+
+              const headers: Record<string, string> = {
+                'Accept': 'application/json, text/plain, */*',
+              };
+              if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+              }
+
               const response = await fetch(apiUrl, {
                 method: 'GET',
                 credentials: 'include',
+                headers,
               });
 
               if (!response.ok) {
-                return { success: false, error: `HTTP ${response.status}` };
+                return { success: false, error: `HTTP ${response.status}`, token: !!token };
               }
 
               const data = await response.json();
               return data.redirectUrl
-                ? { success: true, redirectUrl: data.redirectUrl }
-                : { success: false, error: 'redirectUrl yok' };
+                ? { success: true, redirectUrl: data.redirectUrl, token: !!token }
+                : { success: false, error: 'redirectUrl yok', token: !!token };
             } catch (e: unknown) {
-              return { success: false, error: e instanceof Error ? e.message : 'Hata' };
+              return { success: false, error: e instanceof Error ? e.message : 'Hata', token: false };
             }
           }, GIB_CONFIG.BASE_URL + appConfig.apiEndpoint);
 
+          console.log(`[GIB-LAUNCHER] API sonucu: success=${apiResult.success}, token=${apiResult.token}, error=${apiResult.error || 'yok'}`);
+
           if (apiResult.success && apiResult.redirectUrl) {
-            onProgress(`${appConfig.displayName} sayfası açılıyor...`);
-            await page.goto(apiResult.redirectUrl, {
+            // Yeni sekmede aç
+            onProgress(`${appConfig.displayName} yeni sekmede açılıyor...`);
+            const newPage = await browser!.newPage();
+            await newPage.goto(apiResult.redirectUrl, {
               waitUntil: 'domcontentloaded',
               timeout: GIB_CONFIG.TIMEOUTS.APP_REDIRECT,
             });
+            await newPage.bringToFront();
             appOpened = true;
           }
         }
 
-        // Yöntem 2: API başarısız olursa UI üzerinden tıklama ile geç
+        // Fallback: API başarısız olursa UI üzerinden tıklama
         if (!appOpened) {
           console.log(`[GIB-LAUNCHER] API yönlendirmesi başarısız, UI üzerinden ${appConfig.displayName}'ye geçiliyor...`);
           onProgress(`${appConfig.displayName} menüsü açılıyor...`);
 
-          // Dashboard'un yüklenmesini bekle (hızlı)
           await new Promise(r => setTimeout(r, GIB_CONFIG.DELAYS.PAGE_TRANSITION));
 
-          // Uygulama kartına tıkla
           const menuClicked = await clickAppCard(page, appConfig);
-
           if (menuClicked) {
-            // Popup açılmasını bekle (hızlı)
             await new Promise(r => setTimeout(r, GIB_CONFIG.DELAYS.POPUP_OPEN));
             onProgress(`${appConfig.displayName} onaylanıyor...`);
-
-            // ONAYLA butonuna tıkla
             const onayClicked = await clickConfirmButton(page);
-
-            if (onayClicked) {
-              appOpened = true;
-            }
+            if (onayClicked) appOpened = true;
           }
         }
 
         if (appOpened) {
-          await new Promise(r => setTimeout(r, GIB_CONFIG.DELAYS.PAGE_TRANSITION));
           onProgress(`🎉 ${appConfig.displayName} açıldı! Tarayıcı sizin kontrolünüzde.`);
         } else {
           onProgress(`⚠️ ${appConfig.displayName} yönlendirme başarısız. Dashboard'dan manuel geçiş yapabilirsiniz.`);
@@ -1007,6 +1447,7 @@ export function hasActiveBrowser(): boolean {
 export async function launchIvdBrowser(options: Omit<GibLaunchOptions, 'application'>): Promise<GibLaunchResult> {
   return launchGibApplication({ ...options, application: 'ivd' });
 }
+
 
 /**
  * @deprecated Use closeGibBrowser() instead

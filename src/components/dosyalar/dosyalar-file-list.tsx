@@ -219,7 +219,7 @@ export const DosyalarFileList = memo(function DosyalarFileList({
                       onContextMenu={onItemContextMenu}
                       onDoubleClick={onDoubleClick}
                       onDragStart={onDragStart}
-                      onDrop={(e, folderId) => onDrop(e, folderId)}
+                      onDrop={onDrop}
                     />
                   ))}
                 </tbody>

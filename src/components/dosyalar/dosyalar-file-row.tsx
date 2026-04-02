@@ -4,14 +4,11 @@
  * Memoized dosya/klasör satırı
  */
 
-import { memo, useRef, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
 import type { FileItem } from "./types";
 import { normalizeSirketTipi, formatBytes } from "./types";
-
-// Çift tıklama algılama için sabit
-const DOUBLE_CLICK_DELAY = 300; // ms
 
 interface DosyalarFileRowProps {
   item: FileItem;
@@ -21,7 +18,7 @@ interface DosyalarFileRowProps {
   onContextMenu: (e: React.MouseEvent, item: FileItem) => void;
   onDoubleClick: (item: FileItem) => void;
   onDragStart: (e: React.DragEvent, item: FileItem) => void;
-  onDrop: (e: React.DragEvent, folderId: string) => void;
+  onDrop: (e: React.DragEvent, folderId: string | null) => void;
 }
 
 // Format date like Windows Explorer: DD.MM.YYYY HH:mm
@@ -90,30 +87,17 @@ export const DosyalarFileRow = memo(function DosyalarFileRow({
   onDrop,
 }: DosyalarFileRowProps) {
   const { icon, color } = getFileIcon(item);
-  const lastClickTime = useRef<number>(0);
-  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Custom click handler - hem tek tıklama hem çift tıklama için
+  // Tek tıklama — seçim
   const handleClick = useCallback((e: React.MouseEvent) => {
-    const now = Date.now();
-    const timeSinceLastClick = now - lastClickTime.current;
+    onClick(e, item);
+  }, [item, onClick]);
 
-    if (timeSinceLastClick < DOUBLE_CLICK_DELAY) {
-      // Çift tıklama algılandı
-      if (clickTimeout.current) {
-        clearTimeout(clickTimeout.current);
-        clickTimeout.current = null;
-      }
-      lastClickTime.current = 0;
-      onDoubleClick(item);
-    } else {
-      // Tek tıklama - biraz bekle, çift tıklama olabilir
-      lastClickTime.current = now;
-
-      // Hemen seçimi güncelle (kullanıcı deneyimi için)
-      onClick(e, item);
-    }
-  }, [item, onClick, onDoubleClick]);
+  // Çift tıklama — klasör navigasyonu / dosya açma (native event, re-render'dan bağımsız)
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onDoubleClick(item);
+  }, [item, onDoubleClick]);
 
   return (
     <tr
@@ -123,6 +107,7 @@ export const DosyalarFileRow = memo(function DosyalarFileRow({
         isCut && "opacity-50"
       )}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={(e) => onContextMenu(e, item)}
       draggable
       onDragStart={(e) => onDragStart(e, item)}

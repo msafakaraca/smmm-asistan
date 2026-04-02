@@ -270,7 +270,19 @@ function connectWebSocket(token: string) {
 
     wsClient = new WebSocketClient(wsUrl, token);
 
-
+    // Token expired/invalid → session temizle, renderer'a bildir
+    wsClient.on('auth-failed', () => {
+        console.log('[MAIN] 🔒 Token süresi dolmuş, oturum temizleniyor...');
+        clearSession();
+        wsClient?.disconnect();
+        wsClient = null;
+        mainWindow?.webContents.send('bot:command', {
+            type: 'session-expired',
+            message: 'Oturum süresi doldu, lütfen tekrar giriş yapın'
+        });
+        // Pencereyi göster ki kullanıcı login yapabilsin
+        mainWindow?.show();
+    });
 
     wsClient.on('bot:start', async (data: BotCommandData) => {
         console.log('═══════════════════════════════════════════════════════════════');
@@ -681,6 +693,22 @@ function connectWebSocket(token: string) {
         }
     });
 
+    // ⚡ GİB Prepare Handler — Puppeteer'ı ANINDA başlat (credentials beklenmeden)
+    // Frontend WebSocket ile gönderir, API'den önce gelir
+    wsClient.on('gib:prepare', async () => {
+        console.log('[MAIN] ⚡ gib:prepare alındı — Puppeteer önceden başlatılıyor...');
+        try {
+            const { prepareGibBrowser } = await import('./gib-launcher');
+            await prepareGibBrowser((status: string) => {
+                console.log(`[GIB-PREPARE] ${status}`);
+                wsClient?.send('gib:launch-progress', { status, application: 'ivd' });
+                mainWindow?.webContents.send('bot:command', { type: 'gib-launch-progress', status });
+            });
+        } catch (e: any) {
+            console.error('[MAIN] gib:prepare hatası:', e);
+        }
+    });
+
     // GİB Uygulama Hızlı Giriş Handler (İVD, E-Beyanname, Vergi Levhası, vs.)
     wsClient.on('gib:launch', async (data: BotCommandData) => {
         const application = (data.application as string) || 'ivd';
@@ -697,20 +725,20 @@ function connectWebSocket(token: string) {
 
         console.log('═══════════════════════════════════════════════════════════════');
         console.log(`[MAIN] 🌐 GİB ${appName} Hızlı Giriş başlatılıyor...`);
-        // Güvenlik: Userid maskeleniyor
         const maskedUserid = data.userid ? `${String(data.userid).slice(0, 3)}***${String(data.userid).slice(-2)}` : 'N/A';
         console.log('[MAIN] Userid:', maskedUserid);
         console.log('[MAIN] Uygulama:', application);
         if (targetPage) console.log('[MAIN] Hedef Sayfa:', targetPage);
         if (customerName) console.log('[MAIN] Mükellef:', customerName);
-        if (vergiLevhasiYil) console.log('[MAIN] Vergi Levhası Yılı:', vergiLevhasiYil);
-        if (vergiLevhasiDil) console.log('[MAIN] Vergi Levhası Dili:', vergiLevhasiDil);
         console.log('═══════════════════════════════════════════════════════════════');
 
         mainWindow?.webContents.send('bot:command', { type: 'gib-launch-start', application, targetPage, customerName });
 
-        // NOT: Electron penceresi ön plana getirilmiyor - kullanıcı simge durumunda çalışabilir
-        // Chrome penceresi gib-launcher.ts'de CDP ile maximize edilip ön plana getiriliyor
+        const onProgress = (status: string) => {
+            console.log(`[GIB-LAUNCHER] ${status}`);
+            wsClient?.send('gib:launch-progress', { status, application, targetPage, customerName });
+            mainWindow?.webContents.send('bot:command', { type: 'gib-launch-progress', status, application });
+        };
 
         try {
             const { launchGibApplication } = await import('./gib-launcher');
@@ -723,11 +751,7 @@ function connectWebSocket(token: string) {
                 customerName,
                 vergiLevhasiYil: vergiLevhasiYil as '2023' | '2024' | '2025' | '2026' | undefined,
                 vergiLevhasiDil: vergiLevhasiDil as 'tr' | 'en' | undefined,
-                onProgress: (status: string) => {
-                    console.log(`[GIB-LAUNCHER] ${status}`);
-                    wsClient?.send('gib:launch-progress', { status, application, targetPage, customerName });
-                    mainWindow?.webContents.send('bot:command', { type: 'gib-launch-progress', status, application });
-                }
+                onProgress,
             });
 
             if (result.success) {
@@ -2853,8 +2877,20 @@ app.whenReady().then(() => {
     // Try to restore session
     const session = getSession();
     if (session?.token) {
-        console.log('[SMMM-ASISTAN] 🔐 Kaydedilmiş oturum bulundu, WebSocket bağlanıyor...');
-        connectWebSocket(session.token);
+        // Token süresini kontrol et
+        try {
+            const decoded = jwt.decode(session.token) as { exp?: number } | null;
+            if (decoded?.exp && decoded.exp * 1000 < Date.now()) {
+                console.log('[SMMM-ASISTAN] ⚠️ Token süresi dolmuş, oturum temizleniyor...');
+                clearSession();
+            } else {
+                console.log('[SMMM-ASISTAN] 🔐 Kaydedilmiş oturum bulundu, WebSocket bağlanıyor...');
+                connectWebSocket(session.token);
+            }
+        } catch {
+            console.log('[SMMM-ASISTAN] ⚠️ Token okunamadı, oturum temizleniyor...');
+            clearSession();
+        }
     } else {
         console.log('[SMMM-ASISTAN] ℹ️ Kaydedilmiş oturum yok, giriş bekleniyor...');
     }

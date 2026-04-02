@@ -279,7 +279,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
   const [prefetchedCustomers, setPrefetchedCustomers] = useState<Customer[]>([]);
   const [vergiLevhasiDialogOpen, setVergiLevhasiDialogOpen] = useState(false);
   const [iskurDialogOpen, setIskurDialogOpen] = useState(false);
-  const { electronConnected } = useBotLog();
+  const { electronConnected, sendWsMessage } = useBotLog();
 
   // SGK Şube seçim dialog state'leri
   const [sgkBranchDialogOpen, setSgkBranchDialogOpen] = useState(false);
@@ -320,6 +320,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -359,6 +360,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ivd" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -401,6 +403,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ivd" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -443,6 +446,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "interaktifvd" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -484,6 +488,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "defter-beyan" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -525,6 +530,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ebeyan" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -631,11 +637,15 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
       toast.dismiss(toastId);
       toast.info("İnternet Vergi Dairesi açılıyor...", {
         id: toastId,
-        description: "SMMM Asistan'a bağlanılıyor...",
+        description: "Tarayıcı başlatılıyor...",
         duration: 3000,
       });
 
+      // ⚡ WebSocket ile anında "hazırlan" sinyali gönder — Puppeteer hemen başlar
+      sendWsMessage("gib:prepare", { application: "ivd" });
+
       try {
+        // API paralelde credentials çözer ve gib:launch gönderir
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -695,6 +705,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ivd" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -756,6 +767,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ebeyanname" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -816,6 +828,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "ivd" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",
@@ -897,6 +910,7 @@ export const QuickActionsPanel = memo(function QuickActionsPanel({
         duration: 3000,
       });
 
+      sendWsMessage("gib:prepare", { application: "edefter" });
       try {
         const res = await fetch("/api/bot/launch-gib", {
           method: "POST",

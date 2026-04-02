@@ -403,6 +403,12 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
       });
       break;
 
+    case 'gib:prepare':
+      // ⚡ Tarayıcı hazırla sinyali — frontend'den Electron'a direkt relay
+      console.log(`[WS] ⚡ GİB prepare sinyali: ${(message.data as Record<string, unknown>)?.application || 'ivd'}`);
+      broadcastToTenant(client.tenantId, message);
+      break;
+
     case 'gib:ivd-progress':
     case 'gib:ivd-complete':
     case 'gib:launch-progress':

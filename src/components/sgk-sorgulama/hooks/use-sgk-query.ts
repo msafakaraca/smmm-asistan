@@ -58,7 +58,7 @@ interface SgkQueryState {
 }
 
 export interface UseSgkQueryReturn extends SgkQueryState {
-  startQuery: (customerId: string, basAy: string, basYil: string, bitAy: string, bitYil: string) => Promise<void>;
+  startQuery: (customerId: string, basAy: string, basYil: string, bitAy: string, bitYil: string, customerName?: string) => Promise<void>;
   clearResults: () => void;
   pdfPreview: PdfPreviewInfo | null;
   closePdfPreview: () => void;
@@ -221,6 +221,7 @@ export function useSgkQuery(): UseSgkQueryReturn {
 
   // Pipeline state refs
   const pipelineCompleteRef = useRef(false);
+  const customerNameRef = useRef("");
 
   // Bildirge listesi ref (WS handler'dan erişim için)
   const bildirgeRef = useRef<BildirgeItem[]>([]);
@@ -507,11 +508,12 @@ export function useSgkQuery(): UseSgkQueryReturn {
   }, [bufferPdf, fireBulkSave]);
 
   const startQuery = useCallback(
-    async (customerId: string, basAy: string, basYil: string, bitAy: string, bitYil: string) => {
+    async (customerId: string, basAy: string, basYil: string, bitAy: string, bitYil: string, customerName?: string) => {
       if (state.isLoading) return;
 
       dispatch({ type: "QUERY_START" });
       pendingQueryRef.current = { customerId };
+      if (customerName) customerNameRef.current = customerName;
       pipelineCompleteRef.current = false;
       activeBulkSavesRef.current = 0;
       pdfBufferRef.current = [];
@@ -563,18 +565,53 @@ export function useSgkQuery(): UseSgkQueryReturn {
   }, [pdfPreview?.blobUrl]);
 
   const openPdf = useCallback(
-    (bildirgeRefNo: string, type: "tahakkuk" | "hizmet") => {
+    async (bildirgeRefNo: string, type: "tahakkuk" | "hizmet") => {
       const fileCategory = type === "tahakkuk" ? "SGK_TAHAKKUK" : "HIZMET_LISTESI";
       const key = `${bildirgeRefNo}_${fileCategory}`;
       const documentId = state.pdfDocumentIds[key];
 
-      if (documentId) {
-        window.open(`/api/files/view?id=${documentId}`, "_blank");
-      } else {
+      if (!documentId) {
         toast.error("PDF henüz kaydedilmedi veya bulunamadı");
+        return;
+      }
+
+      // Bildirge bilgilerini bul
+      const bildirge = state.bildirgeler.find((b) => b.bildirgeRefNo === bildirgeRefNo);
+      const typeLabel = type === "tahakkuk" ? "Tahakkuk Fişi" : "Hizmet Listesi";
+      const title = bildirge
+        ? `SGK ${typeLabel} - ${bildirge.belgeTuru}${bildirge.belgeMahiyeti !== "ASIL" ? ` ${bildirge.belgeMahiyeti}` : ""}`
+        : `SGK ${typeLabel}`;
+      const donem = bildirge?.hizmetDonem || "";
+
+      // Dialog'u hemen aç (loading spinner ile)
+      setPdfPreview({
+        blobUrl: null,
+        title: title.trim(),
+        donem,
+        customerName: customerNameRef.current,
+      });
+
+      try {
+        // PDF'i storage'dan fetch et
+        const response = await fetch(`/api/files/view?id=${documentId}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        setPdfPreview({
+          blobUrl,
+          title: title.trim(),
+          donem,
+          customerName: customerNameRef.current,
+        });
+      } catch {
+        toast.error("PDF yüklenemedi");
+        setPdfPreview(null);
       }
     },
-    [state.pdfDocumentIds]
+    [state.pdfDocumentIds, state.bildirgeler]
   );
 
   return {

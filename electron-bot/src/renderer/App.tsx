@@ -26,6 +26,14 @@ function App() {
     useEffect(() => {
         // Check for stored session
         checkSession();
+
+        // Token expired event'ini dinle
+        window.electron?.onBotCommand((data) => {
+            if (data?.type === 'session-expired') {
+                setUser(null);
+                setState('login');
+            }
+        });
     }, []);
 
     const checkSession = async () => {

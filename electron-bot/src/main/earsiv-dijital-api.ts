@@ -101,158 +101,27 @@ function getHeaders(token?: string): Record<string, string> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Captcha Çözücü — OCR.space (birincil) + 2Captcha (fallback)
+// Captcha Çözücü — ddddocr Lokal ONNX Model
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { solveCaptchaLocal } from './captcha-local';
+
 /**
- * OCR.space tek istek — belirtilen engine ile captcha çöz
+ * Captcha çöz — ddddocr lokal ONNX model (~10ms, ücretsiz, offline)
  */
-async function ocrSpaceRequest(cleanBase64: string, apiKey: string, engine: '1' | '2', scale: boolean = false): Promise<string | null> {
-  const params: Record<string, string> = {
-    apikey: apiKey,
-    base64Image: `data:image/png;base64,${cleanBase64}`,
-    OCREngine: engine,
-    isOverlayRequired: 'false',
-    language: 'eng',
-  };
-  if (scale) params.scale = 'true';
-  if (engine === '2') params.isTable = 'false';
-
-  const controller = new AbortController();
-  const TIMEOUT_MS = 10000;
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
+async function solveCaptcha(imageBase64: string): Promise<string | null> {
   try {
-    const response = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(params),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    const result = await response.json();
-    if (result.IsErroredOnProcessing) {
-      console.log(`[EARSIV-CAPTCHA] OCR.space E${engine} API hatası: ${result.ErrorMessage?.[0] || JSON.stringify(result.ErrorDetails)}`);
-      return null;
+    const result = await solveCaptchaLocal(imageBase64);
+    if (result) {
+      console.log(`[EARSIV-CAPTCHA] ddddocr çözüm: ${result}`);
+      return result;
     }
-    if (result.ParsedResults?.[0]?.ParsedText) {
-      const text = result.ParsedResults[0].ParsedText.trim().replace(/\s+/g, '').toLowerCase();
-      if (text.length >= 4) return text;
-      console.log(`[EARSIV-CAPTCHA] OCR.space E${engine} sonuç çok kısa: "${text}"`);
-    }
+    console.log('[EARSIV-CAPTCHA] ddddocr çözüm başarısız (sonuç kısa veya hata)');
     return null;
   } catch (e) {
-    clearTimeout(timeout);
-    const msg = (e as Error).name === 'AbortError' ? `zaman aşımı (${TIMEOUT_MS / 1000}s)` : (e as Error).message;
-    console.log(`[EARSIV-CAPTCHA] OCR.space E${engine} hatası: ${msg}`);
+    console.log(`[EARSIV-CAPTCHA] ddddocr hatası: ${(e as Error).message}`);
     return null;
   }
-}
-
-/**
- * OCR.space ile captcha çöz — çoklu engine retry stratejisi
- * Deneme sırası: Engine 2 → Engine 2 (scale) → Engine 1
- */
-async function solveWithOcrSpace(imageBase64: string, apiKey: string): Promise<string | null> {
-  const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-  // 1. Engine 2 — captcha-tarzı metin için daha iyi
-  console.log('[EARSIV-CAPTCHA] OCR.space E2 deneniyor...');
-  const r1 = await ocrSpaceRequest(cleanBase64, apiKey, '2');
-  if (r1) { console.log(`[EARSIV-CAPTCHA] OCR.space E2 çözüm: ${r1}`); return r1; }
-
-  // 2. Engine 2 + scale — küçük/bulanık captcha'lar için
-  console.log('[EARSIV-CAPTCHA] OCR.space E2+scale deneniyor...');
-  const r2 = await ocrSpaceRequest(cleanBase64, apiKey, '2', true);
-  if (r2) { console.log(`[EARSIV-CAPTCHA] OCR.space E2+scale çözüm: ${r2}`); return r2; }
-
-  // 3. Engine 1 — farklı OCR algoritması, bazı captcha'larda daha başarılı
-  console.log('[EARSIV-CAPTCHA] OCR.space E1 deneniyor...');
-  const r3 = await ocrSpaceRequest(cleanBase64, apiKey, '1', true);
-  if (r3) { console.log(`[EARSIV-CAPTCHA] OCR.space E1 çözüm: ${r3}`); return r3; }
-
-  console.log('[EARSIV-CAPTCHA] OCR.space tüm denemeler başarısız');
-  return null;
-}
-
-/**
- * 2Captcha ile captcha çöz (yavaş ama güvenilir)
- */
-async function solveWith2Captcha(imageBase64: string, apiKey: string): Promise<string | null> {
-  try {
-    console.log('[EARSIV-CAPTCHA] 2Captcha deneniyor...');
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-    const submitResponse = await fetch('https://2captcha.com/in.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        key: apiKey,
-        method: 'base64',
-        body: cleanBase64,
-        json: '1',
-        numeric: '0',
-        min_len: '4',
-        max_len: '7',
-        language: '2',
-        textinstructions: 'Captcha may contain dash (-) character. Include all characters.',
-      }),
-    });
-
-    const submitResult = await submitResponse.json();
-    if (submitResult.status !== 1) {
-      console.log(`[EARSIV-CAPTCHA] 2Captcha submit başarısız:`, JSON.stringify(submitResult));
-      return null;
-    }
-
-    const captchaId = submitResult.request;
-    console.log(`[EARSIV-CAPTCHA] 2Captcha ID: ${captchaId}, polling başlıyor...`);
-
-    // Polling (max 30 deneme × 3s = 90s)
-    for (let i = 0; i < 30; i++) {
-      await sleep(3000);
-      const resultResponse = await fetch(
-        `https://2captcha.com/res.php?key=${apiKey}&action=get&id=${captchaId}&json=1`
-      );
-      const resultData = await resultResponse.json();
-
-      if (resultData.status === 1) {
-        const solution = resultData.request.toLowerCase();
-        console.log(`[EARSIV-CAPTCHA] 2Captcha çözüm: ${solution}`);
-        return solution;
-      }
-      if (resultData.request !== 'CAPCHA_NOT_READY') {
-        console.log(`[EARSIV-CAPTCHA] 2Captcha beklenmeyen yanıt:`, JSON.stringify(resultData));
-        return null;
-      }
-    }
-    console.log('[EARSIV-CAPTCHA] 2Captcha zaman aşımı (90s)');
-    return null;
-  } catch (e) {
-    console.log(`[EARSIV-CAPTCHA] 2Captcha hatası: ${(e as Error).message}`);
-    return null;
-  }
-}
-
-/**
- * Captcha çöz — önce OCR.space, sonra 2Captcha fallback
- */
-async function solveCaptcha(imageBase64: string, captchaApiKey: string, ocrSpaceApiKey?: string): Promise<string | null> {
-  // Önce OCR.space dene (hızlı)
-  if (ocrSpaceApiKey) {
-    const result = await solveWithOcrSpace(imageBase64, ocrSpaceApiKey);
-    if (result) return result;
-    console.log('[EARSIV-CAPTCHA] OCR.space başarısız, 2Captcha deneniyor...');
-  }
-
-  // 2Captcha fallback
-  if (captchaApiKey) {
-    return await solveWith2Captcha(imageBase64, captchaApiKey);
-  }
-
-  console.log('[EARSIV-CAPTCHA] Hiçbir captcha servisi kullanılamadı!');
-  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -261,11 +130,13 @@ async function solveCaptcha(imageBase64: string, captchaApiKey: string, ocrSpace
 
 /**
  * GİB Dijital Vergi Dairesi'ne login yap, Bearer token döndür.
+ * Captcha çözümü ddddocr lokal ONNX model ile yapılır (~10ms).
+ * Captcha yanlışsa otomatik yeni captcha ister ve tekrar dener.
  *
  * @param userid - GİB kullanıcı kodu (gibKodu)
  * @param sifre - GİB şifresi (gibSifre)
- * @param captchaApiKey - 2Captcha API key
- * @param ocrSpaceApiKey - OCR.space API key (opsiyonel, öncelikli)
+ * @param captchaApiKey - Kullanılmıyor (geriye uyumluluk için tutuldu)
+ * @param ocrSpaceApiKey - Kullanılmıyor (geriye uyumluluk için tutuldu)
  * @param onProgress - İlerleme callback
  * @returns Bearer token string
  * @throws Hata durumunda Error fırlatır (AUTH_FAILED, CAPTCHA_FAILED, vb.)
@@ -273,15 +144,11 @@ async function solveCaptcha(imageBase64: string, captchaApiKey: string, ocrSpace
 export async function gibDijitalLogin(
   userid: string,
   sifre: string,
-  captchaApiKey: string,
+  captchaApiKey?: string,
   ocrSpaceApiKey?: string,
   onProgress?: (status: string) => void,
 ): Promise<string> {
-  if (!captchaApiKey && !ocrSpaceApiKey) {
-    throw new Error('CAPTCHA_SERVICE_DOWN: Captcha API key tanımlı değil');
-  }
-
-  console.log('[EARSIV-LOGIN] GİB Dijital VD login başlatılıyor...');
+  console.log('[EARSIV-LOGIN] GİB Dijital VD login başlatılıyor (ddddocr lokal model)...');
 
   for (let attempt = 1; attempt <= MAX_CAPTCHA_RETRIES; attempt++) {
     console.log(`[EARSIV-LOGIN] Deneme ${attempt}/${MAX_CAPTCHA_RETRIES}`);
@@ -314,10 +181,10 @@ export async function gibDijitalLogin(
         continue;
       }
 
-      // 2. Captcha çöz
-      onProgress?.('Captcha çözülüyor...');
+      // 2. Captcha çöz — ddddocr lokal model
+      onProgress?.('Captcha çözülüyor (lokal model)...');
       const cleanBase64 = captchaBase64.replace(/^data:image\/\w+;base64,/, '');
-      const captchaSolution = await solveCaptcha(cleanBase64, captchaApiKey, ocrSpaceApiKey);
+      const captchaSolution = await solveCaptcha(cleanBase64);
 
       if (!captchaSolution) {
         console.log('[EARSIV-LOGIN] Captcha çözülemedi');

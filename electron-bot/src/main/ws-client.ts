@@ -99,11 +99,20 @@ export class WebSocketClient extends EventEmitter {
                 }
             });
 
-            this.ws.on('close', () => {
-                console.log('[WS] Disconnected');
+            this.ws.on('close', (code: number, reason: Buffer) => {
+                const reasonStr = reason?.toString() || '';
+                console.log(`[WS] Disconnected (code: ${code}, reason: ${reasonStr})`);
                 this.isConnected = false;
                 this.ws = null;
                 this.emit('disconnected');
+
+                // 1008 = Policy Violation → token geçersiz/expired
+                if (code === 1008) {
+                    console.error('[WS] ❌ Token geçersiz veya süresi dolmuş, yeniden giriş gerekiyor');
+                    this.emit('auth-failed', reasonStr);
+                    return; // Reconnect deneme - aynı token ile bağlanamaz
+                }
+
                 this.scheduleReconnect();
             });
 

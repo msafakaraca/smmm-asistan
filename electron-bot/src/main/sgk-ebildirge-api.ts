@@ -4,7 +4,7 @@
  * SGK E-Bildirge sistemi üzerinden onaylanmış tahakkuk/hizmet bildirgeleri sorgulama ve PDF indirme.
  *
  * - Session-based auth (JSESSIONID cookie + Struts CSRF token zinciri)
- * - Custom JPEG captcha çözme (2Captcha — ultra hızlı polling)
+ * - Custom JPEG captcha çözme (2Captcha — hızlı polling, max 22s)
  * - Dönem bazlı sorgulama
  * - Tahakkuk Fişi (T) ve Hizmet Listesi (H) PDF indirme
  *
@@ -118,13 +118,13 @@ function calculatePeriodIndex(targetYear: number, targetMonth: number): number {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Captcha Çözücü — 2Captcha (ultra hızlı polling)
+// Captcha Çözücü — Sadece 2Captcha (SGK captcha'ları OCR ile çözülemiyor)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * 2Captcha ile captcha çöz — agresif polling stratejisi
- * İlk bekleme 3s, sonra 1s aralıklarla poll (toplam max ~48s)
- * Erken timeout retry'a sebep olur ve toplamda daha yavaş olur.
+ * 2Captcha ile captcha çöz
+ * İlk bekleme 2s, sonra 2s aralıklarla poll (toplam max ~22s)
+ * 2Captcha basit captcha'ları 5-12s'de çözer, 22s'den uzun sürerse yeni captcha denemek daha hızlı
  */
 async function solveCaptcha(imageBase64: string, captchaApiKey?: string): Promise<string | null> {
   if (!captchaApiKey) {
@@ -164,11 +164,11 @@ async function solveCaptcha(imageBase64: string, captchaApiKey?: string): Promis
 
     const pollUrl = `https://2captcha.com/res.php?key=${captchaApiKey}&action=get&id=${captchaId}&json=1`;
 
-    // İlk bekleme 3s — 2Captcha minimum işleme süresi
-    await sleep(3000);
+    // İlk bekleme 2s — 2Captcha queue'ya alım süresi
+    await sleep(2000);
 
-    // Agresif polling: 1s aralıkla, max 45 deneme (~48s toplam)
-    for (let i = 0; i < 45; i++) {
+    // Polling: 2s aralıkla, max 10 deneme (~22s toplam)
+    for (let i = 0; i < 10; i++) {
       const resultResponse = await fetch(pollUrl);
       const resultData = await resultResponse.json();
 
@@ -182,9 +182,9 @@ async function solveCaptcha(imageBase64: string, captchaApiKey?: string): Promis
         console.log(`[SGK-CAPTCHA] 2Captcha beklenmeyen yanıt:`, JSON.stringify(resultData));
         return null;
       }
-      await sleep(1000);
+      await sleep(2000);
     }
-    console.log('[SGK-CAPTCHA] 2Captcha zaman aşımı (48s)');
+    console.log('[SGK-CAPTCHA] 2Captcha zaman aşımı (22s)');
     return null;
   } catch (e) {
     console.log(`[SGK-CAPTCHA] 2Captcha hatası: ${(e as Error).message}`);

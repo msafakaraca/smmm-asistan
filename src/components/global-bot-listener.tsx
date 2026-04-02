@@ -20,7 +20,7 @@ import type { GibBotResult } from "@/types/gib";
 
 export function GlobalBotListener() {
     const router = useRouter();
-    const { addLog, setLiveMessage, clearLiveMessage, setBotRunning, setBotStatus, setElectronConnected } = useBotLog();
+    const { addLog, setLiveMessage, clearLiveMessage, setBotRunning, setBotStatus, setElectronConnected, setWsRef } = useBotLog();
     const { setPendingResult } = useBotResult();
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -97,6 +97,7 @@ export function GlobalBotListener() {
                 const wsHost = `${window.location.hostname}:${wsPort}`;
                 const ws = new WebSocket(`${protocol}//${wsHost}?token=${token}`);
                 wsRef.current = ws;
+                setWsRef(ws);
 
                 // Eğer bu arada cancel olduysa hemen kapat
                 if (isCancelled) {
@@ -252,6 +253,7 @@ export function GlobalBotListener() {
                     if (isCancelled) return;
                     console.log("[GLOBAL-BOT-WS] Bağlantı kesildi, 5s sonra tekrar deneniyor...");
                     wsRef.current = null;
+                    setWsRef(null);
                     setElectronConnectedRef.current(false);
                     reconnectTimerRef.current = setTimeout(connectWS, 5000);
                 };
@@ -274,6 +276,7 @@ export function GlobalBotListener() {
             if (wsRef.current) {
                 wsRef.current.close();
                 wsRef.current = null;
+                setWsRef(null);
             }
             if (reconnectTimerRef.current) {
                 clearTimeout(reconnectTimerRef.current);

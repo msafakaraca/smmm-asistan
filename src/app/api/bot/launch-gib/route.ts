@@ -151,37 +151,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Bot bağlantı kontrolü (Electron client bağlı mı?)
+    // 4. Internal API ile bot'a sinyal gönder (bot check frontend'de yapılıyor)
     const port = process.env.PORT || "3000";
-    try {
-      const clientsResponse = await fetch(`http://localhost:${port}/_internal/clients`, {
-        method: "GET",
-      });
-
-      if (clientsResponse.ok) {
-        const clientsData = await clientsResponse.json();
-        if ((clientsData.electronConnections ?? clientsData.totalConnections) === 0) {
-          return NextResponse.json(
-            {
-              error: "SMMM Asistan masaüstü uygulaması bağlı değil. Lütfen uygulamayı çalıştırın.",
-              code: "BOT_NOT_CONNECTED"
-            },
-            { status: 503 }
-          );
-        }
-      }
-    } catch {
-      console.warn("[launch-gib] Bot bağlantı kontrolü yapılamadı");
-      return NextResponse.json(
-        {
-          error: "SMMM Asistan masaüstü uygulaması bağlı değil. Lütfen uygulamayı çalıştırın.",
-          code: "BOT_NOT_CONNECTED"
-        },
-        { status: 503 }
-      );
-    }
-
-    // 5. Internal API ile bot'a sinyal gönder
     const internalUrl = `http://localhost:${port}/_internal/bot-command`;
 
     // E-Arşiv için farklı event tipi kullan

@@ -19,7 +19,6 @@ import {
   ChevronsUpDown,
   Check,
   FileDown,
-  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,9 +35,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { useSgkQuery } from "./hooks/use-sgk-query";
 import type { BildirgeItem, IsyeriInfo } from "./hooks/use-sgk-query";
+import SgkGroupList from "./sgk-group-list";
+import PdfPreviewDialog from "@/components/beyannameler/pdf-preview-dialog";
 import { toast } from "sonner";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -51,6 +51,7 @@ interface Customer {
   kisaltma: string | null;
   vknTckn: string;
   hasSgkCredentials: boolean;
+  lastSgkQueryAt: string | null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -63,6 +64,14 @@ const MONTHS_TR = [
 ];
 
 const YEARS = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+
+/** Tarih formatı: ISO string → "15.02.2026 14:30" */
+function formatQueryDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    + " " + d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
 
 /** Beyanname dönem kuralı: bir önceki ay */
 function getDefaultPeriod() {
@@ -233,6 +242,7 @@ export default function SgkClient() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const statusLoadedRef = useRef(false);
 
   // Dönem
   const defaultPeriod = useMemo(() => getDefaultPeriod(), []);
@@ -257,6 +267,8 @@ export default function SgkClient() {
     startQuery,
     clearResults,
     openPdf,
+    pdfPreview,
+    closePdfPreview,
   } = useSgkQuery();
 
   // Mükellef listesini yükle
@@ -283,6 +295,7 @@ export default function SgkClient() {
             kisaltma: c.kisaltma,
             vknTckn: c.vknTckn,
             hasSgkCredentials: c.hasSgkCredentials ?? !!c.sgkSistemSifresi,
+            lastSgkQueryAt: null,
           })
         );
         setCustomers(mapped);
@@ -294,6 +307,24 @@ export default function SgkClient() {
     }
     loadCustomers();
   }, []);
+
+  // Sorgulama durumlarını arka planda yükle (combobox'ı bloklamaz)
+  useEffect(() => {
+    if (customersLoading || statusLoadedRef.current || customers.length === 0) return;
+    statusLoadedRef.current = true;
+    fetch("/api/query-archives/customer-status?queryType=sgk")
+      .then((r) => (r.ok ? r.json() : { statuses: {} }))
+      .then((data) => {
+        const statuses: Record<string, string> = data.statuses || {};
+        setCustomers((prev) =>
+          prev.map((c) => ({
+            ...c,
+            lastSgkQueryAt: statuses[c.id] || c.lastSgkQueryAt,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, [customersLoading, customers.length]);
 
   // Filtrelenmiş mükellefler
   const filteredCustomers = useMemo(() => {
@@ -337,7 +368,8 @@ export default function SgkClient() {
       return;
     }
 
-    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil);
+    const customerName = selectedCustomer?.kisaltma || selectedCustomer?.unvan || "";
+    await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil, customerName);
   }, [selectedCustomerId, selectedCustomer, basAy, basYil, bitAy, bitYil, startQuery]);
 
   // Temizle
@@ -347,6 +379,27 @@ export default function SgkClient() {
 
   // İndirilmiş ref'ler seti
   const downloadedSet = useMemo(() => new Set(downloadedRefNos), [downloadedRefNos]);
+
+  // Yıl filtresi
+  const [yearFilter, setYearFilter] = useState<string>("all");
+
+  // Kullanılabilir yıllar ve sayıları
+  const availableYears = useMemo(() => {
+    const yearCounts = new Map<string, number>();
+    for (const b of bildirgeler) {
+      const year = b.hizmetDonem.split("/")[0] || "Bilinmeyen";
+      yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
+    }
+    return Array.from(yearCounts.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([year, count]) => ({ year, count }));
+  }, [bildirgeler]);
+
+  // Yıl filtresine göre filtrelenmiş bildirgeler
+  const filteredBildirgeler = useMemo(() => {
+    if (yearFilter === "all") return bildirgeler;
+    return bildirgeler.filter((b) => b.hizmetDonem.split("/")[0] === yearFilter);
+  }, [bildirgeler, yearFilter]);
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -384,7 +437,7 @@ export default function SgkClient() {
             </PopoverTrigger>
             <PopoverContent
               className="p-0"
-              style={{ width: "var(--radix-popover-trigger-width)", minWidth: 500 }}
+              style={{ width: "var(--radix-popover-trigger-width)", minWidth: 600 }}
               align="start"
             >
               <div className="p-2">
@@ -412,7 +465,7 @@ export default function SgkClient() {
                     <button
                       key={c.id}
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                      className="grid grid-cols-[16px_1fr_1px_100px_1px_110px_1px_110px] w-full items-center gap-x-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
                       onClick={() => {
                         setSelectedCustomerId(c.id);
                         setCustomerSearch("");
@@ -420,18 +473,30 @@ export default function SgkClient() {
                       }}
                     >
                       <Check
-                        className={`h-4 w-4 shrink-0 ${
+                        className={`h-4 w-4 ${
                           selectedCustomerId === c.id ? "opacity-100" : "opacity-0"
                         }`}
                       />
-                      <span className="truncate flex-1 text-left">
+                      <span className="truncate text-sm text-left">
                         {c.kisaltma || c.unvan}
                         {!c.hasSgkCredentials && (
                           <span className="text-[10px] text-destructive font-medium ml-1">SGK eksik</span>
                         )}
                       </span>
-                      <span className="text-xs font-mono text-rose-500 dark:text-rose-400 shrink-0">
+                      <span className="h-4 bg-border" />
+                      <span className="text-xs font-mono text-rose-500 dark:text-rose-400 text-right">
                         {c.vknTckn}
+                      </span>
+                      <span className="h-4 bg-border" />
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.lastSgkQueryAt ? "bg-emerald-500 dark:bg-emerald-400" : "bg-slate-300 dark:bg-zinc-600"}`} />
+                        <span className={`text-[11px] whitespace-nowrap ${c.lastSgkQueryAt ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                          {c.lastSgkQueryAt ? "Sorgulandı" : "Sorgulanmamış"}
+                        </span>
+                      </span>
+                      <span className="h-4 bg-border" />
+                      <span className={`text-[11px] text-right whitespace-nowrap ${c.lastSgkQueryAt ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                        {c.lastSgkQueryAt ? formatQueryDate(c.lastSgkQueryAt) : "—"}
                       </span>
                     </button>
                   ))
@@ -634,91 +699,50 @@ export default function SgkClient() {
       {/* İşyeri Bilgileri */}
       {isyeriInfo && <IsyeriInfoPanel info={isyeriInfo} />}
 
-      {/* Bildirge Tablosu */}
+      {/* Yıl Filtre Sekmeleri + Bildirge Grup Listesi */}
       {bildirgeler.length > 0 && (
-        <div className="rounded-lg border bg-card overflow-hidden shadow-sm">
-          <div className="p-3 border-b bg-muted/30">
-            <span className="text-sm font-medium">
-              {bildirgeler.length} Bildirge Bulundu
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-3 py-2 text-left font-medium">Dönem</th>
-                  <th className="px-3 py-2 text-center font-medium">Belge Türü</th>
-                  <th className="px-3 py-2 text-center font-medium">Mahiyet</th>
-                  <th className="px-3 py-2 text-center font-medium">Kanun No</th>
-                  <th className="px-3 py-2 text-right font-medium">Çalışan</th>
-                  <th className="px-3 py-2 text-right font-medium">Gün</th>
-                  <th className="px-3 py-2 text-right font-medium">Tutar</th>
-                  <th className="px-3 py-2 text-center font-medium">PDF</th>
-                  <th className="px-3 py-2 text-center font-medium">Durum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bildirgeler.map((b) => {
-                  const isDownloaded = downloadedSet.has(b.bildirgeRefNo);
-                  return (
-                    <tr key={b.bildirgeRefNo} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 font-mono text-xs">{b.hizmetDonem}</td>
-                      <td className="px-3 py-2 text-center">{b.belgeTuru}</td>
-                      <td className="px-3 py-2 text-center">
-                        <Badge variant={b.belgeMahiyeti === "ASIL" ? "default" : "secondary"} className="text-xs">
-                          {b.belgeMahiyeti}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2 text-center font-mono text-xs">{b.kanunNo}</td>
-                      <td className="px-3 py-2 text-right">{b.calisanSayisi}</td>
-                      <td className="px-3 py-2 text-right">{b.gunSayisi}</td>
-                      <td className="px-3 py-2 text-right font-medium">{b.pekTutar}</td>
-                      <td className="px-3 py-2 text-center">
-                        <div className="flex justify-center gap-1">
-                          {b.hasTahakkukPdf && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`h-7 px-2 text-xs ${pdfDocumentIds[`${b.bildirgeRefNo}_SGK_TAHAKKUK`] ? "text-emerald-600 hover:text-emerald-700" : ""}`}
-                              title="Tahakkuk Fişi"
-                              disabled={!pdfDocumentIds[`${b.bildirgeRefNo}_SGK_TAHAKKUK`]}
-                              onClick={() => openPdf(b.bildirgeRefNo, "tahakkuk")}
-                            >
-                              <FileText className="h-3.5 w-3.5 mr-1" />
-                              T
-                            </Button>
-                          )}
-                          {b.hasHizmetPdf && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`h-7 px-2 text-xs ${pdfDocumentIds[`${b.bildirgeRefNo}_HIZMET_LISTESI`] ? "text-emerald-600 hover:text-emerald-700" : ""}`}
-                              title="Hizmet Listesi"
-                              disabled={!pdfDocumentIds[`${b.bildirgeRefNo}_HIZMET_LISTESI`]}
-                              onClick={() => openPdf(b.bildirgeRefNo, "hizmet")}
-                            >
-                              <FileText className="h-3.5 w-3.5 mr-1" />
-                              H
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {isDownloaded ? (
-                          <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">
-                            Kaydedildi
-                          </Badge>
-                        ) : isPipelineActive ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mx-auto text-muted-foreground" />
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <>
+          {/* Yıl Filtresi */}
+          {availableYears.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setYearFilter("all")}
+                className={`text-sm font-bold px-4 py-1.5 rounded-md border transition-colors ${
+                  yearFilter === "all"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-foreground hover:bg-muted"
+                }`}
+              >
+                Tümü ({bildirgeler.length})
+              </button>
+              {availableYears.map(({ year, count }) => (
+                <button
+                  key={year}
+                  type="button"
+                  onClick={() => setYearFilter(year)}
+                  className={`text-sm font-bold px-4 py-1.5 rounded-md border transition-colors ${
+                    yearFilter === year
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {year} ({count})
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Grup Listesi */}
+          <SgkGroupList
+            bildirgeler={filteredBildirgeler}
+            downloadedRefNos={downloadedSet}
+            isPipelineActive={isPipelineActive}
+            saveProgress={saveProgress}
+            pdfDocumentIds={pdfDocumentIds}
+            onOpenPdf={openPdf}
+          />
+        </>
       )}
 
       {/* Boş Durum */}
@@ -740,6 +764,21 @@ export default function SgkClient() {
           </p>
         </div>
       )}
+
+      {/* PDF Önizleme Dialog */}
+      <PdfPreviewDialog
+        data={
+          pdfPreview
+            ? {
+                blobUrl: pdfPreview.blobUrl,
+                turAdi: pdfPreview.title,
+                donem: pdfPreview.donem,
+                customerName: pdfPreview.customerName,
+              }
+            : null
+        }
+        onClose={closePdfPreview}
+      />
     </div>
   );
 }

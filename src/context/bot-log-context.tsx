@@ -48,6 +48,10 @@ interface BotLogContextValue {
     setBotStatus: (status: BotStatus) => void
     setElectronConnected: (connected: boolean) => void
     stopBot: () => void
+    /** WebSocket referansını set eder (GlobalBotListener kullanır) */
+    setWsRef: (ws: WebSocket | null) => void
+    /** WebSocket üzerinden mesaj gönder — API'yi bypass eder */
+    sendWsMessage: (type: string, data?: Record<string, unknown>) => boolean
 }
 
 const BotLogContext = createContext<BotLogContextValue | null>(null)
@@ -165,6 +169,21 @@ export function BotLogProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(STORAGE_KEY)
     }, [])
 
+    // WebSocket referansı — GlobalBotListener tarafından set edilir
+    const [wsInstance, setWsInstance] = useState<WebSocket | null>(null)
+
+    const setWsRef = useCallback((ws: WebSocket | null) => {
+        setWsInstance(ws)
+    }, [])
+
+    const sendWsMessage = useCallback((type: string, data?: Record<string, unknown>): boolean => {
+        if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+            wsInstance.send(JSON.stringify({ type, data }))
+            return true
+        }
+        return false
+    }, [wsInstance])
+
     return (
         <BotLogContext.Provider value={{
             logs,
@@ -179,7 +198,9 @@ export function BotLogProvider({ children }: { children: ReactNode }) {
             setBotRunning,
             setBotStatus,
             setElectronConnected,
-            stopBot
+            stopBot,
+            setWsRef,
+            sendWsMessage,
         }}>
             {children}
         </BotLogContext.Provider>
