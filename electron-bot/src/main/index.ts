@@ -8,6 +8,7 @@ import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, Notification, ses
 import path from 'path';
 import { WebSocketClient } from './ws-client';
 import { runEbeyannamePipeline, stopBot } from './ebeyanname-api';
+import { runIntrvrgBeyannamePipeline, stopIntrvrgTest } from './intvrg-beyanname-kontrol-api';
 import { syncMukellefsViaApi } from './ebeyan-mukellef-api';
 import { initDatabase, getSession, saveSession, clearSession } from './db';
 import { getApiUrl, getWsUrl } from './config';
@@ -563,12 +564,61 @@ function connectWebSocket(token: string) {
 
         // Bot'u durdur
         stopBot();
+        stopIntrvrgTest();
 
         // Renderer'a bildir
         mainWindow?.webContents.send('bot:command', { type: 'stopped', message: 'Bot durduruldu' });
 
         // Pencereyi göster
         mainWindow?.show();
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTVRG Beyanname Kontrol Test Handler
+    // ═══════════════════════════════════════════════════════════════
+    wsClient.on('bot:start-intvrg-test', async (data: BotCommandData) => {
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] 🧪 INTVRG Beyanname Test Pipeline Başlatılıyor');
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        mainWindow?.webContents.send('bot:command', { ...data, type: 'intvrg-test-start' });
+
+        const onProgress = (type: string, payload: any) => {
+            if (!wsClient) return;
+            if (type === 'progress') {
+                wsClient.send('intvrg-test:progress', payload);
+            } else if (type === 'results') {
+                wsClient.send('intvrg-test:results', payload);
+            } else if (type === 'complete') {
+                wsClient.send('intvrg-test:complete', payload);
+            } else if (type === 'error') {
+                wsClient.send('intvrg-test:error', payload);
+            }
+        };
+
+        try {
+            await runIntrvrgBeyannamePipeline({
+                tenantId: data.tenantId as string,
+                username: data.username as string,
+                password: data.password as string,
+                captchaKey: (data.captchaApiKey as string) || '',
+                ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
+                baslangicTarihi: data.baslangicTarihi as string,
+                bitisTarihi: data.bitisTarihi as string,
+                donemBasAy: data.donemBasAy as string,
+                donemBasYil: data.donemBasYil as string,
+                donemBitAy: data.donemBitAy as string,
+                donemBitYil: data.donemBitYil as string,
+                durumFiltresi: data.durumFiltresi as 'onaylandi' | 'hatali' | 'tumu' | undefined,
+                downloadBeyanname: data.downloadBeyanname as boolean | undefined,
+                downloadTahakkuk: data.downloadTahakkuk as boolean | undefined,
+                downloadSgk: data.downloadSgk as boolean | undefined,
+                onProgress,
+            });
+        } catch (e: any) {
+            console.error('[MAIN] ❌ INTVRG Test hatası:', e);
+            if (wsClient) wsClient.send('intvrg-test:error', { error: e.message });
+        }
     });
 
     // GİB Mükellef Listesi Sync Handler

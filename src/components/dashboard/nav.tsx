@@ -13,9 +13,11 @@ import {
     Lock,
     MessageSquare,
     Settings,
+    Briefcase,
     Building2,
     Users,
     FolderOpen,
+    ClipboardList,
     StickyNote,
     Send,
     Inbox,
@@ -55,14 +57,31 @@ const navItems = [
         icon: LayoutDashboard,
     },
     {
-        title: "Mükellefler",
+        title: "Mükellef İşlemleri",
         href: "/dashboard/mukellefler",
-        icon: Users,
+        icon: ClipboardList,
+        children: [
+            {
+                title: "Mükellef Listesi",
+                href: "/dashboard/mukellefler",
+                icon: Users,
+            },
+            {
+                title: "Dosyalar",
+                href: "/dashboard/dosyalar",
+                icon: FolderOpen,
+            },
+            {
+                title: "Şifreler",
+                href: "/dashboard/sifreler",
+                icon: Lock,
+            },
+        ],
     },
     {
-        title: "Beyanname İşlemleri",
+        title: "Maliye İşlemleri",
         href: "/dashboard/beyanname-kontrol",
-        icon: ClipboardCheck,
+        icon: Landmark,
         children: [
             {
                 title: "Beyanname Kontrol",
@@ -70,46 +89,41 @@ const navItems = [
                 icon: Bot,
             },
             {
-                title: "Kontrol Çizelgesi",
-                href: "/dashboard/kontrol-cizelgesi",
-                icon: TableProperties,
-            },
-            {
-                title: "Toplu Gönderim",
-                href: "/dashboard/toplu-gonderim",
-                icon: Send,
-            },
-            {
                 title: "Beyanname Sorgulama",
                 href: "/dashboard/beyannameler",
                 icon: ScrollText,
             },
+            {
+                title: "E-Arşiv Fatura",
+                href: "/dashboard/e-arsiv-fatura",
+                icon: Receipt,
+            },
+            {
+                title: "Vergi Tahsil Alındıları",
+                href: "/dashboard/tahsilat-alindilari",
+                icon: Wallet,
+            },
+            {
+                title: "POS Sorgulama",
+                href: "/dashboard/pos-sorgulama",
+                icon: CreditCard,
+            },
+            {
+                title: "ÖKC Bildirim Sorgulama",
+                href: "/dashboard/okc-bildirim",
+                icon: Cpu,
+            },
+            {
+                title: "E-Tebligat Sorgulama",
+                href: "/dashboard/e-tebligat",
+                icon: MailOpen,
+            },
+            {
+                title: "E-Defter Kontrol",
+                href: "/dashboard/e-defter-kontrol",
+                icon: BookCheck,
+            },
         ],
-    },
-    {
-        title: "E-Arşiv Fatura",
-        href: "/dashboard/e-arsiv-fatura",
-        icon: Receipt,
-    },
-    {
-        title: "Vergi Tahsil Alındıları",
-        href: "/dashboard/tahsilat-alindilari",
-        icon: Wallet,
-    },
-    {
-        title: "POS Sorgulama",
-        href: "/dashboard/pos-sorgulama",
-        icon: CreditCard,
-    },
-    {
-        title: "ÖKC Bildirim Sorgulama",
-        href: "/dashboard/okc-bildirim",
-        icon: Cpu,
-    },
-    {
-        title: "E-Tebligat Sorgulama",
-        href: "/dashboard/e-tebligat",
-        icon: MailOpen,
     },
     {
         title: "SGK Sorgulama",
@@ -117,29 +131,41 @@ const navItems = [
         icon: Building2,
     },
     {
-        title: "E-Defter Kontrol",
-        href: "/dashboard/e-defter-kontrol",
-        icon: BookCheck,
-    },
-    {
-        title: "Takip Çizelgesi",
-        href: "/dashboard/takip",
-        icon: CalendarDays,
-    },
-    {
-        title: "Notlar",
-        href: "/dashboard/notlar",
-        icon: StickyNote,
-    },
-    {
-        title: "Görevler",
-        href: "/dashboard/gorevler",
-        icon: ListTodo,
-    },
-    {
-        title: "Duyurular",
-        href: "/dashboard/duyurular",
-        icon: Megaphone,
+        title: "Ofis İşlemleri",
+        href: "/dashboard/kontrol-cizelgesi",
+        icon: Briefcase,
+        children: [
+            {
+                title: "Kontrol Çizelgesi",
+                href: "/dashboard/kontrol-cizelgesi",
+                icon: TableProperties,
+            },
+            {
+                title: "Takip Çizelgesi",
+                href: "/dashboard/takip",
+                icon: CalendarDays,
+            },
+            {
+                title: "Toplu Gönderim",
+                href: "/dashboard/toplu-gonderim",
+                icon: Send,
+            },
+            {
+                title: "Duyurular",
+                href: "/dashboard/duyurular",
+                icon: Megaphone,
+            },
+            {
+                title: "Notlar",
+                href: "/dashboard/notlar",
+                icon: StickyNote,
+            },
+            {
+                title: "Görevler",
+                href: "/dashboard/gorevler",
+                icon: ListTodo,
+            },
+        ],
     },
     {
         title: "Mail",
@@ -157,11 +183,6 @@ const navItems = [
                 icon: Inbox,
             },
         ],
-    },
-    {
-        title: "Dosyalar",
-        href: "/dashboard/dosyalar",
-        icon: FolderOpen,
     },
     {
         title: "PDF Araçları",
@@ -261,11 +282,6 @@ const navItems = [
                 icon: FileSpreadsheet,
             },
         ],
-    },
-    {
-        title: "Şifreler",
-        href: "/dashboard/sifreler",
-        icon: Lock,
     },
     {
         title: "AI Asistan",

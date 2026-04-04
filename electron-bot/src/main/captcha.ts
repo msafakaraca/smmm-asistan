@@ -37,7 +37,7 @@ export async function solveCaptcha(base64Image: string, apiKey: string): Promise
         const captchaId = submitResult.request;
         console.log(`[CAPTCHA] 📝 ID: ${captchaId} - Çözülüyor...`);
 
-        // 2. İlk bekleme 2s, sonra 2s aralıkla polling — max ~22 saniye
+        // 2. İlk bekleme 2s, sonra 1s aralıkla polling — max ~12 saniye
         await new Promise((r) => setTimeout(r, 2000));
 
         for (let attempt = 0; attempt < 10; attempt++) {
@@ -57,10 +57,10 @@ export async function solveCaptcha(base64Image: string, apiKey: string): Promise
             }
 
             console.log(`[CAPTCHA] ⏳ Bekleniyor... (${attempt + 1}/10)`);
-            await new Promise((r) => setTimeout(r, 2000));
+            await new Promise((r) => setTimeout(r, 1000));
         }
 
-        console.log("[CAPTCHA] ❌ Timeout - 22 saniye içinde çözülemedi");
+        console.log("[CAPTCHA] ❌ Timeout - 12 saniye içinde çözülemedi");
         return null;
     } catch (error) {
         console.log(`[CAPTCHA] ❌ Bağlantı hatası: ${(error as Error).message}`);

@@ -4,7 +4,7 @@
  * SGK E-Bildirge sistemi üzerinden onaylanmış tahakkuk/hizmet bildirgeleri sorgulama ve PDF indirme.
  *
  * - Session-based auth (JSESSIONID cookie + Struts CSRF token zinciri)
- * - Custom JPEG captcha çözme (2Captcha — hızlı polling, max 22s)
+ * - Custom JPEG captcha çözme (2Captcha — hızlı polling, max 12s)
  * - Dönem bazlı sorgulama
  * - Tahakkuk Fişi (T) ve Hizmet Listesi (H) PDF indirme
  *
@@ -167,7 +167,7 @@ async function solveCaptcha(imageBase64: string, captchaApiKey?: string): Promis
     // İlk bekleme 2s — 2Captcha queue'ya alım süresi
     await sleep(2000);
 
-    // Polling: 2s aralıkla, max 10 deneme (~22s toplam)
+    // Polling: 1s aralıkla, max 10 deneme (~12s toplam)
     for (let i = 0; i < 10; i++) {
       const resultResponse = await fetch(pollUrl);
       const resultData = await resultResponse.json();
@@ -182,9 +182,9 @@ async function solveCaptcha(imageBase64: string, captchaApiKey?: string): Promis
         console.log(`[SGK-CAPTCHA] 2Captcha beklenmeyen yanıt:`, JSON.stringify(resultData));
         return null;
       }
-      await sleep(2000);
+      await sleep(1000);
     }
-    console.log('[SGK-CAPTCHA] 2Captcha zaman aşımı (22s)');
+    console.log('[SGK-CAPTCHA] 2Captcha zaman aşımı (12s)');
     return null;
   } catch (e) {
     console.log(`[SGK-CAPTCHA] 2Captcha hatası: ${(e as Error).message}`);

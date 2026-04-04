@@ -83,7 +83,7 @@ export function InlineNoteForm({ onSuccess }: InlineNoteFormProps) {
   return (
     <Card className="p-4 bg-muted/30">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[350px]">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[400px]">
           <div className="space-y-3 flex-1">
             {/* Başlık */}
             <FormField
@@ -114,9 +114,9 @@ export function InlineNoteForm({ onSuccess }: InlineNoteFormProps) {
                     <Textarea
                       {...field}
                       placeholder="Açıklama (opsiyonel)..."
-                      rows={3}
+                      rows={2}
                       onKeyDown={handleKeyDown}
-                      className="resize-none min-h-[80px]"
+                      className="resize-none min-h-[56px]"
                       disabled={isSubmitting}
                     />
                   </FormControl>
@@ -145,26 +145,28 @@ export function InlineNoteForm({ onSuccess }: InlineNoteFormProps) {
               )}
             />
 
-            {/* Tarih Seçici */}
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Tarih</Label>
-                  <FormControl>
-                    <DatePickerInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      disabled={isSubmitting}
-                      minDate={minDate}
-                      placeholder="Tarih seçin"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Tarih Seçici - Anımsatıcı formu ile hizalı grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Tarih</Label>
+                    <FormControl>
+                      <DatePickerInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isSubmitting}
+                        minDate={minDate}
+                        placeholder="Tarih seçin"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           <Button

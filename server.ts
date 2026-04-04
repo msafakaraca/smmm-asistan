@@ -499,6 +499,15 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
       broadcastToTenant(client.tenantId, message);
       break;
 
+    case 'intvrg-test:progress':
+    case 'intvrg-test:results':
+    case 'intvrg-test:complete':
+    case 'intvrg-test:error':
+      // INTVRG Beyanname Test mesajlarını relay et
+      console.log(`[WS] INTVRG Test event: ${message.type}`);
+      broadcastToTenant(client.tenantId, message);
+      break;
+
     default:
       // Relay unknown messages to tenant
       broadcastToTenant(client.tenantId, message);

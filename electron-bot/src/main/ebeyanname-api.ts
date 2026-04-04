@@ -1,12 +1,13 @@
 /**
- * GİB E-Beyanname API - HTTP API Pipeline
- * =========================================
- * Puppeteer yerine doğrudan HTTP API + Cheerio ile beyanname sorgulama ve PDF indirme.
+ * GİB Beyanname API - INTVRG Pipeline
+ * =====================================
+ * INTVRG (İnternet Vergi Dairesi) JSON API ile beyanname sorgulama ve PDF indirme.
  * earsiv-dijital-api.ts'deki gibDijitalLogin'i kullanır.
+ * intvrg-tahsilat-api.ts'deki getIvdToken ve IntrvrgClient'ı kullanır.
  */
 
-import * as cheerio from 'cheerio';
 import { gibDijitalLogin } from './earsiv-dijital-api';
+import { getIvdToken, IntrvrgClient, INTVRG_BASE } from './intvrg-tahsilat-api';
 import { parseHizmetListesi, parseTahakkukFisi, HizmetListesiParsed, TahakkukFisiParsed } from './sgk-parser';
 import { parseKdvTahakkuk, KdvTahakkukParsed } from './kdv-parser';
 import { parseKdv2Tahakkuk, Kdv2TahakkukParsed } from './kdv2-parser';
@@ -18,51 +19,17 @@ import { getApiUrl } from './config';
 // CONFIG
 // ═══════════════════════════════════════════════════════════════════
 export const GIB_CONFIG = {
-    DIJITAL_GIB: {
-        EBYN_LOGIN: 'https://dijital.gib.gov.tr/apigateway/auth/tdvd/ebyn-login',
-    },
-    EBEYANNAME: {
-        DISPATCH: 'https://ebeyanname.gib.gov.tr/dispatch',
-    },
-    RATE_LIMIT: {
-        BETWEEN_REQUESTS: 100,
-        BETWEEN_PAGES: 1100,
-        BETWEEN_DOWNLOADS: 1200,
-        BASE_RETRY_WAIT: 500,
-        COOLDOWN_AFTER_500: 2000,
-        MAX_DELAY: 1200,
-        CONSECUTIVE_500_THRESHOLD: 3,
-        BIG_COOLDOWN: 3000,
-        RETRY_WAIT: 500,
-        RETRY_MAX_WAIT: 3000,
-    },
     TIMEOUTS: {
         HTTP_REQUEST: 30000,
         CAPTCHA_SOLVE: 60000,
     },
     MAX_RETRIES: 3,
     MAX_CAPTCHA_RETRIES: 5,
-    MAX_PAGE_RETRIES: 20,
 };
 
-// HTTP Headers
-const DIJITAL_HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Accept-Language': 'tr-TR,tr;q=0.9',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Origin': 'https://dijital.gib.gov.tr',
-    'Referer': 'https://dijital.gib.gov.tr/portal/login',
-};
-
-const EBEYANNAME_HEADERS = {
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'Accept': '*/*',
-    'Accept-Language': 'tr-TR,tr;q=0.9',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Origin': 'https://ebeyanname.gib.gov.tr',
-    'X-Requested-With': 'XMLHttpRequest',
-};
+// INTVRG PDF görüntüleme endpoint'i
+const INTVRG_GORUNTULEME = `${INTVRG_BASE}/intvrg_server/goruntuleme`;
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 // ═══════════════════════════════════════════════════════════════════
 // HATA KODLARI
@@ -200,28 +167,37 @@ export interface BotOptions {
     onProgress: (type: string, data: any) => void;
 }
 
-interface BeyannameItem {
-    oid: string;
-    tahakkukOid?: string;
+/** INTVRG beyanname arama sonucu (tek kayıt) */
+interface IntrvrgBeyannameItem {
+    beyannameKodu: string;
     beyannameTuru: string;
-    tcVkn: string;
-    adSoyadUnvan: string;
+    durum: string;           // "0"=Hatalı, "1"=Onay Bekliyor, "2"=Onaylandı, "3"=İptal
+    tckn: string;
+    unvan: string;
     vergiDairesi: string;
-    vergilendirmeDonemi: string;
-    yuklemeZamani: string;
-    hasSgkDetails?: boolean;
-    durum: 'onaylandi' | 'hata' | 'iptal' | 'onay_bekliyor' | 'bilinmiyor';
+    donem: string;           // "01/2026-01/2026"
+    yuklemezamani: string;   // "23.02.2026 - 15:26:26"
+    beyannameOid: string;
+    tahakkukOid: string;
 }
 
-interface PaginationInfo {
-    currentPage: number;
-    totalPages: number;
-    baseQuery: string;
+/** Beyanname arama response */
+interface BeyannameSearchResponse {
+    data: {
+        data: IntrvrgBeyannameItem[];
+        rowcount: number;
+        page: number;
+    };
 }
 
-interface MuhsgkDetailPdfs {
-    sgkTahakkukUrls: string[];
-    hizmetListesiUrls: string[];
+/** SGK bildirge detay response */
+interface SgkBildirgeResponse {
+    data: {
+        beyanname_durum: string;
+        bildirim_sayisi: string;
+        beyannameoid: string;
+        [key: string]: unknown; // thkhaberlesme1, thkhaberlesme2, ...
+    };
 }
 
 interface PreDownloadedCustomer {
@@ -257,24 +233,6 @@ export function resetBotStopFlag() {
 
 function checkIfStopped(): boolean {
     return botShouldStop;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// RATE LIMIT STATE
-// ═══════════════════════════════════════════════════════════════════
-let consecutiveHttp500Count = 0;
-let currentDelay = GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS;
-
-function getAdaptiveDelay(): number {
-    if (consecutiveHttp500Count >= 2) {
-        return Math.min(currentDelay + 300, GIB_CONFIG.RATE_LIMIT.MAX_DELAY);
-    }
-    return currentDelay;
-}
-
-function resetRateLimitState(): void {
-    consecutiveHttp500Count = 0;
-    currentDelay = GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -387,585 +345,123 @@ function resolveBeyannameTanim(code: string): string {
     return GIB_BEYANNAME_TANIM_MAP[code.toUpperCase()] || code;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// E-BEYANNAME TOKEN
-// ═══════════════════════════════════════════════════════════════════
-async function getEbeyanToken(dijitalToken: string): Promise<string | null> {
-    log.debug('E-Beyanname token alınıyor...');
+// getEbeyanToken kaldırıldı — INTVRG'de getIvdToken kullanılıyor
 
-    const response = await fetch(GIB_CONFIG.DIJITAL_GIB.EBYN_LOGIN, {
-        method: 'GET',
-        headers: {
-            ...DIJITAL_HEADERS,
-            'Authorization': `Bearer ${dijitalToken}`,
-        },
-    });
-
-    const data = await response.json();
-
-    if (data.redirectUrl) {
-        const tokenMatch = data.redirectUrl.match(/TOKEN=([^&]+)/);
-        if (tokenMatch) {
-            const token = tokenMatch[1];
-            log.debug(`E-Beyanname token: ${token.substring(0, 30)}...`);
-
-            // Session aktive et (ZORUNLU — yapılmazsa dispatch çalışmaz)
-            log.debug('Session aktive ediliyor...');
-            await fetch(data.redirectUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'User-Agent': DIJITAL_HEADERS['User-Agent'],
-                },
-            });
-
-            log.success('E-Beyanname session aktive edildi');
-            return token;
-        }
-    }
-
-    log.error('E-Beyanname oturum anahtarı alınamadı — GİB giriş bilgilerini kontrol edin');
-    return null;
-}
+// parseBeyannamePage ve fetchBeyannamePage kaldırıldı — INTVRG JSON API kullanılıyor
 
 // ═══════════════════════════════════════════════════════════════════
-// BEYANNAME SEARCH (Cheerio)
-// ═══════════════════════════════════════════════════════════════════
-
-function parseBeyannamePage(html: string): { records: BeyannameItem[]; totalRecords: number; totalPages: number } {
-    // HTMLCONTENT çıkar
-    let contentHtml = html;
-    const htmlContentMatch = html.match(/<HTMLCONTENT>([\s\S]*?)<\/HTMLCONTENT>/i);
-    if (htmlContentMatch) {
-        contentHtml = htmlContentMatch[1];
-    }
-
-    const $ = cheerio.load(contentHtml);
-
-    // Pagination: "1 - 25 / 123" veya digerSayfayaGecis fonksiyon çağrısı
-    let totalRecords = 0;
-    let totalPages = 1;
-
-    // Yöntem 1: digerSayfayaGecis fonksiyon çağrısından sayfa bilgisi
-    const paginationMatch = contentHtml.match(
-        /digerSayfayaGecis\([^,]+,\s*'nextPage'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']+)'/
-    );
-    if (paginationMatch) {
-        totalPages = parseInt(paginationMatch[2], 10);
-    }
-
-    // Yöntem 2: "1 - 25 / 123" formatından toplam kayıt
-    const pageInfoText = $('font[size="2"]').text();
-    const pageMatch = pageInfoText.match(/(\d+)\s*-\s*(\d+)\s*\/\s*(\d+)/);
-    if (pageMatch) {
-        totalRecords = parseInt(pageMatch[3], 10);
-        if (totalPages === 1) {
-            totalPages = Math.ceil(totalRecords / 25);
-        }
-    }
-
-    // Satırları parse et
-    const records: BeyannameItem[] = [];
-    $('tr[id^="row"]').each((_, row) => {
-        const $row = $(row);
-        const rowId = $row.attr('id')?.replace('row', '') || '';
-
-        // OID decode
-        let oid: string;
-        try { oid = decodeURIComponent(rowId); } catch { oid = rowId; }
-
-        // Durum tespiti
-        let durum: BeyannameItem['durum'] = 'bilinmiyor';
-        const durumTd = $row.find(`td[id^="durumTD"]`);
-        if (durumTd.length > 0) {
-            const durumHtml = durumTd.html()?.toLowerCase() || '';
-            if (durumHtml.includes('ok.gif')) durum = 'onaylandi';
-            else if (durumHtml.includes('err.gif') || durumHtml.includes('error.gif')) durum = 'hata';
-            else if (durumHtml.includes('wtng.gif') || durumHtml.includes('wait.gif')) durum = 'onay_bekliyor';
-            else if (durumHtml.includes('iptal.gif') || durumHtml.includes('del.gif') || durumHtml.includes('cancel.gif')) durum = 'iptal';
-            // Text'ten tespit (backup)
-            else if (durumHtml.includes('onaylandı') || durumHtml.includes('onaylandi')) durum = 'onaylandi';
-            else if (durumHtml.includes('hatalı') || durumHtml.includes('hatali')) durum = 'hata';
-            else if (durumHtml.includes('onay bekliyor') || durumHtml.includes('bekliyor')) durum = 'onay_bekliyor';
-            else if (durumHtml.includes('iptal')) durum = 'iptal';
-        }
-
-        // Yedek: Satırdaki nested table veya direkt status ikonları
-        if (durum === 'bilinmiyor') {
-            const rowHtml = ($row.html() || '').toLowerCase();
-            const statusIcons = rowHtml.match(/images\/(ok|err|wtng|iptal|del|cancel|error|wait)\.gif/g);
-            if (statusIcons) {
-                for (const icon of statusIcons) {
-                    if (icon.includes('ok.gif')) { durum = 'onaylandi'; break; }
-                    else if (icon.includes('err.gif') || icon.includes('error.gif')) durum = 'hata';
-                    else if ((icon.includes('wtng.gif') || icon.includes('wait.gif')) && durum !== 'hata') durum = 'onay_bekliyor';
-                    else if ((icon.includes('iptal.gif') || icon.includes('del.gif') || icon.includes('cancel.gif')) && durum !== 'hata' && durum !== 'onay_bekliyor') durum = 'iptal';
-                }
-            }
-        }
-
-        if (durum === 'bilinmiyor') {
-            log.warn(`Durum tespit edilemedi (OID: ${oid})`);
-        }
-
-        // Hücreleri oku
-        const tds = $row.find('> td');
-        if (tds.length < 6) return; // Yetersiz hücre, atla
-
-        // Beyanname türü (2. sütun, index 1)
-        const beyannameTuru = tds.eq(1).text().replace(/\s+/g, ' ').trim();
-
-        // VKN/TCK (3. sütun, index 2) — başta \n ve boşluk var, trim zorunlu
-        const tcVkn = tds.eq(2).text().trim();
-
-        // Unvan — title attribute'unda tam unvan var
-        const unvanTd = tds.eq(3);
-        const adSoyadUnvan = unvanTd.attr('title') || unvanTd.text().replace(/\s+/g, ' ').trim();
-
-        // Vergi dairesi
-        const vergiDairesi = tds.eq(4).text().replace(/\s+/g, ' ').trim();
-
-        // Dönem
-        const vergilendirmeDonemi = tds.eq(5).text().replace(/\s+/g, ' ').trim();
-
-        // Yükleme zamanı (8. sütun, index 7)
-        const yuklemeZamani = tds.eq(7).text().replace(/\s+/g, ' ').trim();
-
-        // Tahakkuk OID
-        const rowHtmlFull = $row.html() || '';
-        const thkMatch = rowHtmlFull.match(/tahakkukGoruntule\(['"]([^'"]+)['"],\s*['"]([^'"]+)['"]/);
-        let tahakkukOid: string | undefined;
-        if (thkMatch) {
-            try { tahakkukOid = decodeURIComponent(thkMatch[2]); } catch { tahakkukOid = thkMatch[2]; }
-        }
-
-        // MUHSGK kontrolü — SGK detay var mı?
-        const isMuhsgk = beyannameTuru.toUpperCase() === 'MUHSGK' ||
-                         (beyannameTuru.toLowerCase().includes('muhtasar') && beyannameTuru.toLowerCase().includes('prim'));
-        const hasSgkDetails = isMuhsgk || $row.find('img[src*="tick_kontrol"]').length > 0;
-
-        records.push({
-            oid,
-            tahakkukOid,
-            beyannameTuru,
-            tcVkn,
-            adSoyadUnvan,
-            vergiDairesi,
-            vergilendirmeDonemi,
-            yuklemeZamani,
-            hasSgkDetails,
-            durum,
-        });
-    });
-
-    return { records, totalRecords: totalRecords || records.length, totalPages };
-}
-
-async function fetchBeyannamePage(
-    ebeyanToken: string,
-    baslangicTarihi: string,
-    bitisTarihi: string,
-    pageNumber: number = 1,
-    searchFilters?: {
-        vergiNo?: string;
-        tcKimlikNo?: string;
-        beyannameTuru?: string;
-    }
-): Promise<{ beyannameler: BeyannameItem[]; totalPages: number; newToken: string }> {
-    log.debug(`Sayfa ${pageNumber} çekiliyor...`);
-
-    let currentToken = ebeyanToken;
-
-    // Rate limit retry — GİB "İki istek arası en az 1 sn" hatası verirse tekrar dene
-    for (let attempt = 1; attempt <= GIB_CONFIG.MAX_PAGE_RETRIES; attempt++) {
-        const formData = new URLSearchParams();
-        formData.append('cmd', 'BEYANNAMELISTESI');
-
-        if (searchFilters?.vergiNo) {
-            formData.append('sorguTipiN', '1');
-            formData.append('vergiNo', searchFilters.vergiNo);
-        }
-        if (searchFilters?.tcKimlikNo) {
-            formData.append('sorguTipiT', '1');
-            formData.append('tcKimlikNo', searchFilters.tcKimlikNo);
-        }
-        if (searchFilters?.beyannameTuru) {
-            const gibTanim = resolveBeyannameTanim(searchFilters.beyannameTuru);
-            formData.append('sorguTipiB', '1');
-            formData.append('beyannameTanim', gibTanim);
-            if (pageNumber === 1 && attempt === 1) log.info(`Beyanname türü filtresi: ${searchFilters.beyannameTuru} → beyannameTanim=${gibTanim}`);
-        }
-
-        formData.append('sorguTipiZ', '1');
-        formData.append('baslangicTarihi', baslangicTarihi);
-        formData.append('bitisTarihi', bitisTarihi);
-
-        if (pageNumber > 1) {
-            formData.append('pageNo', String(pageNumber));
-        }
-
-        formData.append('TOKEN', currentToken);
-
-        const ts = Date.now();
-        const response = await fetch(`${GIB_CONFIG.EBEYANNAME.DISPATCH}?_dc=${ts}`, {
-            method: 'POST',
-            headers: {
-                ...EBEYANNAME_HEADERS,
-                'Referer': `https://ebeyanname.gib.gov.tr/dispatch?cmd=LOGIN&TOKEN=${currentToken}`,
-            },
-            body: formData.toString(),
-        });
-
-        const html = await response.text();
-
-        // Yeni TOKEN'ı al (her yanıtta güncellenir)
-        const tokenMatch = html.match(/<TOKEN>([^<]+)<\/TOKEN>/);
-        if (tokenMatch) currentToken = tokenMatch[1];
-
-        // Rate limit hatası kontrolü
-        const serverError = html.match(/<SERVERERROR>([^<]*)<\/SERVERERROR>/);
-        if (serverError && serverError[1] && serverError[1].includes('1 sn')) {
-            log.warn(`Sayfa ${pageNumber} rate limit! Deneme ${attempt} — 1.2s bekleniyor...`);
-            await delay(1200);
-            continue;
-        }
-
-        // Cheerio ile parse et
-        const { records, totalPages } = parseBeyannamePage(html);
-
-        log.debug(`Sayfa ${pageNumber}: ${records.length} beyanname bulundu`);
-        return { beyannameler: records, totalPages, newToken: currentToken };
-    }
-
-    // Tüm denemeler başarısız
-    log.error(`Sayfa ${pageNumber} alınamadı — ${GIB_CONFIG.MAX_PAGE_RETRIES} deneme başarısız`);
-    return { beyannameler: [], totalPages: 1, newToken: currentToken };
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// PDF DOWNLOAD
+// PDF DOWNLOAD (INTVRG goruntuleme)
 // ═══════════════════════════════════════════════════════════════════
 
 async function downloadPdf(
-    beyannameOid: string,
-    type: 'beyanname' | 'tahakkuk',
-    token: string,
-    tahakkukOid?: string,
-    maxRetries: number = 3
+    subcmd: string,
+    params: Record<string, string>,
+    ivdToken: string,
+    maxRetries: number = 2,
 ): Promise<{ success: boolean; base64?: string; fileSize?: number; error?: string }> {
-    log.download(`${type} PDF indiriliyor: ${beyannameOid}`);
+    // URL oluştur — TÜM parametreleri encodeURIComponent ile encode et
+    const queryParts = [
+        `cmd=IMAJ`,
+        `subcmd=${subcmd}`,
+        ...Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`),
+        `USERID=`,
+        `inline=true`,
+        `goruntuTip=1`,
+        `token=${ivdToken}`, // küçük harf "token"
+    ];
+    const url = `${INTVRG_GORUNTULEME}?${queryParts.join('&')}`;
 
-    const params = new URLSearchParams({
-        cmd: 'IMAJ',
-        subcmd: type === 'beyanname' ? 'BEYANNAMEGORUNTULE' : 'TAHAKKUKGORUNTULE',
-        beyannameOid,
-        goruntuTip: '1',
-        inline: 'true',
-        TOKEN: token,
-    });
+    log.download(`${subcmd} PDF indiriliyor...`);
 
-    if (type === 'tahakkuk' && tahakkukOid) {
-        params.append('tahakkukOid', tahakkukOid);
-    }
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        const ts = Date.now();
-        const url = `${GIB_CONFIG.EBEYANNAME.DISPATCH}?_dc=${ts}&${params.toString()}`;
-
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/pdf,application/octet-stream,*/*',
-                    'User-Agent': DIJITAL_HEADERS['User-Agent'],
-                    'Referer': 'https://ebeyanname.gib.gov.tr/',
+                    'User-Agent': USER_AGENT,
+                    'Accept': 'application/pdf,*/*',
+                    'Referer': `${INTVRG_BASE}/intvrg_side/main.jsp`,
                 },
             });
 
-            log.http('GET', url, response.status);
-
-            // HTTP 500 — Adaptive Backoff
-            if (response.status === 500) {
-                consecutiveHttp500Count++;
-                if (consecutiveHttp500Count === 1) {
-                    log.warn(`HTTP 500! ${GIB_CONFIG.RATE_LIMIT.COOLDOWN_AFTER_500}ms cooldown...`);
-                    await delay(GIB_CONFIG.RATE_LIMIT.COOLDOWN_AFTER_500);
-                    currentDelay = 2000;
-                } else if (consecutiveHttp500Count >= GIB_CONFIG.RATE_LIMIT.CONSECUTIVE_500_THRESHOLD) {
-                    log.warn(`${consecutiveHttp500Count}. ardisik HTTP 500! ${GIB_CONFIG.RATE_LIMIT.BIG_COOLDOWN}ms buyuk cooldown...`);
-                    await delay(GIB_CONFIG.RATE_LIMIT.BIG_COOLDOWN);
-                    currentDelay = GIB_CONFIG.RATE_LIMIT.MAX_DELAY;
-                }
-                if (attempt < maxRetries) {
-                    const retryWait = GIB_CONFIG.RATE_LIMIT.BASE_RETRY_WAIT + (attempt - 1) * 1000;
-                    log.warn(`${type} PDF HTTP 500, ${retryWait}ms bekle (${attempt}/${maxRetries})...`);
-                    await delay(retryWait);
-                    continue;
-                }
-                return { success: false, error: `HTTP 500 (${attempt} deneme sonrasi)` };
-            }
-
             if (!response.ok) {
-                return { success: false, error: `HTTP ${response.status}` };
+                throw new Error(`HTTP ${response.status}`);
             }
 
-            // Basarili — rate limit reset
-            if (consecutiveHttp500Count > 0) {
-                log.success(`Rate limit normale dondu (${consecutiveHttp500Count} hata sonrasi)`);
-                resetRateLimitState();
-            }
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
 
-            const contentType = response.headers.get('content-type') || '';
-
-            // PDF binary
-            if (contentType.includes('pdf') || contentType.includes('octet-stream')) {
-                const buffer = await response.arrayBuffer();
-                const base64 = Buffer.from(buffer).toString('base64');
-                if (base64.length > 1000) {
-                    log.success(`${type} PDF indirildi: ${buffer.byteLength} bytes`);
-                    return { success: true, base64, fileSize: buffer.byteLength };
+            // Kota kontrolü
+            if (buffer.length < 200) {
+                const text = buffer.toString('utf-8');
+                if (text.includes('kota') || text.includes('günlük')) {
+                    return { success: false, error: 'QUOTA_EXCEEDED' };
                 }
             }
 
-            // HTML/XML response
-            const text = await response.text();
-
-            // XML icinden PDF
-            if (text.includes('<PDFFILE>')) {
-                const pdfMatch = text.match(/<PDFFILE>([^<]+)<\/PDFFILE>/);
-                if (pdfMatch) {
-                    log.success(`${type} PDF (XML) indirildi: ${pdfMatch[1].length} chars`);
-                    return { success: true, base64: pdfMatch[1], fileSize: pdfMatch[1].length };
-                }
+            // PDF geçerlilik
+            const header = buffer.subarray(0, 5).toString('utf-8');
+            if (buffer.length < 100 || !header.startsWith('%PDF')) {
+                // GİB sunucu hatası — retry etme
+                const preview = buffer.subarray(0, 100).toString('utf-8');
+                return { success: false, error: `PDF_INVALID: ${preview.substring(0, 80)}` };
             }
 
-            // Hata mesaji
-            if (text.includes('EYEKSERROR') || text.includes('SERVERERROR')) {
-                const errorMatch = text.match(/<EYEKSERROR>([^<]+)<\/EYEKSERROR>/) ||
-                                  text.match(/<SERVERERROR>([^<]+)<\/SERVERERROR>/);
-                if (errorMatch) return { success: false, error: errorMatch[1] };
-            }
+            log.success(`${subcmd} PDF indirildi: ${buffer.length} bytes`);
+            return {
+                success: true,
+                base64: buffer.toString('base64'),
+                fileSize: buffer.length,
+            };
 
-            return { success: false, error: `Beklenmeyen Content-Type: ${contentType}` };
-        } catch (error) {
-            if (attempt < maxRetries) {
-                const backoffWait = Math.min(
-                    GIB_CONFIG.RATE_LIMIT.RETRY_WAIT * Math.pow(1.5, attempt - 1),
-                    GIB_CONFIG.RATE_LIMIT.RETRY_MAX_WAIT
-                );
-                log.warn(`${type} PDF hatasi, ${backoffWait}ms bekle (${attempt}/${maxRetries})...`);
-                await delay(backoffWait);
-                continue;
+        } catch (e) {
+            if (attempt === maxRetries) {
+                return { success: false, error: (e as Error).message };
             }
-            return { success: false, error: (error as Error).message };
+            // Kısa retry beklemesi
+            await delay(300);
         }
     }
 
-    return { success: false, error: 'Maksimum deneme sayısına ulaşıldı. GİB sunucusu yanıt vermiyor.' };
+    return { success: false, error: 'MAX_RETRIES_EXCEEDED' };
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MUHSGK DETAIL PDFs (Cheerio)
+// MUHSGK SGK DETAY (INTVRG JSON API)
 // ═══════════════════════════════════════════════════════════════════
 
-async function getMuhsgkDetailPdfs(beyannameOid: string, token: string): Promise<MuhsgkDetailPdfs> {
-    log.debug(`MUHSGK Detay PDF'leri: ${beyannameOid}`);
+async function getMuhsgkSgkDetails(
+    client: IntrvrgClient,
+    beyannameOid: string,
+): Promise<{ sgkEntries: Array<{ thkoid: string; aciklama: string; index: number }> }> {
+    log.debug(`MUHSGK SGK detay alınıyor: ${beyannameOid}`);
 
-    const result: MuhsgkDetailPdfs = { sgkTahakkukUrls: [], hizmetListesiUrls: [] };
+    const result = await client.callDispatch<SgkBildirgeResponse>(
+        'sgkBildirgeIslemleri_bildirgeleriGetir',
+        { beyannameOid },
+    );
 
-    try {
-        const ts = Date.now();
-        const formData = new URLSearchParams({
-            cmd: 'THKESASBILGISGKMESAJLARI',
-            beyannameOid,
-            TOKEN: token,
-        });
+    const entries: Array<{ thkoid: string; aciklama: string; index: number }> = [];
+    const data = result.data;
+    const bildirimSayisi = parseInt(data.bildirim_sayisi || '0', 10);
 
-        const response = await fetch(`${GIB_CONFIG.EBEYANNAME.DISPATCH}?_dc=${ts}`, {
-            method: 'POST',
-            headers: {
-                ...EBEYANNAME_HEADERS,
-                'Referer': `https://ebeyanname.gib.gov.tr/dispatch?cmd=LOGIN&TOKEN=${token}`,
-            },
-            body: formData.toString(),
-        });
-
-        if (!response.ok) {
-            log.error(`Detay popup hatasi: HTTP ${response.status}`);
-            return result;
-        }
-
-        const rawHtml = await response.text();
-        log.debug(`Detay popup alindi: ${rawHtml.length} chars`);
-
-        // HTML entity decode
-        const html = rawHtml
-            .replace(/&quot;/g, '"')
-            .replace(/&apos;/g, "'")
-            .replace(/&#39;/g, "'")
-            .replace(/&#34;/g, '"')
-            .replace(/&amp;/g, '&');
-
-        // OID decode helper
-        const safeDecodeEncode = (oid: string): string => {
-            try { return encodeURIComponent(decodeURIComponent(oid)); }
-            catch { return encodeURIComponent(oid); }
-        };
-
-        // SGK URL parse helper
-        const parseSgkUrls = (funcName: string, subcmd: string): string[] => {
-            const urls: string[] = [];
-            const regex = new RegExp(`${funcName}\\s*\\(\\s*['"]([^'"]+)['"]\\s*,\\s*['"]([^'"]+)['"]`, 'gi');
-            let m;
-            while ((m = regex.exec(html)) !== null) {
-                const bynOid = safeDecodeEncode(m[1]);
-                const sgkOid = safeDecodeEncode(m[2]);
-                const url = `${GIB_CONFIG.EBEYANNAME.DISPATCH}?cmd=IMAJ&subcmd=${subcmd}&TOKEN=__TOKEN__&beyannameOid=${bynOid}&sgkTahakkukOid=${sgkOid}&inline=true`;
-                if (!urls.some(u => u.includes(sgkOid))) {
-                    urls.push(url);
-                    log.debug(`${funcName} URL bulundu: sgkOid=${sgkOid}`);
-                }
-            }
-            return urls;
-        };
-
-        result.sgkTahakkukUrls = parseSgkUrls('sgkTahakkukGoruntule', 'SGKTAHAKKUKGORUNTULE');
-        result.hizmetListesiUrls = parseSgkUrls('sgkHizmetGoruntule', 'SGKHIZMETGORUNTULE');
-
-        if (result.sgkTahakkukUrls.length > 0 || result.hizmetListesiUrls.length > 0) {
-            log.info(`   MUHSGK Detay: ${result.sgkTahakkukUrls.length} Tahakkuk, ${result.hizmetListesiUrls.length} Hizmet URL bulundu`);
-        } else {
-            const htmlLower = html.toLowerCase();
-            const hasSgkKeywords = htmlLower.includes('sgktahakkuk') || htmlLower.includes('sgkhizmet');
-            const hasGoruntule = htmlLower.includes('goruntule');
-            if (hasSgkKeywords || hasGoruntule) {
-                log.error(`   MUHSGK Detay: SGK pattern'leri HTML'de var ama URL parse edilemedi!`);
-            } else {
-                log.info(`   MUHSGK Detay: Bu beyannamede SGK verisi bulunmuyor`);
-            }
-        }
-    } catch (error) {
-        log.error(`MUHSGK detay hatasi: ${(error as Error).message}`);
-    }
-
-    return result;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SGK PDF DOWNLOAD
-// ═══════════════════════════════════════════════════════════════════
-
-async function downloadSgkPdf(
-    url: string,
-    token: string,
-    maxRetries: number = 3
-): Promise<{ success: boolean; base64?: string; fileSize?: number; error?: string }> {
-    const urlWithToken = url.replace('__TOKEN__', token);
-    log.download(`SGK PDF indiriliyor...`);
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch(urlWithToken, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/pdf,application/octet-stream,*/*',
-                    'User-Agent': DIJITAL_HEADERS['User-Agent'],
-                    'Referer': 'https://ebeyanname.gib.gov.tr/',
-                },
-            });
-
-            log.http('GET', urlWithToken, response.status);
-
-            // HTTP 500 — Adaptive Backoff
-            if (response.status === 500) {
-                consecutiveHttp500Count++;
-                if (consecutiveHttp500Count === 1) {
-                    log.warn(`HTTP 500! ${GIB_CONFIG.RATE_LIMIT.COOLDOWN_AFTER_500}ms cooldown...`);
-                    await delay(GIB_CONFIG.RATE_LIMIT.COOLDOWN_AFTER_500);
-                    currentDelay = 2000;
-                } else if (consecutiveHttp500Count >= GIB_CONFIG.RATE_LIMIT.CONSECUTIVE_500_THRESHOLD) {
-                    log.warn(`${consecutiveHttp500Count}. ardisik HTTP 500! ${GIB_CONFIG.RATE_LIMIT.BIG_COOLDOWN}ms buyuk cooldown...`);
-                    await delay(GIB_CONFIG.RATE_LIMIT.BIG_COOLDOWN);
-                    currentDelay = GIB_CONFIG.RATE_LIMIT.MAX_DELAY;
-                }
-                if (attempt < maxRetries) {
-                    const retryWait = GIB_CONFIG.RATE_LIMIT.BASE_RETRY_WAIT + (attempt - 1) * 1000;
-                    log.warn(`SGK PDF HTTP 500, ${retryWait}ms bekle (${attempt}/${maxRetries})...`);
-                    await delay(retryWait);
-                    continue;
-                }
-                return { success: false, error: `HTTP 500 (${attempt} deneme sonrasi)` };
-            }
-
-            if (!response.ok) {
-                return { success: false, error: `HTTP ${response.status}` };
-            }
-
-            // Basarili — rate limit reset
-            if (consecutiveHttp500Count > 0) {
-                log.success(`Rate limit normale dondu (${consecutiveHttp500Count} hata sonrasi)`);
-                resetRateLimitState();
-            }
-
-            const contentType = response.headers.get('content-type') || '';
-
-            // PDF binary
-            if (contentType.includes('pdf') || contentType.includes('octet-stream')) {
-                const buffer = await response.arrayBuffer();
-                const base64 = Buffer.from(buffer).toString('base64');
-                if (base64.length > 1000) {
-                    log.success(`SGK PDF indirildi: ${buffer.byteLength} bytes`);
-                    return { success: true, base64, fileSize: buffer.byteLength };
-                }
-                if (base64.length > 100) {
-                    return { success: true, base64, fileSize: buffer.byteLength };
-                }
-                return { success: false, error: `PDF cok kucuk: ${buffer.byteLength} bytes` };
-            }
-
-            // Text response
-            const text = await response.text();
-            if (text.includes('<PDFFILE>')) {
-                const pdfMatch = text.match(/<PDFFILE>([^<]+)<\/PDFFILE>/);
-                if (pdfMatch) {
-                    log.success(`SGK PDF (XML) indirildi: ${pdfMatch[1].length} chars`);
-                    return { success: true, base64: pdfMatch[1], fileSize: pdfMatch[1].length };
-                }
-            }
-
-            if (text.includes('EYEKSERROR') || text.includes('SERVERERROR')) {
-                const errorMatch = text.match(/<EYEKSERROR>([^<]+)<\/EYEKSERROR>/) ||
-                                  text.match(/<SERVERERROR>([^<]+)<\/SERVERERROR>/);
-                if (errorMatch) {
-                    const errorMsg = errorMatch[1];
-                    const isTransient = errorMsg.includes('sistem hatası') || errorMsg.includes('daha sonra tekrar') ||
-                                       errorMsg.includes('zaman aşımı') || errorMsg.includes('timeout');
-                    if (isTransient && attempt < maxRetries) {
-                        const retryWait = GIB_CONFIG.RATE_LIMIT.BASE_RETRY_WAIT + (attempt - 1) * 1000;
-                        log.warn(`SGK PDF gecici hata: "${errorMsg}" - ${retryWait}ms bekle (${attempt}/${maxRetries})...`);
-                        await delay(retryWait);
-                        continue;
-                    }
-                    return { success: false, error: errorMsg };
-                }
-            }
-
-            return { success: false, error: `Beklenmeyen Content-Type: ${contentType}` };
-        } catch (error) {
-            if (attempt < maxRetries) {
-                const backoffWait = Math.min(
-                    GIB_CONFIG.RATE_LIMIT.RETRY_WAIT * Math.pow(1.5, attempt - 1),
-                    GIB_CONFIG.RATE_LIMIT.RETRY_MAX_WAIT
-                );
-                log.warn(`SGK PDF hatasi, ${backoffWait}ms bekle (${attempt}/${maxRetries})...`);
-                await delay(backoffWait);
-                continue;
-            }
-            return { success: false, error: (error as Error).message };
+    // thkhaberlesme1 = Vergi tahakkuku (atla — ana tahakkuk zaten indiriliyor)
+    // thkhaberlesme2+ = SGK bildirgeleri
+    for (let i = 2; i <= bildirimSayisi; i++) {
+        const key = `thkhaberlesme${i}`;
+        const thk = data[key] as { thkoid: string; aciklama: string } | undefined;
+        if (thk?.thkoid) {
+            entries.push({ thkoid: thk.thkoid, aciklama: thk.aciklama, index: i });
         }
     }
 
-    return { success: false, error: 'Maksimum deneme sayısına ulaşıldı. GİB sunucusu yanıt vermiyor.' };
+    if (entries.length > 0) {
+        log.info(`   MUHSGK Detay: ${entries.length} SGK bildirge bulundu`);
+    } else {
+        log.info(`   MUHSGK Detay: Bu beyannamede SGK verisi bulunmuyor`);
+    }
+
+    return { sgkEntries: entries };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1022,9 +518,8 @@ export async function runEbeyannamePipeline(options: BotOptions) {
 
     // Reset
     resetBotStopFlag();
-    resetRateLimitState();
 
-    log.separator('E-BEYANNAME HTTP API PIPELINE');
+    log.separator('INTVRG BEYANNAME PIPELINE');
     log.debug(`Tarih araligi: ${startDate} - ${endDate}`);
     log.debug(`PDF indirme: ${downloadFiles ? 'EVET' : 'HAYIR'}`);
     log.debug(`Kullanici: ${username}`);
@@ -1156,29 +651,18 @@ export async function runEbeyannamePipeline(options: BotOptions) {
         }
 
         log.success("GİB giriş başarılı!");
-        await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_REQUESTS);
 
         // ═══════════════════════════════════════════════════════════
-        // STEP 2: E-BEYANNAME TOKEN
+        // STEP 2: IVD TOKEN (INTVRG)
         // ═══════════════════════════════════════════════════════════
-        const ebeyanToken = await getEbeyanToken(dijitalToken);
-        if (!ebeyanToken) {
-            const error = createGibError('E-Beyanname token alınamadı');
-            onProgress('error', { error: error.message, gibError: error });
-            return;
-        }
-        let currentToken = ebeyanToken;
-        await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_REQUESTS);
+        report(50, 'İnternet Vergi Dairesi oturumu açılıyor...');
+        const ivdToken = await getIvdToken(dijitalToken);
+        const client = new IntrvrgClient(ivdToken, '');
+        log.success('IVD token alındı');
 
         // ═══════════════════════════════════════════════════════════
-        // STEP 3: SEARCH
+        // STEP 3: SEARCH (INTVRG JSON API)
         // ═══════════════════════════════════════════════════════════
-        const searchFilters = { vergiNo, tcKimlikNo, beyannameTuru };
-        const filterParts: string[] = [];
-        if (beyannameTuru) filterParts.push(`Tur: ${beyannameTuru}`);
-        if (vergiNo) filterParts.push(`VKN: ${vergiNo}`);
-        if (tcKimlikNo) filterParts.push(`TCK: ${tcKimlikNo}`);
-
         if (beyannameTuru) {
             report(55, `${beyannameTuru} beyanname sorgusu yapılıyor...${vergiNo ? ` (VKN: ${vergiNo})` : ''}${tcKimlikNo ? ` (TCK: ${tcKimlikNo})` : ''}`);
         } else {
@@ -1188,71 +672,88 @@ export async function runEbeyannamePipeline(options: BotOptions) {
         const startDateInfo = formatDate(startDate);
         const endDateInfo = formatDate(endDate);
 
-        // Ilk sayfa
-        const firstResult = await fetchBeyannamePage(currentToken, startDateInfo.formatted, endDateInfo.formatted, 1, searchFilters);
-        let totalPages = firstResult.totalPages;
-        currentToken = firstResult.newToken;
-        const allSearchedBeyannameler: BeyannameItem[] = [...firstResult.beyannameler];
+        // Tarih parametreleri (YYYYMMDD)
+        const baslangicTarihi = startDateInfo.formatted;
+        const bitisTarihi = endDateInfo.formatted;
 
-        log.info(`Sayfa 1/${totalPages} çekildi: ${firstResult.beyannameler.length} beyanname`);
-        if (totalPages > 1) {
-            report(57, `Sayfa 1/${totalPages} çekildi (${firstResult.beyannameler.length} beyanname)`);
-        }
+        // Dönem hesapla
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        let dBasAy = startDateObj.getMonth(); // 0-indexed → zaten -1
+        let donemBasYil = startDateObj.getFullYear();
+        if (dBasAy <= 0) { dBasAy += 12; donemBasYil--; }
 
-        // Kalan sayfalar
-        for (let currentPage = 2; currentPage <= totalPages; currentPage++) {
+        // INTVRG arama parametreleri
+        const searchJp: Record<string, unknown> = {
+            arsivde: false,
+            sorguTipiN: vergiNo ? 1 : 0,
+            vergiNo: vergiNo || '',
+            sorguTipiT: tcKimlikNo ? 1 : 0,
+            tcKimlikNo: tcKimlikNo || '',
+            sorguTipiB: beyannameTuru ? 1 : 0,
+            beyannameTanim: beyannameTuru ? resolveBeyannameTanim(beyannameTuru) : '',
+            sorguTipiP: 0,
+            donemBasAy: String(dBasAy).padStart(2, '0'),
+            donemBasYil: String(donemBasYil),
+            donemBitAy: String(endDateObj.getMonth() + 1).padStart(2, '0'),
+            donemBitYil: String(endDateObj.getFullYear()),
+            sorguTipiV: 0,
+            vdKodu: '',
+            sorguTipiZ: 1,
+            tarihAraligi: { baslangicTarihi, bitisTarihi },
+            sorguTipiD: 1,
+            durum: { radiob: false, radiob1: false, radiob2: true, radiob3: false }, // Sadece onaylandı
+        };
+
+        // Tüm sayfaları çek (bekleme YOK)
+        let page = 1;
+        let totalPages = 1;
+        const allIntrvrgItems: IntrvrgBeyannameItem[] = [];
+
+        do {
             if (checkIfStopped()) {
-                log.warn('Bot durduruldu (sayfa cekme sirasinda)');
+                log.warn('Bot durduruldu (sayfa çekme sırasında)');
                 onProgress('error', { error: 'Bot kullanıcı tarafından durduruldu', errorCode: 'USER_STOPPED' });
                 return;
             }
 
-            await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_PAGES);
+            if (page > 1) searchJp.pageNo = page;
 
-            log.info(`Sayfa ${currentPage}/${totalPages} çekiliyor...`);
-            const pageResult = await fetchBeyannamePage(currentToken, startDateInfo.formatted, endDateInfo.formatted, currentPage, searchFilters);
-            allSearchedBeyannameler.push(...pageResult.beyannameler);
-            currentToken = pageResult.newToken;
+            const result = await client.callDispatch<BeyannameSearchResponse>('beyannameService_beyannameAra', searchJp);
+            const items = result.data?.data || [];
+            const rowcount = result.data?.rowcount || 0;
+            totalPages = Math.ceil(rowcount / 25);
 
-            if (pageResult.totalPages > totalPages) totalPages = pageResult.totalPages;
+            allIntrvrgItems.push(...items);
 
-            log.info(`Sayfa ${currentPage}/${totalPages} çekildi: ${pageResult.beyannameler.length} beyanname`);
-            const progressPct = 55 + Math.round((currentPage / totalPages) * 10);
-            report(progressPct, `Sayfa ${currentPage}/${totalPages} çekildi (toplam: ${allSearchedBeyannameler.length} beyanname)`);
-        }
+            log.info(`Sayfa ${page}/${totalPages} çekildi: ${items.length} beyanname`);
+            const progressPct = 55 + Math.round((page / Math.max(totalPages, 1)) * 10);
+            report(progressPct, `Sayfa ${page}/${totalPages} çekildi (toplam: ${allIntrvrgItems.length}/${rowcount} beyanname)`);
+
+            page++;
+        } while (page <= totalPages);
 
         stats.pages = totalPages;
 
-        // Durum filtresi
-        const onaylanmisBeyannameler = allSearchedBeyannameler.filter(b => b.durum === 'onaylandi');
-
-        const durumStats = {
-            onaylandi: allSearchedBeyannameler.filter(b => b.durum === 'onaylandi').length,
-            hata: allSearchedBeyannameler.filter(b => b.durum === 'hata').length,
-            iptal: allSearchedBeyannameler.filter(b => b.durum === 'iptal').length,
-            onay_bekliyor: allSearchedBeyannameler.filter(b => b.durum === 'onay_bekliyor').length,
-            bilinmiyor: allSearchedBeyannameler.filter(b => b.durum === 'bilinmiyor').length,
-        };
+        // INTVRG → BeyannameData dönüşümü (durum filtresi API'de yapıldı)
+        const onaylanmisBeyannameler: BeyannameData[] = allIntrvrgItems.map(item => ({
+            beyannameTuru: normalizeBeyannameTuru(item.beyannameKodu),
+            tcVkn: item.tckn,
+            adSoyadUnvan: item.unvan,
+            vergiDairesi: item.vergiDairesi,
+            vergilendirmeDonemi: item.donem,
+            yuklemeZamani: item.yuklemezamani,
+            oid: item.beyannameOid,
+            tahakkukOid: item.tahakkukOid,
+            tahakkukDurumu: 'onaylandi',
+        }));
 
         const filterLabel = beyannameTuru ? `${beyannameTuru} ` : '';
-        log.success(`Toplam: ${allSearchedBeyannameler.length} ${filterLabel}beyanname (${totalPages} sayfa)`);
-        log.success(`Onaylandi: ${durumStats.onaylandi} (indirilecek)`);
-        if (durumStats.onay_bekliyor > 0) log.warn(`Onay Bekliyor: ${durumStats.onay_bekliyor}`);
-        if (durumStats.hata > 0) log.warn(`Hatali: ${durumStats.hata}`);
-        if (durumStats.iptal > 0) log.warn(`Iptal: ${durumStats.iptal}`);
-        if (durumStats.bilinmiyor > 0) log.warn(`Bilinmiyor: ${durumStats.bilinmiyor}`);
+        log.success(`Toplam: ${onaylanmisBeyannameler.length} ${filterLabel}onaylı beyanname (${totalPages} sayfa)`);
 
         stats.total = onaylanmisBeyannameler.length;
-        stats.skipped = allSearchedBeyannameler.length - onaylanmisBeyannameler.length;
 
-        report(65, `${allSearchedBeyannameler.length} ${filterLabel}beyanname bulundu (${totalPages} sayfa)`);
-
-        const statusParts: string[] = [];
-        statusParts.push(`${durumStats.onaylandi} onaylı`);
-        if (durumStats.hata > 0) statusParts.push(`${durumStats.hata} hatalı`);
-        if (durumStats.onay_bekliyor > 0) statusParts.push(`${durumStats.onay_bekliyor} bekliyor`);
-        if (durumStats.iptal > 0) statusParts.push(`${durumStats.iptal} iptal`);
-        report(70, statusParts.join(' | '));
+        report(65, `${onaylanmisBeyannameler.length} ${filterLabel}onaylı beyanname bulundu (${totalPages} sayfa)`);
 
         if (onaylanmisBeyannameler.length === 0) {
             report(100, "Onaylanmış beyanname bulunamadı!");
@@ -1277,6 +778,7 @@ export async function runEbeyannamePipeline(options: BotOptions) {
         report(75, `${onaylanmisBeyannameler.length} beyanname için PDF indirme başlıyor...`);
 
         const processedBeyannameler: BeyannameData[] = [];
+        let quotaExceeded = false;
 
         for (let i = 0; i < onaylanmisBeyannameler.length; i++) {
             // Stop kontrolu
@@ -1288,25 +790,14 @@ export async function runEbeyannamePipeline(options: BotOptions) {
                 return;
             }
 
-            const item = onaylanmisBeyannameler[i];
+            if (quotaExceeded) break;
+
+            const beyanname = onaylanmisBeyannameler[i];
 
             // Pre-download check
-            const normalizedTuru = normalizeBeyannameTuru(item.beyannameTuru || '');
-            const preDownloadKey = `${item.tcVkn}_${normalizedTuru}`;
+            const normalizedTuru = normalizeBeyannameTuru(beyanname.beyannameTuru || '');
+            const preDownloadKey = `${beyanname.tcVkn}_${normalizedTuru}`;
             const preCheck = preDownloadedMap.get(preDownloadKey);
-
-            // BeyannameData olustur
-            const beyanname: BeyannameData = {
-                beyannameTuru: item.beyannameTuru,
-                tcVkn: item.tcVkn,
-                adSoyadUnvan: item.adSoyadUnvan,
-                vergiDairesi: item.vergiDairesi,
-                vergilendirmeDonemi: item.vergilendirmeDonemi,
-                yuklemeZamani: item.yuklemeZamani,
-                oid: item.oid,
-                tahakkukOid: item.tahakkukOid,
-                tahakkukDurumu: 'onaylandi',
-            };
 
             // Pre-download skip
             if (preCheck && preCheck.downloadedTypes.has('BEYANNAME') && preCheck.downloadedTypes.has('TAHAKKUK')) {
@@ -1314,144 +805,151 @@ export async function runEbeyannamePipeline(options: BotOptions) {
                 beyanname.success = true;
                 processedBeyannameler.push(beyanname);
                 allBeyannameler.push(beyanname);
-                await delay(100);
                 continue;
             }
 
             try {
                 // a) Beyanname PDF
-                if (item.oid) {
-                    const result = await downloadPdf(item.oid, 'beyanname', currentToken);
+                if (beyanname.oid) {
+                    const result = await downloadPdf('BEYANNAMEGORUNTULE', { beyannameOid: beyanname.oid }, ivdToken);
                     if (result.success && result.base64) {
                         beyanname.beyannameBuffer = result.base64;
                         stats.downloaded++;
                     } else {
-                        stats.failed++;
-                        log.error(`Beyanname PDF hatasi: ${result.error}`);
+                        if (result.error === 'QUOTA_EXCEEDED') { quotaExceeded = true; }
+                        else { stats.failed++; log.error(`Beyanname PDF hatasi: ${result.error}`); }
                     }
-                    await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS);
                 }
 
                 // b) Tahakkuk PDF
-                if (item.tahakkukOid) {
-                    const result = await downloadPdf(item.oid, 'tahakkuk', currentToken, item.tahakkukOid);
+                if (beyanname.tahakkukOid && !quotaExceeded) {
+                    const result = await downloadPdf('TAHAKKUKGORUNTULE', {
+                        tahakkukOid: beyanname.tahakkukOid,
+                        beyannameOid: beyanname.oid!,
+                    }, ivdToken);
                     if (result.success && result.base64) {
                         beyanname.tahakkukBuffer = result.base64;
                         stats.downloaded++;
 
                         // Parse tahakkuk
-                        const turuUpper = item.beyannameTuru?.toUpperCase() || '';
-                        if (turuUpper === 'KDV1') {
+                        if (normalizedTuru === 'KDV1') {
                             try { beyanname.kdvTahakkukParsed = await parseKdvTahakkuk(result.base64) || undefined; }
                             catch (e) { log.warn(`KDV1 parse hatasi: ${(e as Error).message}`); }
                         }
-                        if (turuUpper === 'KDV2') {
+                        if (normalizedTuru === 'KDV2') {
                             try { beyanname.kdv2TahakkukParsed = await parseKdv2Tahakkuk(result.base64) || undefined; }
                             catch (e) { log.warn(`KDV2 parse hatasi: ${(e as Error).message}`); }
                         }
-                        if (turuUpper === 'KDV9015') {
+                        if (normalizedTuru === 'KDV9015') {
                             try { beyanname.kdv9015TahakkukParsed = await parseKdv9015Tahakkuk(result.base64) || undefined; }
                             catch (e) { log.warn(`KDV9015 parse hatasi: ${(e as Error).message}`); }
                         }
-                        const normalizedForParse = normalizeBeyannameTuru(item.beyannameTuru || '');
-                        if (normalizedForParse === 'GGECICI' || normalizedForParse === 'KGECICI') {
+                        if (normalizedTuru === 'GGECICI' || normalizedTuru === 'KGECICI') {
                             try { beyanname.geciciVergiTahakkukParsed = await parseGeciciVergiTahakkuk(result.base64) || undefined; }
-                            catch (e) { log.warn(`${item.beyannameTuru} parse hatasi: ${(e as Error).message}`); }
+                            catch (e) { log.warn(`${beyanname.beyannameTuru} parse hatasi: ${(e as Error).message}`); }
                         }
                     } else {
-                        stats.failed++;
-                        log.error(`Tahakkuk PDF hatasi: ${result.error}`);
+                        if (result.error === 'QUOTA_EXCEEDED') { quotaExceeded = true; }
+                        else { stats.failed++; log.error(`Tahakkuk PDF hatasi: ${result.error}`); }
                     }
-                    await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS);
                 }
 
-                // c) MUHSGK SGK PDF'leri
-                if (item.hasSgkDetails && item.oid) {
+                // c) MUHSGK SGK PDF'leri (INTVRG JSON API)
+                if (normalizedTuru === 'MUHSGK' && beyanname.oid && !quotaExceeded) {
                     log.debug('MUHSGK tespit edildi, SGK PDF\'leri indiriliyor...');
 
-                    const muhsgkPdfs = await getMuhsgkDetailPdfs(item.oid, currentToken);
+                    try {
+                        const { sgkEntries } = await getMuhsgkSgkDetails(client, beyanname.oid);
 
-                    beyanname.sgkTahakkukBuffers = [];
-                    beyanname.sgkHizmetBuffers = [];
+                        beyanname.sgkTahakkukBuffers = [];
+                        beyanname.sgkHizmetBuffers = [];
 
-                    // SGK Tahakkuk
-                    for (let sgkIdx = 0; sgkIdx < muhsgkPdfs.sgkTahakkukUrls.length; sgkIdx++) {
-                        if (sgkIdx > 0) await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS);
+                        for (const entry of sgkEntries) {
+                            if (quotaExceeded) break;
 
-                        const sgkResult = await downloadSgkPdf(muhsgkPdfs.sgkTahakkukUrls[sgkIdx], currentToken);
-                        if (sgkResult.success && sgkResult.base64) {
-                            let parsed: TahakkukFisiParsed | undefined;
-                            try { parsed = await parseTahakkukFisi(sgkResult.base64) || undefined; }
-                            catch (e) { log.warn(`SGK Tahakkuk parse hatasi: ${(e as Error).message}`); }
+                            // SGK Tahakkuk
+                            const sgkThk = await downloadPdf('SGKTAHAKKUKGORUNTULE', { sgkTahakkukOid: entry.thkoid }, ivdToken);
+                            if (sgkThk.success && sgkThk.base64) {
+                                let parsed: TahakkukFisiParsed | undefined;
+                                try { parsed = await parseTahakkukFisi(sgkThk.base64) || undefined; }
+                                catch (e) { log.warn(`SGK Tahakkuk parse hatasi: ${(e as Error).message}`); }
 
-                            beyanname.sgkTahakkukBuffers.push({ buffer: sgkResult.base64, index: sgkIdx + 1, parsed });
+                                beyanname.sgkTahakkukBuffers.push({ buffer: sgkThk.base64, index: entry.index, parsed });
 
-                            if (sgkIdx === 0) {
-                                beyanname.sgkTahakkukBuffer = sgkResult.base64;
-                                beyanname.sgkTahakkukParsed = parsed;
+                                if (!beyanname.sgkTahakkukBuffer) {
+                                    beyanname.sgkTahakkukBuffer = sgkThk.base64;
+                                    beyanname.sgkTahakkukParsed = parsed;
+                                }
+                                stats.downloaded++;
+                            } else {
+                                if (sgkThk.error === 'QUOTA_EXCEEDED') { quotaExceeded = true; break; }
+                                log.warn(`SGK Tahakkuk[${entry.index}] indirme başarısız: ${sgkThk.error || 'Bilinmeyen hata'}`);
                             }
-                            stats.downloaded++;
-                        } else {
-                            log.warn(`SGK Tahakkuk[${sgkIdx + 1}] indirme başarısız: ${sgkResult.error || 'Bilinmeyen hata'}`);
-                        }
-                    }
 
-                    // SGK Tahakkuk toplam
-                    if (beyanname.sgkTahakkukBuffers.length > 0) {
-                        let totalIsci = 0, totalTutar = 0, ilkGun = 0;
-                        for (const f of beyanname.sgkTahakkukBuffers) {
-                            if (f.parsed) {
-                                totalIsci += f.parsed.isciSayisi || 0;
-                                totalTutar += f.parsed.netTutar || 0;
-                                if (ilkGun === 0) ilkGun = f.parsed.gunSayisi || 0;
+                            // SGK Hizmet Listesi
+                            if (!quotaExceeded) {
+                                const sgkHiz = await downloadPdf('SGKHIZMETGORUNTULE', {
+                                    sgkTahakkukOid: entry.thkoid,
+                                    beyannameOid: beyanname.oid!,
+                                }, ivdToken);
+                                if (sgkHiz.success && sgkHiz.base64) {
+                                    let parsed: HizmetListesiParsed | undefined;
+                                    try { parsed = await parseHizmetListesi(sgkHiz.base64) || undefined; }
+                                    catch (e) { log.warn(`Hizmet Listesi parse hatasi: ${(e as Error).message}`); }
+
+                                    beyanname.sgkHizmetBuffers!.push({ buffer: sgkHiz.base64, index: entry.index, parsed });
+
+                                    if (!beyanname.sgkHizmetBuffer) {
+                                        beyanname.sgkHizmetBuffer = sgkHiz.base64;
+                                        beyanname.sgkHizmetParsed = parsed;
+                                    }
+                                    stats.downloaded++;
+                                } else if (sgkHiz.error === 'QUOTA_EXCEEDED') {
+                                    quotaExceeded = true;
+                                }
                             }
                         }
-                        beyanname.sgkTahakkukToplam = {
-                            isciSayisi: totalIsci, netTutar: totalTutar, gunSayisi: ilkGun,
-                            dosyaSayisi: beyanname.sgkTahakkukBuffers.length
-                        };
-                        log.success(`   SGK Parse: ${totalIsci} isci | ${totalTutar.toLocaleString('tr-TR')} TL${beyanname.sgkTahakkukBuffers.length > 1 ? ` (${beyanname.sgkTahakkukBuffers.length} dosya)` : ''}`);
-                    }
 
-                    // Hizmet Listesi
-                    if (muhsgkPdfs.hizmetListesiUrls.length > 0 && muhsgkPdfs.sgkTahakkukUrls.length > 0) {
-                        await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS);
-                    }
-
-                    for (let hizmetIdx = 0; hizmetIdx < muhsgkPdfs.hizmetListesiUrls.length; hizmetIdx++) {
-                        if (hizmetIdx > 0) await delay(GIB_CONFIG.RATE_LIMIT.BETWEEN_DOWNLOADS);
-
-                        const hizmetResult = await downloadSgkPdf(muhsgkPdfs.hizmetListesiUrls[hizmetIdx], currentToken);
-                        if (hizmetResult.success && hizmetResult.base64) {
-                            let parsed: HizmetListesiParsed | undefined;
-                            try { parsed = await parseHizmetListesi(hizmetResult.base64) || undefined; }
-                            catch (e) { log.warn(`Hizmet Listesi parse hatasi: ${(e as Error).message}`); }
-
-                            beyanname.sgkHizmetBuffers!.push({ buffer: hizmetResult.base64, index: hizmetIdx + 1, parsed });
-
-                            if (hizmetIdx === 0) {
-                                beyanname.sgkHizmetBuffer = hizmetResult.base64;
-                                beyanname.sgkHizmetParsed = parsed;
+                        // SGK Tahakkuk toplam
+                        if (beyanname.sgkTahakkukBuffers.length > 0) {
+                            let totalIsci = 0, totalTutar = 0, ilkGun = 0;
+                            for (const f of beyanname.sgkTahakkukBuffers) {
+                                if (f.parsed) {
+                                    totalIsci += f.parsed.isciSayisi || 0;
+                                    totalTutar += f.parsed.netTutar || 0;
+                                    if (ilkGun === 0) ilkGun = f.parsed.gunSayisi || 0;
+                                }
                             }
-                            stats.downloaded++;
+                            beyanname.sgkTahakkukToplam = {
+                                isciSayisi: totalIsci, netTutar: totalTutar, gunSayisi: ilkGun,
+                                dosyaSayisi: beyanname.sgkTahakkukBuffers.length
+                            };
+                            log.success(`   SGK Parse: ${totalIsci} isci | ${totalTutar.toLocaleString('tr-TR')} TL${beyanname.sgkTahakkukBuffers.length > 1 ? ` (${beyanname.sgkTahakkukBuffers.length} dosya)` : ''}`);
                         }
-                    }
 
-                    // Hizmet Listesi toplam
-                    if (beyanname.sgkHizmetBuffers && beyanname.sgkHizmetBuffers.length > 0) {
-                        let totalIsci = 0;
-                        for (const f of beyanname.sgkHizmetBuffers) {
-                            if (f.parsed) totalIsci += f.parsed.isciSayisi || 0;
+                        // Hizmet Listesi toplam
+                        if (beyanname.sgkHizmetBuffers && beyanname.sgkHizmetBuffers.length > 0) {
+                            let totalIsci = 0;
+                            for (const f of beyanname.sgkHizmetBuffers) {
+                                if (f.parsed) totalIsci += f.parsed.isciSayisi || 0;
+                            }
+                            beyanname.sgkHizmetToplam = { isciSayisi: totalIsci, dosyaSayisi: beyanname.sgkHizmetBuffers.length };
+                            if (totalIsci > 0) {
+                                log.success(`   Hizmet Listesi: ${totalIsci} isci${beyanname.sgkHizmetBuffers.length > 1 ? ` (${beyanname.sgkHizmetBuffers.length} dosya)` : ''}`);
+                            }
                         }
-                        beyanname.sgkHizmetToplam = { isciSayisi: totalIsci, dosyaSayisi: beyanname.sgkHizmetBuffers.length };
-                        if (totalIsci > 0) {
-                            log.success(`   Hizmet Listesi: ${totalIsci} isci${beyanname.sgkHizmetBuffers.length > 1 ? ` (${beyanname.sgkHizmetBuffers.length} dosya)` : ''}`);
-                        }
+                    } catch (sgkErr: any) {
+                        log.error(`MUHSGK SGK detay hatası: ${sgkErr.message}`);
                     }
                 }
             } catch (e: any) {
-                log.error(`Indirme hatasi (${item.tcVkn}): ${e.message}`);
+                log.error(`Indirme hatasi (${beyanname.tcVkn}): ${e.message}`);
                 stats.failed++;
+            }
+
+            // Kota kontrolü
+            if (quotaExceeded) {
+                report(95, 'Günlük PDF indirme kotası doldu! Kalan beyannameler atlanıyor...');
             }
 
             // Basari durumu
@@ -1475,9 +973,6 @@ export async function runEbeyannamePipeline(options: BotOptions) {
             if (beyanname.geciciVergiTahakkukParsed) parseInfo.geciciVergi = { odenecek: beyanname.geciciVergiTahakkukParsed.odenecek };
             if (beyanname.sgkTahakkukToplam) parseInfo.sgk = { isciSayisi: beyanname.sgkTahakkukToplam.isciSayisi, netTutar: beyanname.sgkTahakkukToplam.netTutar, dosyaSayisi: beyanname.sgkTahakkukToplam.dosyaSayisi };
 
-            // Adaptive delay
-            await delay(getAdaptiveDelay());
-
             // Her 5 mukellefde batch gonder
             if ((i + 1) % 5 === 0 || i === onaylanmisBeyannameler.length - 1) {
                 onProgress('batch-results', {
@@ -1491,7 +986,7 @@ export async function runEbeyannamePipeline(options: BotOptions) {
 
             // Progress raporu
             const hasParseData = Object.keys(parseInfo).length > 0;
-            reportBeyanname(i + 1, onaylanmisBeyannameler.length, item, 'OK', hasParseData ? parseInfo : undefined);
+            reportBeyanname(i + 1, onaylanmisBeyannameler.length, beyanname, 'OK', hasParseData ? parseInfo : undefined);
         }
 
         // ═══════════════════════════════════════════════════════════

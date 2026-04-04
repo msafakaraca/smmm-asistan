@@ -19,6 +19,7 @@ import {
   Square,
   RefreshCw,
   Settings,
+  FlaskConical,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,12 @@ import { BotProgressArea } from "./bot-progress-area";
 import { BulunanTab } from "./tabs/bulunan-tab";
 import { EslesmeyenlerTab } from "./tabs/eslesmeyenler-tab";
 import { TaramalarTab } from "./tabs/taramalar-tab";
+
+// Lazy load INTVRG test tab (ağır bileşen — kendi WS bağlantısı var)
+const IntrvrgTestTab = dynamic(
+  () => import("./intvrg-test-tab").then((mod) => ({ default: mod.IntrvrgTestTab })),
+  { ssr: false }
+);
 
 // Dialogs
 import { AddCustomerDialog } from "@/components/kontrol/dialogs/add-customer-dialog";
@@ -607,6 +614,25 @@ export function SmmmAsistanPage() {
           </CollapsibleContent>
         </Collapsible>
       )}
+
+      {/* 12. INTVRG Test */}
+      <Collapsible>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
+          <span className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-violet-500" />
+            INTVRG Beyanname Test
+            <Badge variant="outline" className="text-[10px] text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800">
+              Test
+            </Badge>
+          </span>
+          <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border bg-card p-4 shadow-sm mt-1">
+            <IntrvrgTestTab />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Modallar */}
       <BotReportModal
