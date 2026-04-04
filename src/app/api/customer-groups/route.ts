@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import { z } from "zod";
 
 // Validation schema
@@ -169,6 +170,8 @@ export async function POST(req: NextRequest) {
       group!.id,
       { name: group!.name, memberCount: group!._count.customer_group_members }
     );
+
+    invalidateDashboard(user.tenantId, ['stats']);
 
     return NextResponse.json({
       id: group!.id,

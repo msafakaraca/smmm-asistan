@@ -4,45 +4,39 @@
  * Ana süreç: Pencere yönetimi, system tray, WebSocket client
  */
 
-// Load environment variables
-import dotenv from 'dotenv';
-dotenv.config();
-
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, Notification, session } from 'electron';
 import path from 'path';
-import jwt from 'jsonwebtoken';
 import { WebSocketClient } from './ws-client';
 import { runEbeyannamePipeline, stopBot } from './ebeyanname-api';
 import { syncMukellefsViaApi } from './ebeyan-mukellef-api';
 import { initDatabase, getSession, saveSession, clearSession } from './db';
+import { getApiUrl, getWsUrl } from './config';
+import { isChromiumInstalled, downloadChromium } from './chromium-downloader';
 
-// Internal API token helper
-function getInternalHeaders(tenantId: string): Record<string, string> {
-    const secret = process.env.INTERNAL_API_SECRET || process.env.JWT_SECRET;
-    if (!secret) {
-        throw new Error('[ELECTRON] INTERNAL_API_SECRET veya JWT_SECRET yapılandırılmamış');
+// Login token ile API çağrısı yapmak için yardımcı fonksiyon
+function getBearerHeaders(): Record<string, string> {
+    const session = getSession();
+    if (!session?.token) {
+        throw new Error('[ELECTRON] Oturum bulunamadı — lütfen tekrar giriş yapın');
     }
-    const token = jwt.sign({ tenantId, purpose: 'internal-api' }, secret, { expiresIn: '1h' });
     return {
         'Content-Type': 'application/json',
-        'X-Internal-Token': token,
+        'Authorization': `Bearer ${session.token}`,
     };
 }
-// NOT: API bot kaldırıldı - Puppeteer yöntemi kullanılıyor
-
 // GPU cache hatalarını önle (Windows'ta "Unable to move the cache" hatası)
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('disable-gpu-cache');
 app.commandLine.appendSwitch('disk-cache-size', '0');
 app.disableHardwareAcceleration();
 
-// Globals
+// Global değişkenler
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let wsClient: WebSocketClient | null = null;
 let isQuitting = false;
 
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = !app.isPackaged;
 
 interface LoginResponse {
     success: boolean;
@@ -52,10 +46,7 @@ interface LoginResponse {
 }
 
 /**
- * Create main window
- */
-/**
- * Create main window
+ * Ana pencereyi oluştur
  */
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -66,7 +57,7 @@ function createWindow() {
         autoHideMenuBar: true,  // Menü çubuğunu gizle
         center: true,
         show: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#e8ecf1',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -79,30 +70,40 @@ function createWindow() {
     mainWindow.setMenuBarVisibility(false);
     Menu.setApplicationMenu(null);
 
-    // Load content
+    // Cache temizle — eski renderer dosyalarının gösterilmesini önle
+    session.defaultSession.clearCache();
+
+    // İçerik yükle
     if (isDev) {
-        // Poll for dev server
+        // Önce dev server'ı dene, yoksa build edilmiş dosyaları yükle
+        let retryCount = 0;
+        const maxRetries = 3;
         const loadURL = async () => {
             try {
                 await mainWindow?.loadURL('http://localhost:5173');
             } catch (e) {
-                console.log('Waiting for dev server...');
-                setTimeout(loadURL, 1000);
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    console.log(`[ELECTRON] Dev server bekleniyor... (${retryCount}/${maxRetries})`);
+                    setTimeout(loadURL, 1000);
+                } else {
+                    // Dev server yok, build edilmiş dosyaları yükle
+                    console.log('[ELECTRON] Dev server bulunamadı, build dosyaları yükleniyor...');
+                    mainWindow?.loadFile(path.join(__dirname, '../renderer/index.html'));
+                }
             }
         };
         loadURL();
-        // DevTools'u gizle - production'a yakın görünüm
-        // mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
         mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
     }
 
-    // Show when ready
+    // Hazır olduğunda göster
     mainWindow.once('ready-to-show', () => {
         mainWindow?.show();
     });
 
-    // Minimize to tray instead of closing
+    // Kapatma yerine sistem tepsisine küçült
     mainWindow.on('close', (event) => {
         if (!isQuitting) {
             event.preventDefault();
@@ -116,7 +117,7 @@ function createWindow() {
 }
 
 /**
- * Create system tray
+ * Sistem tepsisi oluştur
  */
 function createTray() {
     const icon = nativeImage.createFromPath(
@@ -188,18 +189,18 @@ function showCompletionNotification(stats: {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// IPC HANDLERS - Moved to setupIpcHandlers() to run after app.whenReady()
+// IPC HANDLER'LAR — app.whenReady() sonrası çalışmak üzere setupIpcHandlers()'a taşındı
 // ═══════════════════════════════════════════════════════════════════
 
 function setupIpcHandlers() {
-    // Login
+    // Giriş
     ipcMain.handle('auth:login', async (_, email: string, password: string) => {
         try {
             console.log('[AUTH] 🔐 Giriş denemesi:', email);
-            const apiUrl = process.env.API_URL || 'http://localhost:3000';
+            const apiUrl = getApiUrl();
             console.log('[AUTH] API URL:', apiUrl);
 
-            // Call website API to authenticate
+            // Kimlik doğrulama için web API'sine istek gönder
             const response = await fetch(`${apiUrl}/api/auth/electron-login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -211,10 +212,10 @@ function setupIpcHandlers() {
             if (data.success && data.user && data.token) {
                 console.log('[AUTH] ✅ Giriş başarılı!');
 
-                // Save to local storage
+                // Yerel veritabanına kaydet
                 saveSession(data.user, data.token);
 
-                // Connect to WebSocket
+                // WebSocket'e bağlan
                 console.log('[AUTH] 🔌 WebSocket bağlantısı kuruluyor...');
                 connectWebSocket(data.token);
 
@@ -222,26 +223,26 @@ function setupIpcHandlers() {
             }
 
             console.log('[AUTH] ❌ Giriş başarısız:', data.error);
-            return { success: false, error: data.error || 'Giriş başarısız' };
+            return { success: false, error: data.error || 'E-posta adresi veya şifre hatalı. Lütfen bilgilerinizi kontrol edip tekrar deneyin.' };
         } catch (error) {
             console.error('[AUTH] ❌ Bağlantı hatası:', error);
-            return { success: false, error: 'Sunucuya bağlanılamadı' };
+            return { success: false, error: 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.' };
         }
     });
 
-    // Get stored session
+    // Kayıtlı oturumu getir
     ipcMain.handle('auth:getSession', async () => {
         return getSession();
     });
 
-    // Logout
+    // Çıkış yap
     ipcMain.handle('auth:logout', async () => {
         clearSession();
         wsClient?.disconnect();
         wsClient = null;
     });
 
-    // Window controls
+    // Pencere kontrolleri
     ipcMain.handle('window:minimize', () => {
         mainWindow?.hide();
     });
@@ -251,7 +252,192 @@ function setupIpcHandlers() {
         app.quit();
     });
 
-    // NOT: GİB API test handlers kaldırıldı - Puppeteer yöntemi kullanılıyor
+    // Chromium durumu
+    ipcMain.handle('chromium:status', () => {
+        return { installed: isChromiumInstalled() };
+    });
+
+    // Chromium tekrar indirme
+    ipcMain.handle('chromium:retry', async () => {
+        try {
+            await downloadChromium((progress) => {
+                mainWindow?.webContents.send('chromium:progress', progress);
+            });
+            mainWindow?.webContents.send('chromium:progress', {
+                percent: 100, downloadedMB: 0, totalMB: 0, status: 'done',
+            });
+            return { success: true };
+        } catch (err: any) {
+            mainWindow?.webContents.send('chromium:progress', {
+                percent: -1, downloadedMB: 0, totalMB: 0,
+                status: `Chromium indirilemedi: ${err.message}`,
+            });
+            return { success: false, error: err.message };
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // DASHBOARD IPC HANDLERS
+    // ═══════════════════════════════════════════════════════════════
+
+    // Dashboard: Müşteri listesi al
+    ipcMain.handle('dashboard:getCustomers', async () => {
+        try {
+            const headers = getBearerHeaders();
+            const apiUrl = getApiUrl();
+            const res = await fetch(`${apiUrl}/api/bot/dashboard-customers`, { headers });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                return { success: false, error: (err as any).error || 'Mükellef listesi yüklenemedi. Oturumunuz sona ermiş olabilir, lütfen tekrar giriş yapın.' };
+            }
+            const data = await res.json();
+            return { success: true, customers: (data as any).customers };
+        } catch (e: any) {
+            console.error('[DASHBOARD] Müşteri listesi hatası:', e);
+            return { success: false, error: e.message || 'Sunucu ile bağlantı kurulamadı. Lütfen internet bağlantınızı kontrol edin.' };
+        }
+    });
+
+    // Dashboard: Link launch — credential al ve launcher'ı başlat
+    ipcMain.handle('dashboard:launch', async (_, params: {
+        linkId: string;
+        customerId?: string;
+        credentialType: string;
+        application?: string;
+        targetPage?: string;
+        vergiLevhasiYil?: string;
+        vergiLevhasiDil?: string;
+    }) => {
+        const { linkId, customerId, credentialType, application, targetPage, vergiLevhasiYil, vergiLevhasiDil } = params;
+        console.log(`[DASHBOARD] Launch: ${linkId} (credentialType: ${credentialType})`);
+
+        // Diğer işlemler — credential gerekmez, direkt launcher çağır
+        if (credentialType === 'diger') {
+            try {
+                const { launchDigerIslem } = await import('./diger-islemler-launch');
+                const result = await launchDigerIslem({
+                    actionId: linkId,
+                    onProgress: (status: string) => {
+                        mainWindow?.webContents.send('dashboard:launch-progress', { status, linkId });
+                    },
+                });
+                if (result.success) {
+                    mainWindow?.webContents.send('dashboard:launch-complete', { linkId });
+                    return { success: true };
+                }
+                mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: result.error });
+                return { success: false, error: result.error };
+            } catch (e: any) {
+                mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: e.message });
+                return { success: false, error: e.message };
+            }
+        }
+
+        // API'den credential al
+        try {
+            const headers = getBearerHeaders();
+            const apiUrl = getApiUrl();
+            const res = await fetch(`${apiUrl}/api/bot/dashboard-launch`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ linkId, customerId, credentialType }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                const errorMsg = (err as any).error || 'Giriş bilgileri sunucudan alınamadı. Oturumunuzun aktif olduğundan emin olun.';
+                mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: errorMsg });
+                return { success: false, error: errorMsg };
+            }
+
+            const data = await res.json() as { success: boolean; credentials?: any };
+            if (!data.credentials) {
+                const noCredMsg = 'Bu mükellef için giriş bilgisi tanımlanmamış. Lütfen mükellef bilgilerinden ilgili şifreleri ekleyin.';
+                mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: noCredMsg });
+                return { success: false, error: noCredMsg };
+            }
+
+            const creds = data.credentials;
+            const customerName = creds.customerName;
+            const onProgress = (status: string) => {
+                mainWindow?.webContents.send('dashboard:launch-progress', { status, linkId });
+            };
+
+            // linkId'ye göre doğru launcher'ı seç
+            let result: { success: boolean; error?: string };
+
+            // GİB uygulamaları (MM ve Mükellef)
+            if (application && ['ivd', 'ebeyanname', 'interaktifvd', 'defter-beyan', 'ebeyan', 'edefter'].includes(application)) {
+                const { launchGibApplication } = await import('./gib-launcher');
+                result = await launchGibApplication({
+                    userid: creds.userid,
+                    password: creds.password,
+                    application: application as any,
+                    targetPage: targetPage as any,
+                    customerName,
+                    vergiLevhasiYil: targetPage === 'vergi-levhasi' ? (vergiLevhasiYil || '2025') as any : undefined,
+                    vergiLevhasiDil: targetPage === 'vergi-levhasi' ? (vergiLevhasiDil || 'tr') as any : undefined,
+                    onProgress,
+                });
+            }
+            // E-Arşiv (GİB 5000/2000)
+            else if (linkId === 'gib-5000') {
+                const { launchEarsivPortal } = await import('./earsiv-launcher');
+                result = await launchEarsivPortal({
+                    userid: creds.userid,
+                    password: creds.password,
+                    customerName,
+                    onProgress,
+                });
+            }
+            // E-Devlet
+            else if (linkId === 'edevlet' || linkId === 'edevlet-mukellef') {
+                const { launchEdevletKapisi } = await import('./edevlet-launcher');
+                result = await launchEdevletKapisi({
+                    tckn: creds.tckn,
+                    password: creds.password,
+                    customerName,
+                    onProgress,
+                });
+            }
+            // TÜRMOB Luca
+            else if (linkId === 'turmob-luca') {
+                const { launchTurmobLuca } = await import('./turmob-launcher');
+                result = await launchTurmobLuca({
+                    userid: creds.userid,
+                    password: creds.password,
+                    customerName,
+                    onProgress,
+                });
+            }
+            // İŞKUR (E-Devlet ile giriş)
+            else if (linkId === 'iskur') {
+                const { launchIskurWithEdevlet } = await import('./iskur-launcher');
+                result = await launchIskurWithEdevlet({
+                    tckn: creds.tckn,
+                    password: creds.password,
+                    loginMethod: 'edevlet',
+                    customerName,
+                    onProgress,
+                });
+            }
+            else {
+                result = { success: false, error: `Bu işlem henüz desteklenmiyor: ${linkId}` };
+            }
+
+            if (result.success) {
+                mainWindow?.webContents.send('dashboard:launch-complete', { linkId });
+                return { success: true };
+            } else {
+                mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: result.error });
+                return { success: false, error: result.error };
+            }
+        } catch (e: any) {
+            console.error(`[DASHBOARD] Launch hatası (${linkId}):`, e);
+            mainWindow?.webContents.send('dashboard:launch-error', { linkId, error: e.message });
+            return { success: false, error: e.message || 'Uygulama başlatılamadı. Lütfen tekrar deneyin veya bilgisayarınızı yeniden başlatın.' };
+        }
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -266,7 +452,7 @@ interface BotCommandData {
 }
 
 function connectWebSocket(token: string) {
-    const wsUrl = process.env.WS_URL || 'ws://localhost:3001';
+    const wsUrl = getWsUrl();
 
     wsClient = new WebSocketClient(wsUrl, token);
 
@@ -278,7 +464,7 @@ function connectWebSocket(token: string) {
         wsClient = null;
         mainWindow?.webContents.send('bot:command', {
             type: 'session-expired',
-            message: 'Oturum süresi doldu, lütfen tekrar giriş yapın'
+            message: 'Oturum süreniz doldu. Güvenliğiniz için lütfen tekrar giriş yapın.'
         });
         // Pencereyi göster ki kullanıcı login yapabilsin
         mainWindow?.show();
@@ -297,18 +483,18 @@ function connectWebSocket(token: string) {
         });
         console.log('═══════════════════════════════════════════════════════════════');
 
-        // Notify renderer
+        // Renderer'a bildir
         mainWindow?.webContents.send('bot:command', { ...data, type: 'start' });
 
-        // Minimize to tray
+        // Sistem tepsisine küçült
         mainWindow?.hide();
 
         // Token'ı session'dan al
         const session = getSession();
-        const captchaApiKey = (data.captchaApiKey as string) || process.env.CAPTCHA_API_KEY;
-        const ocrSpaceApiKey = (data.ocrSpaceApiKey as string) || process.env.OCR_SPACE_API_KEY;
+        const captchaApiKey = (data.captchaApiKey as string) || '';
+        const ocrSpaceApiKey = (data.ocrSpaceApiKey as string) || '';
 
-        // Progress callback
+        // İlerleme geri bildirimi
         const onProgress = (type: string, payload: any) => {
             if (wsClient) {
                 if (type === 'progress') {
@@ -330,7 +516,7 @@ function connectWebSocket(token: string) {
                 } else if (type === 'batch-results') {
                     wsClient.send('bot:batch-results', payload);
                 } else if (type === 'error') {
-                    const errorMsg = payload.error || payload.message || 'Bilinmeyen hata';
+                    const errorMsg = payload.error || payload.message || 'E-Beyanname işlemi sırasında beklenmeyen bir hata oluştu.';
                     const errorCode = payload.errorCode || payload.gibError?.code || 'UNKNOWN';
                     wsClient.sendError(errorMsg, errorCode, payload.gibError);
                     mainWindow?.webContents.send('bot:command', { type: 'error', ...payload });
@@ -362,7 +548,7 @@ function connectWebSocket(token: string) {
             });
 
         } catch (e: any) {
-            console.error('[MAIN] Bot error:', e);
+            console.error('[MAIN] ❌ Bot hatası:', e);
             if (wsClient) wsClient.sendError(e.message);
             mainWindow?.webContents.send('bot:command', { type: 'error', message: e.message });
             mainWindow?.show();
@@ -391,13 +577,13 @@ function connectWebSocket(token: string) {
         mainWindow?.hide();
 
         // Captcha API key: WebSocket'ten gelen veya env'den al
-        const captchaApiKey = (data.captchaApiKey as string) || process.env.CAPTCHA_API_KEY;
+        const captchaApiKey = (data.captchaApiKey as string) || '';
 
-        console.log('[MAIN] GİB Mükellef sync starting with data:', data);
+        console.log('[MAIN] GİB Mükellef sync başlatılıyor, veriler:', data);
         console.log('[MAIN] Captcha API Key:', captchaApiKey ? 'Mevcut (' + captchaApiKey.substring(0, 6) + '...)' : 'Yok');
 
         try {
-            const ocrSpaceApiKey = (data.ocrSpaceApiKey as string) || process.env.OCR_SPACE_API_KEY || '';
+            const ocrSpaceApiKey = (data.ocrSpaceApiKey as string) || '' || '';
 
             await syncMukellefsViaApi({
                 username: data.username as string,
@@ -410,15 +596,15 @@ function connectWebSocket(token: string) {
                             wsClient.sendProgress(payload.progress, payload.message);
                             mainWindow?.webContents.send('bot:command', { type: 'progress', ...payload });
                         } else if (type === 'mukellef-data') {
-                            // Send mükellef data to import API
-                            console.log(`[MAIN] Sending ${payload.taxpayers?.length || 0} taxpayers to import API...`);
+                            // Mükellef verilerini import API'sine gönder
+                            console.log(`[MAIN] ${payload.taxpayers?.length || 0} mükellef import API'sine gönderiliyor...`);
                             wsClient.send('bot:mukellef-data', { ...payload, tenantId: data.tenantId });
                         } else if (type === 'complete') {
                             wsClient.sendComplete({ ...payload, tenantId: data.tenantId });
                             mainWindow?.webContents.send('bot:command', { type: 'complete', ...payload });
                             mainWindow?.show();
                         } else if (type === 'error') {
-                            const errorMsg = payload.error || payload.message || 'Bilinmeyen hata';
+                            const errorMsg = payload.error || payload.message || 'Mükellef listesi senkronizasyonunda beklenmeyen bir hata oluştu.';
                             const errorCode = payload.errorCode || payload.gibError?.code || 'UNKNOWN';
                             wsClient.sendError(errorMsg, errorCode, payload.gibError);
                             mainWindow?.webContents.send('bot:command', { type: 'error', ...payload });
@@ -428,7 +614,7 @@ function connectWebSocket(token: string) {
                 }
             });
         } catch (e: any) {
-            console.error('[MAIN] GİB Mükellef sync error:', e);
+            console.error('[MAIN] ❌ GİB Mükellef sync hatası:', e);
             if (wsClient) wsClient.sendError(e.message);
             mainWindow?.webContents.send('bot:command', { type: 'error', message: e.message });
             mainWindow?.show();
@@ -444,13 +630,13 @@ function connectWebSocket(token: string) {
         if (data.groupId) console.log('[MAIN] Grup:', data.groupId);
         console.log('═══════════════════════════════════════════════════════════════');
 
-        const apiUrl = process.env.API_URL || 'http://localhost:3000';
+        const apiUrl = getApiUrl();
         const tenantId = data.tenantId as string;
         const year = data.year as number;
         const month = data.month as number;
         const groupId = data.groupId as string | undefined;
 
-        // Notify renderer
+        // Renderer'a bildir
         mainWindow?.webContents.send('bot:command', {
             type: 'sgk-parse-start',
             message: 'SGK dosyaları parse ediliyor...',
@@ -458,7 +644,7 @@ function connectWebSocket(token: string) {
             month
         });
 
-        // Progress callback
+        // İlerleme geri bildirimi
         const sendProgress = (progress: number, message: string) => {
             if (wsClient) {
                 wsClient.sendProgress(progress, message);
@@ -474,7 +660,7 @@ function connectWebSocket(token: string) {
             const filesResponse = await fetch(
                 `${apiUrl}/api/sgk-kontrol/files?year=${year}&month=${month}${groupQuery}`,
                 {
-                    headers: getInternalHeaders(tenantId),
+                    headers: getBearerHeaders(),
                 }
             );
 
@@ -640,7 +826,7 @@ function connectWebSocket(token: string) {
             if (results.length > 0) {
                 const saveResponse = await fetch(`${apiUrl}/api/sgk-kontrol/save-results`, {
                     method: 'POST',
-                    headers: getInternalHeaders(tenantId),
+                    headers: getBearerHeaders(),
                     body: JSON.stringify({ results }),
                 });
 
@@ -2859,9 +3045,9 @@ function connectWebSocket(token: string) {
 // APP LIFECYCLE
 // ═══════════════════════════════════════════════════════════════════
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     console.log('═══════════════════════════════════════════════════════════════');
-    console.log('[SMMM-ASISTAN] 🚀 Electron uygulama başlatılıyor...');
+    console.log('[SMMM-ASISTAN] Electron uygulama başlatılıyor...');
     console.log('[SMMM-ASISTAN] Platform:', process.platform);
     console.log('[SMMM-ASISTAN] Node version:', process.version);
     console.log('[SMMM-ASISTAN] Electron version:', process.versions.electron);
@@ -2874,25 +3060,55 @@ app.whenReady().then(() => {
     createWindow();
     createTray();
 
-    // Try to restore session
+    // ─── Chromium kontrol & indirme ───────────────────────────────
+    if (!isChromiumInstalled()) {
+        console.log('[SMMM-ASISTAN] Chromium bulunamadı, indirme başlatılıyor...');
+        mainWindow?.webContents.send('chromium:progress', {
+            percent: 0, downloadedMB: 0, totalMB: 0,
+            status: 'Chromium hazırlanıyor...',
+        });
+
+        try {
+            await downloadChromium((progress) => {
+                mainWindow?.webContents.send('chromium:progress', progress);
+            });
+            console.log('[SMMM-ASISTAN] Chromium indirme tamamlandı!');
+            mainWindow?.webContents.send('chromium:progress', {
+                percent: 100, downloadedMB: 0, totalMB: 0,
+                status: 'done',
+            });
+        } catch (err: any) {
+            console.error('[SMMM-ASISTAN] Chromium indirme hatası:', err);
+            mainWindow?.webContents.send('chromium:progress', {
+                percent: -1, downloadedMB: 0, totalMB: 0,
+                status: `Chromium indirilemedi: ${err.message}`,
+            });
+        }
+    } else {
+        console.log('[SMMM-ASISTAN] Chromium mevcut.');
+    }
+
+    // ─── Oturum kontrolü ──────────────────────────────────────────
     const session = getSession();
     if (session?.token) {
-        // Token süresini kontrol et
         try {
-            const decoded = jwt.decode(session.token) as { exp?: number } | null;
+            const parts = session.token.split('.');
+            const decoded = parts.length === 3
+                ? JSON.parse(Buffer.from(parts[1], 'base64').toString()) as { exp?: number }
+                : null;
             if (decoded?.exp && decoded.exp * 1000 < Date.now()) {
-                console.log('[SMMM-ASISTAN] ⚠️ Token süresi dolmuş, oturum temizleniyor...');
+                console.log('[SMMM-ASISTAN] Token süresi dolmuş, oturum temizleniyor...');
                 clearSession();
             } else {
-                console.log('[SMMM-ASISTAN] 🔐 Kaydedilmiş oturum bulundu, WebSocket bağlanıyor...');
+                console.log('[SMMM-ASISTAN] Kaydedilmiş oturum bulundu, WebSocket bağlanıyor...');
                 connectWebSocket(session.token);
             }
         } catch {
-            console.log('[SMMM-ASISTAN] ⚠️ Token okunamadı, oturum temizleniyor...');
+            console.log('[SMMM-ASISTAN] Token okunamadı, oturum temizleniyor...');
             clearSession();
         }
     } else {
-        console.log('[SMMM-ASISTAN] ℹ️ Kaydedilmiş oturum yok, giriş bekleniyor...');
+        console.log('[SMMM-ASISTAN] Kaydedilmiş oturum yok, giriş bekleniyor...');
     }
 
     app.on('activate', () => {

@@ -34,6 +34,9 @@ let charset: string[] = [];
 
 function findModelPath(): string | null {
   const candidates = [
+    // Production: extraResources/models/
+    path.join(process.resourcesPath || '', 'models', 'ddddocr.onnx'),
+    // Development: electron-bot/models/
     path.join(__dirname, '..', '..', 'models', 'ddddocr.onnx'),
     path.join(__dirname, '..', '..', '..', 'electron-bot', 'models', 'ddddocr.onnx'),
   ];
@@ -45,6 +48,9 @@ function findModelPath(): string | null {
 
 function findCharsetPath(): string | null {
   const candidates = [
+    // Production: extraResources/models/
+    path.join(process.resourcesPath || '', 'models', 'ddddocr_charset.json'),
+    // Development: electron-bot/models/
     path.join(__dirname, '..', '..', 'models', 'ddddocr_charset.json'),
     path.join(__dirname, '..', '..', '..', 'electron-bot', 'models', 'ddddocr_charset.json'),
   ];

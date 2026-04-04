@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import { z } from "zod";
 
 // Validation schema
@@ -100,6 +101,8 @@ export async function POST(
       where: { groupId },
     });
 
+    invalidateDashboard(user.tenantId, ['stats']);
+
     return NextResponse.json({
       success: true,
       added: newIds.length,
@@ -163,6 +166,8 @@ export async function DELETE(
     const memberCount = await prisma.customer_group_members.count({
       where: { groupId },
     });
+
+    invalidateDashboard(user.tenantId, ['stats']);
 
     return NextResponse.json({
       success: true,

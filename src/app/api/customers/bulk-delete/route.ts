@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { auditLog } from "@/lib/audit"
+import { invalidateDashboard } from "@/lib/dashboard-invalidation"
 
 export async function DELETE(req: NextRequest) {
     const session = await auth()
@@ -98,6 +99,8 @@ export async function DELETE(req: NextRequest) {
             count,
             { ids }
         )
+
+        invalidateDashboard(tenantId, ['stats', 'alerts', 'declaration-stats']);
 
         return NextResponse.json({ success: true, count })
     } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 import type { TakipStats, TakipCompletedItem } from "@/types/dashboard";
 
 /**
@@ -32,6 +33,11 @@ export async function GET(req: NextRequest) {
     const year = parseInt(searchParams.get("year") || String(defaultYear));
     const month = parseInt(searchParams.get("month") || String(defaultMonth));
     const tenantId = user.tenantId;
+
+    // Server-side cache kontrolu
+    const cacheKey = `${tenantId}:takip-stats:${year}:${month}`;
+    const cached = serverCache.get<TakipStats>(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     // Dönem bazlı takip satırlarını çek (isim dahil)
     const satirlar = await prisma.takip_satirlar.findMany({
@@ -118,6 +124,7 @@ export async function GET(req: NextRequest) {
       recentCompleted,
     };
 
+    serverCache.set(cacheKey, stats, 60_000); // 60 saniye TTL
     return NextResponse.json(stats);
   } catch (error) {
     console.error("[Takip Stats API] Error:", error);

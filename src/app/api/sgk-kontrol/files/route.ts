@@ -10,34 +10,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/server";
-import { verifyInternalToken } from "@/lib/internal-auth";
+import { verifyBearerOrInternal } from "@/lib/internal-auth";
 
 const BUCKET_NAME = "smmm-documents";
 
 export async function GET(req: NextRequest) {
   try {
-    // Internal request kontrolü - JWT token ile doğrulama
-    const token = req.headers.get("X-Internal-Token");
-
-    let tenantId: string | null = null;
-
-    if (token) {
-      const decoded = verifyInternalToken(token);
-      if (!decoded) {
-        return NextResponse.json(
-          { error: "Unauthorized - invalid token" },
-          { status: 401 }
-        );
-      }
-      tenantId = decoded.tenantId;
-    }
-
-    if (!tenantId) {
+    // Internal veya Bearer token ile doğrulama
+    const auth = verifyBearerOrInternal(req.headers);
+    if (!auth) {
       return NextResponse.json(
-        { error: "Unauthorized - authentication required" },
+        { error: "Unauthorized" },
         { status: 401 }
       );
     }
+    const tenantId = auth.tenantId;
 
     const { searchParams } = new URL(req.url);
     const year = parseInt(searchParams.get("year") || "0");

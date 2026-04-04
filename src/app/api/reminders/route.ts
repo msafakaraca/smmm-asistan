@@ -3,6 +3,7 @@ import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import type { CreateReminderInput } from "@/types/reminder";
 
 /**
@@ -258,6 +259,8 @@ export async function POST(req: NextRequest) {
       reminder.id,
       { title: reminder.title, type: reminder.type, date: reminder.date?.toISOString() }
     );
+
+    invalidateDashboard(user.tenantId, ['upcoming']);
 
     return NextResponse.json(mappedReminder, { status: 201 });
   } catch (error) {

@@ -54,9 +54,9 @@ export function SWRProvider({ children }: SWRProviderProps) {
           // Exponential backoff ile retry
           setTimeout(() => revalidate({ retryCount }), 5000 * (retryCount + 1));
         },
-        revalidateOnFocus: false,
+        revalidateOnFocus: true,
         revalidateOnReconnect: true,
-        dedupingInterval: 5000,
+        dedupingInterval: 10000,
         keepPreviousData: true,
         errorRetryCount: 3,
       }}

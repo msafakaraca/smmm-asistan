@@ -39,6 +39,8 @@ interface BotLogContextValue {
     isBotRunning: boolean
     botStatus: BotStatus
     electronConnected: boolean
+    /** Browser ↔ WS server bağlantısı aktif mi? (Electron'dan bağımsız) */
+    wsConnected: boolean
     liveMessage: LiveMessage | null
     addLog: (type: BotLogEntry['type'], message: string, details?: BotLogEntry['details'], progress?: number) => void
     setLiveMessage: (message: string, type?: LiveMessage['type'], progress?: number) => void
@@ -190,6 +192,7 @@ export function BotLogProvider({ children }: { children: ReactNode }) {
             isBotRunning,
             botStatus,
             electronConnected,
+            wsConnected: wsInstance !== null,
             liveMessage,
             addLog,
             setLiveMessage,

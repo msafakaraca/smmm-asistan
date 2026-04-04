@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import type { TaskStatus } from "@/types/task";
 
 // Prisma response'u frontend tipine dönüştür
@@ -124,6 +125,8 @@ export async function PATCH(
         updatedTask.dueDate !== null &&
         new Date(updatedTask.dueDate) < now,
     };
+
+    invalidateDashboard(user.tenantId, ['stats', 'alerts', 'tasks-summary']);
 
     return NextResponse.json(taskWithOverdue);
   } catch (error) {

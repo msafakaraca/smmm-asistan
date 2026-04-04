@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import { z } from "zod";
 
 // Pasif Mükellefleri grubu adı
@@ -180,6 +181,8 @@ export async function POST(request: NextRequest) {
       result.count,
       { action: status === "passive" ? "set_passive" : "set_active", ids }
     );
+
+    invalidateDashboard(tenantId, ['stats', 'alerts']);
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 /**
  * GET /api/takip/satirlar?year=2026&month=1
@@ -197,6 +198,7 @@ export async function POST(req: NextRequest) {
       { customerName: isim || undefined, no: satirNo, year: satirYear, month: satirMonth }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json(yeniSatir);
   } catch (error) {
     console.error("[TakipSatir] POST Error:", error);
@@ -370,6 +372,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    invalidateDashboard(user.tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json(guncellenmis);
   } catch (error) {
     console.error("[TakipSatir] PUT Error:", error);
@@ -420,6 +423,7 @@ export async function DELETE(req: NextRequest) {
       { customerName: satir.isim || undefined, no: satir.no || undefined }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[TakipSatir] DELETE Error:", error);

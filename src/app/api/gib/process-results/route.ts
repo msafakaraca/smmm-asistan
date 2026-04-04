@@ -12,7 +12,8 @@ import { prisma } from "@/lib/db";
 import { BEYANNAME_TYPES } from "@/lib/constants/beyanname-types";
 import { adminUploadFile, generateStoragePath } from "@/lib/storage-supabase";
 import { isValidTaxNumber } from "@/lib/utils/tax-validation";
-import { verifyInternalToken } from "@/lib/internal-auth";
+import { verifyBearerOrInternal } from "@/lib/internal-auth";
+import { ensureBeyannameFolderChainLocked, ensureSgkFolderChainLocked } from "@/lib/file-system";
 
 // Beyanname türü eşleştirme (GIB kodları -> sistem kodları)
 function getBeyannameTurKod(beyannameTuru: string): string {
@@ -91,129 +92,6 @@ function turkishToAscii(str: string): string {
 
 // File category mapping
 type FileCategory = "BEYANNAME" | "TAHAKKUK" | "SGK_TAHAKKUK" | "HIZMET_LISTESI";
-
-// ═══════════════════════════════════════════════════════════════════
-// SGK KLASÖR YAPISI - Race condition önlemek için önceden oluştur
-// Yapı: Müşteri / SGK Tahakkuk ve Hizmet Listesi / Tahakkuk|Hizmet Listesi / Ay/Yıl
-// ═══════════════════════════════════════════════════════════════════
-async function ensureSgkFolderStructure(
-    tenantId: string,
-    customerId: string,
-    customerUnvan: string,
-    fileType: "sgkTahakkuk" | "hizmetListesi",
-    year: number,
-    month: number
-): Promise<string> {
-    const monthPadded = String(month).padStart(2, '0');
-    const monthYearFolderName = `${monthPadded}/${year}`;
-
-    // 1. Müşteri kök klasörünü kontrol et/oluştur
-    let customerRootFolder = await prisma.documents.findFirst({
-        where: { tenantId, customerId, isFolder: true, parentId: null }
-    });
-
-    if (!customerRootFolder) {
-        const customer = await prisma.customers.findUnique({
-            where: { id: customerId },
-            select: { unvan: true, sirketTipi: true }
-        });
-
-        const folderName = customer?.unvan?.replace(/[<>:"/\\|?*]/g, '').trim() || 'İsimsiz';
-
-        customerRootFolder = await prisma.documents.create({
-            data: {
-                id: crypto.randomUUID(),
-                name: folderName,
-                type: "folder",
-                isFolder: true,
-                customerId,
-                tenantId,
-                size: 0,
-                storage: "local",
-                parentId: null,
-                updatedAt: new Date()
-            }
-        });
-        console.log(`[SUPABASE] 📁 Müşteri kök klasörü oluşturuldu: ${folderName}`);
-    }
-
-    // 2. SGK ana klasörünü kontrol et/oluştur
-    const mainFolderName = "SGK Tahakkuk ve Hizmet Listesi";
-    let mainFolder = await prisma.documents.findFirst({
-        where: { tenantId, customerId, name: mainFolderName, isFolder: true, parentId: customerRootFolder.id }
-    });
-
-    if (!mainFolder) {
-        mainFolder = await prisma.documents.create({
-            data: {
-                id: crypto.randomUUID(),
-                name: mainFolderName,
-                isFolder: true,
-                type: "sgk",
-                tenantId,
-                customerId,
-                parentId: customerRootFolder.id,
-                size: 0,
-                storage: "local",
-                updatedAt: new Date()
-            }
-        });
-        console.log(`[SUPABASE] 📁 ${mainFolderName} klasörü oluşturuldu`);
-    }
-
-    // 3. Tip klasörünü kontrol et/oluştur (Tahakkuk veya Hizmet Listesi)
-    const typeFolderName = fileType === "sgkTahakkuk" ? "Tahakkuk" : "Hizmet Listesi";
-    const typeFolderType = fileType === "sgkTahakkuk" ? "sgk_tahakkuk" : "hizmet_listesi";
-
-    let typeFolder = await prisma.documents.findFirst({
-        where: { tenantId, customerId, name: typeFolderName, isFolder: true, parentId: mainFolder.id }
-    });
-
-    if (!typeFolder) {
-        typeFolder = await prisma.documents.create({
-            data: {
-                id: crypto.randomUUID(),
-                name: typeFolderName,
-                isFolder: true,
-                type: typeFolderType,
-                tenantId,
-                customerId,
-                parentId: mainFolder.id,
-                size: 0,
-                storage: "local",
-                updatedAt: new Date()
-            }
-        });
-        console.log(`[SUPABASE] 📁 ${typeFolderName} klasörü oluşturuldu`);
-    }
-
-    // 4. Ay/Yıl klasörünü kontrol et/oluştur
-    let monthYearFolder = await prisma.documents.findFirst({
-        where: { tenantId, customerId, name: monthYearFolderName, isFolder: true, parentId: typeFolder.id }
-    });
-
-    if (!monthYearFolder) {
-        monthYearFolder = await prisma.documents.create({
-            data: {
-                id: crypto.randomUUID(),
-                name: monthYearFolderName,
-                isFolder: true,
-                type: "FOLDER",
-                tenantId,
-                customerId,
-                parentId: typeFolder.id,
-                year,
-                month,
-                size: 0,
-                storage: "local",
-                updatedAt: new Date()
-            }
-        });
-        console.log(`[SUPABASE] 📁 ${typeFolderName}/${monthYearFolderName} klasörü oluşturuldu`);
-    }
-
-    return monthYearFolder.id;
-}
 
 function getFileCategory(fileType: "beyanname" | "tahakkuk" | "sgkTahakkuk" | "hizmetListesi"): FileCategory {
     const map: Record<string, FileCategory> = {
@@ -342,132 +220,33 @@ async function savePdfToSupabase(
             console.log(`[SUPABASE] 📁 Müşteri kök klasörü oluşturuldu: ${folderName}`);
         }
 
-        // 2. Ana klasör seçimi (YENİ YAPI - 4 klasör)
-        let mainFolderName: string;
-        let mainFolderType: string;
-
-        if (fileType === "beyanname") {
-            mainFolderName = "Beyannameler";
-            mainFolderType = "beyanname";
-        } else if (fileType === "tahakkuk") {
-            mainFolderName = "Tahakkuklar";
-            mainFolderType = "tahakkuk";
-        } else {
-            // sgkTahakkuk ve hizmetListesi → "SGK Tahakkuk ve Hizmet Listesi"
-            mainFolderName = "SGK Tahakkuk ve Hizmet Listesi";
-            mainFolderType = "sgk";
-        }
-
-        let mainFolder = await prisma.documents.findFirst({
-            where: { tenantId, customerId, name: mainFolderName, isFolder: true, parentId: customerRootFolder.id }
-        });
-
-        if (!mainFolder) {
-            mainFolder = await prisma.documents.create({
-                data: { id: crypto.randomUUID(), name: mainFolderName, isFolder: true, type: mainFolderType, tenantId, customerId, parentId: customerRootFolder.id, size: 0, storage: "local", updatedAt: new Date() }
-            });
-            console.log(`[SUPABASE] 📁 ${mainFolderName} klasörü oluşturuldu`);
-        }
-
         // ═══════════════════════════════════════════════════════════════════
-        // 3. YENİ KLASÖR YAPISI - Dinamik alt klasörler
-        // Aylık: {Ay}/{Yıl} örn: "01/2025", "12/2025"
-        // Çeyreklik (GGECICI/KGECICI): {BaşlangıçAy}/{Yıl}-{BitişAy}/{Yıl} örn: "10/2025-12/2025"
+        // 2-3. KLASÖR YAPISI — Tipe göre dallanma
+        // Beyanname/Tahakkuk: Paylaşılan fonksiyon (Yıl → TürKodu)
+        // SGK: Mevcut inline yapı (Tahakkuk|Hizmet Listesi → Ay/Yıl)
         // ═══════════════════════════════════════════════════════════════════
-        const isQuarterlyDeclaration = cleanBeyannameTuru === 'GGECICI' || cleanBeyannameTuru === 'KGECICI';
-        let monthYearFolderName: string;
-
-        if (isQuarterlyDeclaration) {
-            // Çeyreklik dönem klasör adı: month Q sonuna işaret eder (3, 6, 9, 12)
-            const quarterEnd = month;
-            const quarterStart = quarterEnd - 2;
-            const startPadded = String(quarterStart).padStart(2, '0');
-            const endPadded = String(quarterEnd).padStart(2, '0');
-            monthYearFolderName = `${startPadded}/${year}-${endPadded}/${year}`;
-        } else {
-            monthYearFolderName = `${monthPadded}/${year}`;
-        }
         let targetParentId: string;
 
-        // SGK dosyaları için preCreatedFolderId varsa klasör oluşturmayı atla
-        if (preCreatedFolderId && (fileType === "sgkTahakkuk" || fileType === "hizmetListesi")) {
+        if (fileType === "beyanname" || fileType === "tahakkuk") {
+            // Beyanname/Tahakkuk: Paylaşılan fonksiyon ile Yıl → TürKodu yapısı
+            const mfName = fileType === "beyanname" ? "Beyannameler" as const : "Tahakkuklar" as const;
+            const mfType = fileType === "beyanname" ? "beyanname" as const : "tahakkuk" as const;
+
+            targetParentId = await ensureBeyannameFolderChainLocked(
+                tenantId, customerId, mfName, mfType, year, beyannameTuru
+            );
+        } else if (preCreatedFolderId && (fileType === "sgkTahakkuk" || fileType === "hizmetListesi")) {
             targetParentId = preCreatedFolderId;
             console.log(`[SUPABASE] 📁 Önceden oluşturulmuş klasör kullanılıyor: ${preCreatedFolderId}`);
-        } else if (fileType === "sgkTahakkuk") {
-            // SGK Tahakkuk ve Hizmet Listesi / Tahakkuk / {Ay}/{Yıl}
-            let tahakkukFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: "Tahakkuk", isFolder: true, parentId: mainFolder.id }
-            });
-
-            if (!tahakkukFolder) {
-                tahakkukFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: "Tahakkuk", isFolder: true, type: "sgk_tahakkuk", tenantId, customerId, parentId: mainFolder.id, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            // Ay/Yıl klasörü
-            let monthYearFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: monthYearFolderName, isFolder: true, parentId: tahakkukFolder.id }
-            });
-
-            if (!monthYearFolder) {
-                monthYearFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: monthYearFolderName, isFolder: true, type: "FOLDER", tenantId, customerId, parentId: tahakkukFolder.id, year, month, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            targetParentId = monthYearFolder.id;
-
-        } else if (fileType === "hizmetListesi") {
-            // SGK Tahakkuk ve Hizmet Listesi / Hizmet Listesi / {Ay}/{Yıl}
-            let hizmetListesiFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: "Hizmet Listesi", isFolder: true, parentId: mainFolder.id }
-            });
-
-            if (!hizmetListesiFolder) {
-                hizmetListesiFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: "Hizmet Listesi", isFolder: true, type: "hizmet_listesi", tenantId, customerId, parentId: mainFolder.id, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            // Ay/Yıl klasörü
-            let monthYearFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: monthYearFolderName, isFolder: true, parentId: hizmetListesiFolder.id }
-            });
-
-            if (!monthYearFolder) {
-                monthYearFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: monthYearFolderName, isFolder: true, type: "FOLDER", tenantId, customerId, parentId: hizmetListesiFolder.id, year, month, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            targetParentId = monthYearFolder.id;
-
+        } else if (fileType === "sgkTahakkuk" || fileType === "hizmetListesi") {
+            // SGK dosyaları: Paylaşılan fonksiyon ile aynı yapı
+            const sgkCategory = fileType === "sgkTahakkuk" ? "SGK_TAHAKKUK" as const : "HIZMET_LISTESI" as const;
+            targetParentId = await ensureSgkFolderChainLocked(
+                tenantId, customerId, sgkCategory, year, month
+            );
         } else {
-            // Beyanname veya Tahakkuk: Ana Klasör / {Tür} / {Ay}/{Yıl}
-            // Beyanname türü klasörü (KDV1, MUHSGK, vb.)
-            let beyannameTuruFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: cleanBeyannameTuru, isFolder: true, parentId: mainFolder.id }
-            });
-
-            if (!beyannameTuruFolder) {
-                beyannameTuruFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: cleanBeyannameTuru, isFolder: true, type: "FOLDER", tenantId, customerId, parentId: mainFolder.id, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            // Ay/Yıl klasörü
-            let monthYearFolder = await prisma.documents.findFirst({
-                where: { tenantId, customerId, name: monthYearFolderName, isFolder: true, parentId: beyannameTuruFolder.id }
-            });
-
-            if (!monthYearFolder) {
-                monthYearFolder = await prisma.documents.create({
-                    data: { id: crypto.randomUUID(), name: monthYearFolderName, isFolder: true, type: "FOLDER", tenantId, customerId, parentId: beyannameTuruFolder.id, year, month, size: 0, storage: "local", updatedAt: new Date() }
-                });
-            }
-
-            targetParentId = monthYearFolder.id;
+            // Fallback — bilinmeyen tip
+            targetParentId = customerRootFolder.id;
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -548,21 +327,16 @@ async function savePdfToSupabase(
 }
 
 export async function POST(request: NextRequest) {
-    // Check for internal token first (from server.ts WebSocket handler)
-    const internalToken = request.headers.get('X-Internal-Token');
+    // Internal/Bearer token veya normal auth
+    const internalAuth = verifyBearerOrInternal(request.headers);
 
     let tenantId: string;
 
-    if (internalToken) {
-        // Internal call from server.ts - JWT token ile doğrulama
-        const decoded = verifyInternalToken(internalToken);
-        if (!decoded) {
-            return NextResponse.json({ error: "Geçersiz internal token" }, { status: 401 });
-        }
-        tenantId = decoded.tenantId;
-        console.log(`[PROCESS] Internal call for tenant: ${tenantId}`);
+    if (internalAuth) {
+        tenantId = internalAuth.tenantId;
+        console.log(`[PROCESS] Internal/Bot call for tenant: ${tenantId}`);
     } else {
-        // Normal auth check
+        // Normal auth check (browser session)
         const session = await auth();
         if (!session?.user?.tenantId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -811,8 +585,8 @@ export async function POST(request: NextRequest) {
 
             if (hasSgkTahakkuk) {
                 // 1. ÖNCE klasör yapısı oluştur (tek sefer)
-                const sgkTahakkukFolderId = await ensureSgkFolderStructure(
-                    tenantId, customer.id, customer.unvan, "sgkTahakkuk", year, month
+                const sgkTahakkukFolderId = await ensureSgkFolderChainLocked(
+                    tenantId, customer.id, "SGK_TAHAKKUK", year, month
                 );
 
                 // 2. SONRA dosyaları sırayla kaydet
@@ -853,8 +627,8 @@ export async function POST(request: NextRequest) {
 
             if (hasSgkHizmet) {
                 // 1. ÖNCE klasör yapısı oluştur (tek sefer)
-                const sgkHizmetFolderId = await ensureSgkFolderStructure(
-                    tenantId, customer.id, customer.unvan, "hizmetListesi", year, month
+                const sgkHizmetFolderId = await ensureSgkFolderChainLocked(
+                    tenantId, customer.id, "HIZMET_LISTESI", year, month
                 );
 
                 // 2. SONRA dosyaları sırayla kaydet

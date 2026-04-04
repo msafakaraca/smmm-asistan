@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 export async function DELETE(req: NextRequest) {
   const user = await getUserWithProfile();
@@ -74,6 +75,8 @@ export async function DELETE(req: NextRequest) {
       count,
       { ids }
     );
+
+    invalidateDashboard(user.tenantId, ['stats', 'alerts', 'tasks-summary']);
 
     return NextResponse.json({ success: true, count });
   } catch (error) {

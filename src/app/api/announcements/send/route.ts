@@ -3,6 +3,7 @@ import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { sendWhatsAppMessage } from "@/lib/whatsapp/whapi";
 import { sendSMS } from "@/lib/sms/netgsm";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import {
   SendAnnouncementRequest,
   SendResult,
@@ -386,6 +387,8 @@ export async function POST(req: NextRequest) {
     }
 
     result.success = result.failed === 0;
+
+    invalidateDashboard(user.tenantId, ['announcement-stats']);
 
     return NextResponse.json(result);
   } catch (error) {

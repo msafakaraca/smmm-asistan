@@ -10,6 +10,7 @@ import { parseKdvTahakkuk, KdvTahakkukParsed } from './kdv-parser';
 import { parseKdv2Tahakkuk, Kdv2TahakkukParsed } from './kdv2-parser';
 import { parseKdv9015Tahakkuk, Kdv9015TahakkukParsed } from './kdv9015-parser';
 import { parseGeciciVergiTahakkuk, GeciciVergiTahakkukParsed } from './gecici-vergi-parser';
+import { getApiUrl } from './config';
 
 // ═══════════════════════════════════════════════════════════════════
 // CONFIG - HTTP API için optimize edilmiş
@@ -77,29 +78,71 @@ export const GIB_ERROR_CODES = {
         message: 'GİB oturumu sona erdi',
         description: 'Başka bir yerden GİB\'e giriş yapıldı veya oturum zaman aşımına uğradı.',
         isCritical: true,
-        userAction: 'Lütfen botu yeniden başlatın.'
+        userAction: 'Lütfen botu yeniden başlatın. Aynı anda başka bir cihazdan GİB\'e giriş yapmadığınızdan emin olun.'
     },
     GIB_AUTH_FAILED: {
         code: 'GIB_AUTH_FAILED',
         message: 'GİB giriş başarısız',
-        description: 'Kullanıcı adı veya şifre hatalı.',
+        description: 'Kullanıcı adı, şifre veya parola hatalı olabilir.',
         isCritical: true,
-        userAction: 'Lütfen GİB bilgilerinizi kontrol edip botu yeniden başlatın.'
+        userAction: 'GİB kullanıcı adı ve şifrenizi kontrol edin. Şifrenizi yakın zamanda değiştirdiyseniz SMMM Asistan\'da güncellemeyi unutmayın.'
     },
     GIB_CAPTCHA_FAILED: {
         code: 'GIB_CAPTCHA_FAILED',
-        message: 'CAPTCHA çözümü başarısız',
-        description: 'CAPTCHA birden fazla denemede çözülemedi.',
+        message: 'CAPTCHA doğrulaması başarısız',
+        description: 'GİB güvenlik kodu birden fazla denemede çözülemedi.',
         isCritical: true,
-        userAction: '2Captcha bakiyenizi kontrol edip botu yeniden başlatın.'
+        userAction: 'Captcha servisi geçici olarak yanıt vermiyor olabilir. Birkaç dakika bekleyip tekrar deneyin.'
     },
-    HTTP_401: { code: 'HTTP_401', message: 'Yetkilendirme hatası', isCritical: false, userAction: null },
-    HTTP_403: { code: 'HTTP_403', message: 'Erişim reddedildi', isCritical: false, userAction: null },
-    HTTP_500: { code: 'HTTP_500', message: 'GİB sunucu hatası', isCritical: false, userAction: null },
-    PDF_INVALID: { code: 'PDF_INVALID', message: 'Geçersiz PDF', isCritical: false, userAction: null },
-    PDF_TIMEOUT: { code: 'PDF_TIMEOUT', message: 'PDF indirme zaman aşımı', isCritical: false, userAction: null },
-    TIMEOUT: { code: 'TIMEOUT', message: 'Zaman aşımı', isCritical: false, userAction: null },
-    UNKNOWN: { code: 'UNKNOWN', message: 'Bilinmeyen hata', isCritical: false, userAction: null }
+    HTTP_401: {
+        code: 'HTTP_401',
+        message: 'GİB yetkilendirme hatası',
+        description: 'GİB oturumu geçersiz veya süresi dolmuş.',
+        isCritical: false,
+        userAction: 'Bot otomatik olarak yeniden giriş deneyecek. Sorun devam ederse botu yeniden başlatın.'
+    },
+    HTTP_403: {
+        code: 'HTTP_403',
+        message: 'GİB erişim engeli',
+        description: 'Bu işlem için yetkiniz bulunmuyor veya GİB tarafından geçici erişim kısıtlaması uygulandı.',
+        isCritical: false,
+        userAction: 'Birkaç dakika bekleyip tekrar deneyin. Sorun devam ederse GİB yetkilerinizi kontrol edin.'
+    },
+    HTTP_500: {
+        code: 'HTTP_500',
+        message: 'GİB sunucusu yanıt vermiyor',
+        description: 'GİB sunucularında geçici bir sorun yaşanıyor.',
+        isCritical: false,
+        userAction: 'GİB sistemlerinde bakım veya yoğunluk olabilir. Birkaç dakika sonra tekrar deneyin.'
+    },
+    PDF_INVALID: {
+        code: 'PDF_INVALID',
+        message: 'PDF dosyası okunamadı',
+        description: 'İndirilen PDF dosyası bozuk veya geçersiz formatta.',
+        isCritical: false,
+        userAction: 'Bot ilgili beyanname için tekrar deneyecek. Sorun devam ederse beyanname durumunu manuel kontrol edin.'
+    },
+    PDF_TIMEOUT: {
+        code: 'PDF_TIMEOUT',
+        message: 'PDF indirme zaman aşımına uğradı',
+        description: 'GİB sunucusu PDF dosyasını zamanında göndermedi.',
+        isCritical: false,
+        userAction: 'Ağ bağlantınız yavaş olabilir veya GİB sunucuları meşgul. Bot otomatik olarak tekrar deneyecek.'
+    },
+    TIMEOUT: {
+        code: 'TIMEOUT',
+        message: 'İstek zaman aşımına uğradı',
+        description: 'GİB sunucusu beklenen sürede yanıt vermedi.',
+        isCritical: false,
+        userAction: 'İnternet bağlantınızı kontrol edin. GİB sunucuları yoğun saatlerde yavaşlayabilir.'
+    },
+    UNKNOWN: {
+        code: 'UNKNOWN',
+        message: 'Beklenmeyen bir hata oluştu',
+        description: 'İşlem sırasında tanımlanamayan bir sorun meydana geldi.',
+        isCritical: false,
+        userAction: 'Lütfen botu yeniden başlatmayı deneyin. Sorun tekrarlanırsa destek ekibiyle iletişime geçin.'
+    }
 } as const;
 
 export type GibErrorCode = keyof typeof GIB_ERROR_CODES;
@@ -1283,7 +1326,7 @@ async function getPreDownloadedCustomers(
     const result = new Map<string, PreDownloadCheck>();
 
     try {
-        const apiUrl = process.env.API_URL || 'http://localhost:3000';
+        const apiUrl = getApiUrl();
         const response = await fetch(`${apiUrl}/api/gib/pre-downloaded?year=${year}&month=${month}`, {
             headers: {
                 'Authorization': `Bearer ${apiToken}`,

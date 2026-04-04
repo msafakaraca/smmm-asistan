@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import { z } from "zod";
 
 // ============================================
@@ -232,6 +233,8 @@ export async function PUT(
             id,
             { fields: Object.keys(updateData), action: "credentials_update" }
         );
+
+        invalidateDashboard(session.user.tenantId, ['alerts']);
 
         return NextResponse.json({ success: true, message: "Şifreler başarıyla güncellendi" });
 

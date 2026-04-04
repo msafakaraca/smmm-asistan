@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { toTitleCase } from "@/lib/utils/text"
 import { createCustomerFoldersBatch } from "@/lib/file-system"
-import { verifyInternalToken } from "@/lib/internal-auth"
+import { verifyBearerOrInternal } from "@/lib/internal-auth"
 
 /**
  * POST /api/gib/mukellefler/import
@@ -17,20 +17,14 @@ import { verifyInternalToken } from "@/lib/internal-auth"
 export async function POST(req: NextRequest) {
     const startTime = Date.now()
 
-    // Check for internal token first (from server.ts WebSocket handler)
-    const internalToken = req.headers.get('X-Internal-Token');
+    // Internal/Bearer token veya normal auth
+    const internalAuth = verifyBearerOrInternal(req.headers);
 
     let tenantId: string | null = null;
 
-    if (internalToken) {
-        // Internal call from server.ts - JWT token ile doğrulama
-        const decoded = verifyInternalToken(internalToken);
-        if (!decoded) {
-            return NextResponse.json({ error: "Geçersiz internal token" }, { status: 401 })
-        }
-        tenantId = decoded.tenantId;
+    if (internalAuth) {
+        tenantId = internalAuth.tenantId;
     } else {
-        // Regular authenticated call
         const session = await auth()
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

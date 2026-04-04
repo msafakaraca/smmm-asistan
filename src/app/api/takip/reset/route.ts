@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 /**
  * POST /api/takip/reset
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
       { action: "reset", year, month }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json({
       success: true,
       message: `${guncellenenSayisi} satır sıfırlandı`,

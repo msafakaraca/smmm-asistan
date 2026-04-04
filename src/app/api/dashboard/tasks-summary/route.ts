@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 import type {
   TaskSummaryItem,
   TaskSummaryStats,
@@ -32,6 +33,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limitParam = parseInt(searchParams.get("limit") || "5");
     const limit = Math.min(Math.max(1, limitParam), 20);
+
+    // Server-side cache kontrolu
+    const cacheKey = `${user.tenantId}:tasks-summary`;
+    const cached = serverCache.get<TaskSummaryData>(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     const now = new Date();
 
@@ -510,6 +516,7 @@ export async function GET(req: NextRequest) {
       recentlyCompleted: recentlyCompleted.map((t) => transformTask(t, false)),
     };
 
+    serverCache.set(cacheKey, response, 30_000); // 30 saniye TTL
     return NextResponse.json(response);
   } catch (error) {
     console.error("[Dashboard Tasks Summary API] GET Error:", error);

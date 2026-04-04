@@ -8,25 +8,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { verifyInternalToken } from "@/lib/internal-auth";
+import { verifyBearerOrInternal } from "@/lib/internal-auth";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 // POST - Documents tablosundan beyanname_takip'e senkronize et
 export async function POST(req: NextRequest) {
-    // Check for internal token first (from server.ts WebSocket handler)
-    const internalToken = req.headers.get('X-Internal-Token');
+    // Internal/Bearer token veya normal auth
+    const internalAuth = verifyBearerOrInternal(req.headers);
 
     let tenantId: string;
 
-    if (internalToken) {
-        // Internal call from server.ts - JWT token ile doğrulama
-        const decoded = verifyInternalToken(internalToken);
-        if (!decoded) {
-            return NextResponse.json({ error: "Geçersiz internal token" }, { status: 401 });
-        }
-        tenantId = decoded.tenantId;
-        console.log(`[SYNC] Internal call for tenant: ${tenantId}`);
+    if (internalAuth) {
+        tenantId = internalAuth.tenantId;
+        console.log(`[SYNC] Internal/Bot call for tenant: ${tenantId}`);
     } else {
-        // Normal auth check
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -187,6 +182,7 @@ export async function POST(req: NextRequest) {
 
         console.log(`[SYNC] Completed: ${updated} updated, ${created} created`);
 
+        invalidateDashboard(tenantId, ['stats', 'declaration-stats']);
         return NextResponse.json({
             success: true,
             stats: {

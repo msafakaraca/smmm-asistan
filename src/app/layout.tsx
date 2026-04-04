@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import { ToastProviderWithGlobal } from "@/components/ui/modern-toast";
 import { BotResultProvider } from "@/context/bot-result-context";
 import { BotLogProvider } from "@/context/bot-log-context";
 import "./globals.css";
 
-const inter = Inter({
-    subsets: ["latin"],
+const inter = localFont({
+    src: [
+        { path: "../../public/fonts/inter-latin-400.woff2", weight: "400", style: "normal" },
+        { path: "../../public/fonts/inter-latin-ext-400.woff2", weight: "400", style: "normal" },
+        { path: "../../public/fonts/inter-latin-600.woff2", weight: "600", style: "normal" },
+        { path: "../../public/fonts/inter-latin-ext-600.woff2", weight: "600", style: "normal" },
+    ],
     variable: "--font-inter",
+    display: "swap",
 });
 
 export const metadata: Metadata = {

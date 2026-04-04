@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { toTitleCase } from "@/lib/utils/text"
 import { ensureCustomerFolder } from "@/lib/file-system"
 import { auditLog } from "@/lib/audit"
+import { invalidateDashboard } from "@/lib/dashboard-invalidation"
 
 export async function POST(req: NextRequest) {
     const session = await auth()
@@ -81,6 +82,8 @@ export async function POST(req: NextRequest) {
                 { source: "excel" }
             )
         }
+
+        invalidateDashboard(tenantId, ['stats', 'alerts', 'declaration-stats']);
 
         return NextResponse.json({ success: true, count })
     } catch (error) {

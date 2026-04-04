@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 // GET /api/customers/[id]
 export async function GET(
@@ -98,6 +99,8 @@ export async function PUT(
             { unvan: customer.unvan }
         );
 
+        invalidateDashboard(session.user.tenantId, ['stats', 'alerts']);
+
         return NextResponse.json(customer);
 
     } catch (error) {
@@ -143,6 +146,8 @@ export async function DELETE(
                 { unvan: customer.unvan, vknTckn: customer.vknTckn }
             );
         }
+
+        invalidateDashboard(session.user.tenantId, ['stats', 'alerts', 'declaration-stats']);
 
         return NextResponse.json({ success: true });
 

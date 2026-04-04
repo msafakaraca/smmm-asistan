@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { adminUploadFile, generateStoragePath } from "@/lib/storage-supabase";
+import { ensureSgkFolderChainLocked } from "@/lib/file-system";
 
 interface EbildirgeStreamSaveRequest {
   customerId: string;
@@ -164,6 +165,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Klasör zinciri oluştur: SGK Tahakkuk ve Hizmet Listesi → Tip → Ay/Yıl
+    const targetFolderId = await ensureSgkFolderChainLocked(
+      user.tenantId,
+      customerId,
+      fileCategory,
+      year,
+      month
+    );
+
     // Upload başarılı → DB kaydı oluştur
     const docResult = await prisma.documents.create({
       data: {
@@ -182,6 +192,7 @@ export async function POST(req: NextRequest) {
         fileIndex,
         customerId,
         tenantId: user.tenantId,
+        parentId: targetFolderId,
       },
     });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 // Varsayilan kolonlar - ilk yuklenmede olusturulur
 const VARSAYILAN_KOLONLAR = [
@@ -129,6 +130,7 @@ export async function POST(req: NextRequest) {
       { kod, baslik, tip }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json(yeniKolon);
   } catch (error) {
     console.error("[TakipKolon] POST Error:", error);
@@ -186,6 +188,7 @@ export async function PUT(req: NextRequest) {
       { baslik: guncellenmisKolon.baslik, aktif: guncellenmisKolon.aktif }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json(guncellenmisKolon);
   } catch (error) {
     console.error("[TakipKolon] PUT Error:", error);
@@ -243,6 +246,7 @@ export async function DELETE(req: NextRequest) {
       { kod: kolon.kod, baslik: kolon.baslik }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[TakipKolon] DELETE Error:", error);

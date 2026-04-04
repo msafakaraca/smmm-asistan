@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 // 3 aylık beyanname dönem bilgisi hesapla
 // Çeyreğin son ayında (3, 6, 9, 12) o çeyreğin bilgisini döner, diğer aylarda null (dönem dışı)
@@ -174,6 +175,7 @@ export async function PUT(req: NextRequest) {
             { customerId, year, month, kod, status }
         );
 
+        invalidateDashboard(tenantId, ['stats', 'declaration-stats']);
         return NextResponse.json(record);
     } catch (error) {
         console.error("Error updating beyanname takip:", error);
@@ -218,6 +220,7 @@ export async function POST(req: NextRequest) {
                 { action: "reset", year, month }
             );
 
+            invalidateDashboard(tenantId, ['stats', 'declaration-stats']);
             return NextResponse.json({
                 success: true,
                 message: `${result.count} kayıt sıfırlandı`
@@ -265,6 +268,7 @@ export async function DELETE(req: NextRequest) {
             { year, month }
         );
 
+        invalidateDashboard(tenantId, ['stats', 'declaration-stats']);
         return NextResponse.json({
             success: true,
             message: `${result.count} kayıt silindi`

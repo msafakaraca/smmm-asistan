@@ -88,3 +88,39 @@ export function getInternalAuthHeaders(tenantId: string): HeadersInit {
     "X-Internal-Token": token,
   };
 }
+
+/**
+ * Internal API endpoint'lerinde hem X-Internal-Token hem Bearer token kabul eder.
+ * Electron bot login token'ı (Bearer) veya sunucu-arası internal token kullanabilir.
+ *
+ * @returns { tenantId } veya null (yetkisiz)
+ */
+export function verifyBearerOrInternal(
+  headers: Headers
+): { tenantId: string } | null {
+  // 1. Önce X-Internal-Token dene (sunucu-arası iletişim)
+  const internalToken = headers.get("X-Internal-Token");
+  if (internalToken) {
+    return verifyInternalToken(internalToken);
+  }
+
+  // 2. Authorization: Bearer dene (Electron bot login token)
+  const authHeader = headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const bearerToken = authHeader.slice(7);
+    try {
+      const decoded = jwt.verify(bearerToken, INTERNAL_SECRET!) as {
+        tenantId?: string;
+        [key: string]: unknown;
+      };
+      if (decoded.tenantId) {
+        return { tenantId: decoded.tenantId };
+      }
+    } catch {
+      // Token geçersiz veya süresi dolmuş
+      return null;
+    }
+  }
+
+  return null;
+}

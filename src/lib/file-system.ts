@@ -310,3 +310,219 @@ export async function createCustomerFoldersBatch(
         return { success: false, created: 0, errors };
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// BEYANNAME/TAHAKKUK KLASÖR ZİNCİRİ
+// Hiyerarşi: Müşteri Kök → Ana Klasör → Yıl → TürKodu → dosya.pdf
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Race-condition-safe klasör oluşturma.
+ * findFirst → create → P2002 catch → findFirst retry
+ */
+export async function getOrCreateFolderSafe(
+    tenantId: string,
+    customerId: string,
+    parentId: string,
+    name: string,
+    type: string = "FOLDER",
+    extraData?: { year?: number; month?: number }
+): Promise<string> {
+    // 1. Önce var mı bak
+    const existing = await prisma.documents.findFirst({
+        where: { tenantId, customerId, parentId, name, isFolder: true },
+        select: { id: true }
+    });
+    if (existing) return existing.id;
+
+    // 2. Yoksa oluştur
+    try {
+        const { randomUUID } = await import("crypto");
+        const created = await prisma.documents.create({
+            data: {
+                id: randomUUID(),
+                tenantId,
+                customerId,
+                parentId,
+                name,
+                isFolder: true,
+                type,
+                size: 0,
+                storage: "local",
+                updatedAt: new Date(),
+                ...extraData
+            }
+        });
+        return created.id;
+    } catch (e: unknown) {
+        // 3. Race condition — başka bir request aynı anda oluşturduysa
+        const error = e as { code?: string; message?: string };
+        if (error.code === 'P2002' || error.message?.includes('Unique constraint')) {
+            const found = await prisma.documents.findFirst({
+                where: { tenantId, customerId, parentId, name, isFolder: true },
+                select: { id: true }
+            });
+            if (found) return found.id;
+        }
+        throw e;
+    }
+}
+
+/**
+ * Beyanname/Tahakkuk klasör zinciri oluşturur.
+ * Hiyerarşi: Müşteri Kök → Ana Klasör → Yıl → TürKodu
+ *
+ * @returns TürKodu klasörünün ID'si (dosyalar buraya kaydedilecek)
+ */
+export async function ensureBeyannameFolderChain(
+    tenantId: string,
+    customerId: string,
+    mainFolderName: "Beyannameler" | "Tahakkuklar",
+    mainFolderType: "beyanname" | "tahakkuk",
+    year: number,
+    turKodu: string
+): Promise<string> {
+    // 1. Müşteri kök klasörünü bul
+    const customerRoot = await prisma.documents.findFirst({
+        where: { tenantId, customerId, isFolder: true, parentId: null },
+        select: { id: true }
+    });
+    if (!customerRoot) {
+        throw new Error(`Müşteri kök klasörü bulunamadı: ${customerId}`);
+    }
+
+    // 2. Ana klasör (Beyannameler veya Tahakkuklar)
+    const mainFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, customerRoot.id,
+        mainFolderName, mainFolderType
+    );
+
+    // 3. Yıl klasörü (2024, 2025, 2026)
+    const yearFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, mainFolderId,
+        String(year), "FOLDER",
+        { year }
+    );
+
+    // 4. TürKodu klasörü (KDV1, MUHSGK, GGECICI)
+    const cleanTurKodu = turKodu.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 15);
+    const turKoduFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, yearFolderId,
+        cleanTurKodu, "FOLDER"
+    );
+
+    return turKoduFolderId;
+}
+
+// Aynı Node.js process içindeki concurrent request'ler için module-level lock
+const folderCreationLocks = new Map<string, Promise<string>>();
+
+/**
+ * ensureBeyannameFolderChain'in lock korumalı versiyonu.
+ * Aynı müşteri + yıl + tür için concurrent çağrılarda tek promise paylaşılır.
+ */
+export async function ensureBeyannameFolderChainLocked(
+    tenantId: string,
+    customerId: string,
+    mainFolderName: "Beyannameler" | "Tahakkuklar",
+    mainFolderType: "beyanname" | "tahakkuk",
+    year: number,
+    turKodu: string
+): Promise<string> {
+    const cleanTurKodu = turKodu.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 15);
+    const lockKey = `${tenantId}:${customerId}:${mainFolderName}:${year}:${cleanTurKodu}`;
+
+    const existing = folderCreationLocks.get(lockKey);
+    if (existing) return existing;
+
+    const promise = ensureBeyannameFolderChain(
+        tenantId, customerId, mainFolderName, mainFolderType, year, turKodu
+    );
+    folderCreationLocks.set(lockKey, promise);
+
+    try {
+        return await promise;
+    } finally {
+        folderCreationLocks.delete(lockKey);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SGK KLASÖR ZİNCİRİ
+// Hiyerarşi: Müşteri Kök → SGK Tahakkuk ve Hizmet Listesi → Tahakkuk|Hizmet Listesi → Ay/Yıl
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * SGK dosyaları için klasör zinciri oluşturur.
+ * Hiyerarşi: Müşteri Kök → SGK Ana Klasör → Tip Klasörü → Ay/Yıl
+ *
+ * @returns Ay/Yıl klasörünün ID'si (dosyalar buraya kaydedilecek)
+ */
+export async function ensureSgkFolderChain(
+    tenantId: string,
+    customerId: string,
+    fileCategory: "SGK_TAHAKKUK" | "HIZMET_LISTESI",
+    year: number,
+    month: number
+): Promise<string> {
+    // 1. Müşteri kök klasörünü bul
+    const customerRoot = await prisma.documents.findFirst({
+        where: { tenantId, customerId, isFolder: true, parentId: null },
+        select: { id: true }
+    });
+    if (!customerRoot) {
+        throw new Error(`Müşteri kök klasörü bulunamadı: ${customerId}`);
+    }
+
+    // 2. SGK ana klasörü
+    const sgkMainFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, customerRoot.id,
+        "SGK Tahakkuk ve Hizmet Listesi", "sgk"
+    );
+
+    // 3. Tip klasörü (Tahakkuk veya Hizmet Listesi)
+    const typeFolderName = fileCategory === "SGK_TAHAKKUK" ? "Tahakkuk" : "Hizmet Listesi";
+    const typeFolderType = fileCategory === "SGK_TAHAKKUK" ? "sgk_tahakkuk" : "hizmet_listesi";
+    const typeFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, sgkMainFolderId,
+        typeFolderName, typeFolderType
+    );
+
+    // 4. Ay/Yıl klasörü (01/2026 formatı)
+    const monthPadded = String(month).padStart(2, '0');
+    const monthYearFolderName = `${monthPadded}/${year}`;
+    const monthYearFolderId = await getOrCreateFolderSafe(
+        tenantId, customerId, typeFolderId,
+        monthYearFolderName, "FOLDER",
+        { year, month }
+    );
+
+    return monthYearFolderId;
+}
+
+/**
+ * ensureSgkFolderChain'in lock korumalı versiyonu.
+ */
+export async function ensureSgkFolderChainLocked(
+    tenantId: string,
+    customerId: string,
+    fileCategory: "SGK_TAHAKKUK" | "HIZMET_LISTESI",
+    year: number,
+    month: number
+): Promise<string> {
+    const lockKey = `sgk:${tenantId}:${customerId}:${fileCategory}:${year}:${month}`;
+
+    const existing = folderCreationLocks.get(lockKey);
+    if (existing) return existing;
+
+    const promise = ensureSgkFolderChain(
+        tenantId, customerId, fileCategory, year, month
+    );
+    folderCreationLocks.set(lockKey, promise);
+
+    try {
+        return await promise;
+    } finally {
+        folderCreationLocks.delete(lockKey);
+    }
+}

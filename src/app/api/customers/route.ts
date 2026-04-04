@@ -5,6 +5,7 @@ import { encrypt } from "@/lib/crypto";
 import { toTitleCase } from "@/lib/utils/text";
 import { ensureCustomerFolder } from "@/lib/file-system";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 
 // GET /api/customers
 export async function GET(request: Request) {
@@ -200,6 +201,8 @@ export async function POST(request: Request) {
             { unvan: customer.unvan, vknTckn: customer.vknTckn }
         );
 
+        invalidateDashboard(session.user.tenantId, ['stats', 'alerts', 'declaration-stats']);
+
         return NextResponse.json(customer);
 
     } catch (error) {
@@ -391,6 +394,8 @@ export async function DELETE(request: Request) {
             id,
             { unvan: customer.unvan, vknTckn: customer.vknTckn }
         );
+
+        invalidateDashboard(session.user.tenantId, ['stats', 'alerts', 'declaration-stats']);
 
         return NextResponse.json({ success: true, message: "Müşteri silindi" });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import type { UpdateTaskInput } from "@/types/task";
 
 // Prisma response'u frontend tipine dönüştür
@@ -312,6 +313,8 @@ export async function PUT(
       { title: updatedTask.title, status: updatedTask.status }
     );
 
+    invalidateDashboard(user.tenantId, ['stats', 'alerts', 'tasks-summary']);
+
     return NextResponse.json(taskWithOverdue);
   } catch (error) {
     console.error("[Task Detail API] PUT Error:", error);
@@ -361,6 +364,8 @@ export async function DELETE(
       id,
       { title: task.title }
     );
+
+    invalidateDashboard(user.tenantId, ['stats', 'alerts', 'tasks-summary']);
 
     return NextResponse.json({ success: true });
   } catch (error) {

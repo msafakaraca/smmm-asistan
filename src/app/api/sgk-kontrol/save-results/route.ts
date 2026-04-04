@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyInternalToken } from "@/lib/internal-auth";
+import { verifyBearerOrInternal } from "@/lib/internal-auth";
 
 interface ParsedResult {
   customerId: string;
@@ -30,28 +30,15 @@ interface ParsedResult {
 
 export async function POST(req: NextRequest) {
   try {
-    // Internal request kontrolü - JWT token ile doğrulama
-    const token = req.headers.get("X-Internal-Token");
-
-    let tenantId: string | null = null;
-
-    if (token) {
-      const decoded = verifyInternalToken(token);
-      if (!decoded) {
-        return NextResponse.json(
-          { error: "Unauthorized - invalid token" },
-          { status: 401 }
-        );
-      }
-      tenantId = decoded.tenantId;
-    }
-
-    if (!tenantId) {
+    // Internal veya Bearer token ile doğrulama
+    const auth = verifyBearerOrInternal(req.headers);
+    if (!auth) {
       return NextResponse.json(
-        { error: "Unauthorized - authentication required" },
+        { error: "Unauthorized" },
         { status: 401 }
       );
     }
+    const tenantId = auth.tenantId;
 
     const body = await req.json();
     const { results } = body as { results: ParsedResult[] };

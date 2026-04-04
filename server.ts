@@ -107,6 +107,14 @@ function broadcastToAll(data: WSMessage): void {
   });
 }
 
+// Dashboard invalidation — belirli tenant'ın browser client'larına SWR revalidation sinyali gönderir
+function broadcastDashboardInvalidation(tenantId: string, keys: string[]): void {
+  broadcastToTenant(tenantId, {
+    type: 'dashboard:invalidate',
+    data: { keys }
+  });
+}
+
 // Check if tenant has an active Electron client
 function hasElectronClient(tenantId: string): boolean {
   let found = false;
@@ -214,6 +222,8 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
         type: 'bot:complete',
         data: message.data
       });
+      // Dashboard invalidation — bot tamamlanınca dashboard'u güncelle
+      broadcastDashboardInvalidation(client.tenantId, ['stats', 'declaration-stats', 'activity']);
       break;
 
     case 'bot:error':
@@ -364,6 +374,9 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
               message: `${beyannameler.length} beyanname işlendi`
             }
           });
+
+          // Dashboard invalidation — bot batch işlemi sonrası dashboard'u güncelle
+          broadcastDashboardInvalidation(tenantId, ['stats', 'declaration-stats', 'activity']);
         } else {
           console.log('[WS] No beyannameler in batch to process');
         }
@@ -560,6 +573,30 @@ app.prepare().then(() => {
         return;
       }
 
+      // Dashboard invalidation endpoint (Next.js API route'larından çağrılır)
+      if (parsedUrl.pathname === '/_internal/dashboard-invalidate' && req.method === 'POST') {
+        let body = '';
+        req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+        req.on('end', () => {
+          try {
+            const { tenantId, keys } = JSON.parse(body);
+            if (tenantId && Array.isArray(keys) && keys.length) {
+              broadcastDashboardInvalidation(tenantId, keys);
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true }));
+            } else {
+              res.statusCode = 400;
+              res.end('Missing tenantId or keys');
+            }
+          } catch {
+            res.statusCode = 400;
+            res.end('Invalid JSON');
+          }
+        });
+        return;
+      }
+
       // Dev modda derleme sırasında manifest dosyaları henüz hazır olmayabilir
       // handle() çağrılmadan önce kontrol edip 503 dönüyoruz
       if (dev) {
@@ -730,4 +767,4 @@ app.prepare().then(() => {
 });
 
 // Export for external use (e.g., from API routes)
-export { broadcastToTenant, broadcastToAll, clients };
+export { broadcastToTenant, broadcastToAll, broadcastDashboardInvalidation, clients };

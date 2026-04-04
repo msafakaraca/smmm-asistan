@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 import type { DashboardStats } from "@/types/dashboard";
 
 /**
@@ -33,6 +34,12 @@ export async function GET(req: NextRequest) {
     const month = parseInt(searchParams.get("month") || String(defaultMonth));
 
     const tenantId = user.tenantId;
+
+    // Server-side cache kontrolu
+    const cacheKey = `${tenantId}:stats:${year}:${month}`;
+    const cached = serverCache.get<DashboardStats>(cacheKey);
+    if (cached) return NextResponse.json(cached);
+
     const nowDate = new Date();
 
     // Bu ayın ilk günü (yeni müşteri sayısı için)
@@ -322,6 +329,7 @@ export async function GET(req: NextRequest) {
       },
     };
 
+    serverCache.set(cacheKey, stats, 30_000); // 30 saniye TTL
     return NextResponse.json(stats);
   } catch (error) {
     console.error("[Dashboard Stats API] Error:", error);

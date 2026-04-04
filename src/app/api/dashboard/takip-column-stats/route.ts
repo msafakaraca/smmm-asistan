@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 import { extractCellData } from "@/lib/takip-utils";
 import type { TakipColumnStats, TakipColumnStat } from "@/types/dashboard";
 
@@ -31,6 +32,11 @@ export async function GET(req: NextRequest) {
     const year = parseInt(searchParams.get("year") || String(defaultYear));
     const month = parseInt(searchParams.get("month") || String(defaultMonth));
     const tenantId = user.tenantId;
+
+    // Server-side cache kontrolu
+    const cacheKey = `${tenantId}:takip-column-stats:${year}:${month}`;
+    const cached = serverCache.get<TakipColumnStats>(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     // Aktif boolean kolonlar + dönem satırları paralel çek
     const [kolonlar, satirlar] = await Promise.all([
@@ -90,6 +96,7 @@ export async function GET(req: NextRequest) {
       period: { year, month },
     };
 
+    serverCache.set(cacheKey, result, 60_000); // 60 saniye TTL
     return NextResponse.json(result);
   } catch (error) {
     console.error("[Takip Column Stats API] Error:", error);

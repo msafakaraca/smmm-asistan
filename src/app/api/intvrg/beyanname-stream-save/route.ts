@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { adminUploadFile, generateStoragePath } from "@/lib/storage-supabase";
+import { ensureBeyannameFolderChainLocked } from "@/lib/file-system";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -79,6 +80,16 @@ export async function POST(req: NextRequest) {
     // Supabase Storage path
     const storagePath = generateStoragePath(user.tenantId, customerId, year, month, filename);
 
+    // Klasör zinciri oluştur: Beyannameler → Yıl → TürKodu
+    const targetFolderId = await ensureBeyannameFolderChainLocked(
+      user.tenantId,
+      customerId,
+      "Beyannameler",
+      "beyanname",
+      year,
+      turKodu
+    );
+
     // Paralel: Storage upload + Document create + Archive merge
     const [, docResult] = await Promise.all([
       // A) Supabase'e yükle
@@ -101,6 +112,7 @@ export async function POST(req: NextRequest) {
           fileCategory: "BEYANNAME",
           customerId,
           tenantId: user.tenantId,
+          parentId: targetFolderId,
         },
       }),
     ]);

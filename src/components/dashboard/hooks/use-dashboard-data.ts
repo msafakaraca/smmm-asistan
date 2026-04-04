@@ -12,7 +12,8 @@
  */
 
 import useSWR, { mutate } from "swr";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useBotLog } from "@/context/bot-log-context";
 import type {
   DashboardStats,
   DashboardAlert,
@@ -77,11 +78,12 @@ const periodDependentConfig = {
 };
 
 // Dönem bağımsız veriler için config (alerts, activity, upcoming)
+// Not: refreshInterval burada yok — WS invalidation kullanılıyor,
+// WS koptuğunda adaptiveIndependentConfig fallback polling açar
 const periodIndependentConfig = {
-  revalidateOnFocus: false,
+  revalidateOnFocus: true,
   revalidateOnReconnect: true,
-  dedupingInterval: 60000, // 60 saniye
-  refreshInterval: 120000, // 2 dakikada bir background refresh
+  dedupingInterval: 30000, // 30 saniye
   errorRetryCount: 2,
   keepPreviousData: false, // Memory birikimini önle
   // SESSION_EXPIRED hatalarında retry yapma
@@ -122,6 +124,14 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
     options.initialMonth ?? defaultMonth
   );
 
+  // WS bağlantı durumuna göre adaptive config
+  const { wsConnected } = useBotLog();
+  const adaptiveIndependentConfig = useMemo(() => ({
+    ...periodIndependentConfig,
+    // WS bağlı değilse fallback polling aç (120 saniye)
+    refreshInterval: wsConnected ? 0 : 120000,
+  }), [wsConnected]);
+
   // Tenant değişikliği kontrolü: farklı kullanıcı giriş yaptıysa SWR cache'ini temizle
   const cacheChecked = useRef(false);
   useEffect(() => {
@@ -150,6 +160,45 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
   }, []);
 
   // ============================================
+  // BATCH INITIAL FETCH - Tek roundtrip ile ilk yükleme
+  // ============================================
+
+  const batchInitialized = useRef(false);
+
+  useEffect(() => {
+    if (batchInitialized.current) return;
+    batchInitialized.current = true;
+
+    const statsUrl = `/api/dashboard/stats?year=${selectedYear}&month=${selectedMonth}`;
+
+    fetch("/api/dashboard/batch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        widgets: ["stats", "alerts", "activity", "upcoming"],
+        params: {
+          stats: { year: String(selectedYear), month: String(selectedMonth) },
+          activity: { limit: "8", diverse: "true" },
+          upcoming: { limit: "3", days: "30" },
+        },
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        startTransition(() => {
+          if (data.stats?.ok) mutate(statsUrl, data.stats.data, false);
+          if (data.alerts?.ok) mutate("/api/dashboard/alerts", data.alerts.data, false);
+          if (data.activity?.ok) mutate("/api/dashboard/activity?limit=8&diverse=true", data.activity.data, false);
+          if (data.upcoming?.ok) mutate("/api/dashboard/upcoming?limit=3&days=30", data.upcoming.data, false);
+        });
+      })
+      .catch(() => {
+        // Batch başarısız olursa SWR individual hook'lar fallback olarak çalışır
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ============================================
   // SWR HOOKS - Paralel ve cache'li veri çekme
   // ============================================
 
@@ -162,14 +211,14 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
     isValidating: statsValidating,
   } = useSWR<DashboardStats>(statsKey, fetcher, periodDependentConfig);
 
-  // Alerts - Dönem bağımsız, background refresh
+  // Alerts - Dönem bağımsız, WS invalidation ile güncellenir
   const {
     data: alerts,
     isLoading: alertsLoading,
     isValidating: alertsValidating,
-  } = useSWR<DashboardAlert[]>("/api/dashboard/alerts", fetcher, periodIndependentConfig);
+  } = useSWR<DashboardAlert[]>("/api/dashboard/alerts", fetcher, adaptiveIndependentConfig);
 
-  // Activities - Dönem bağımsız, diverse=true ile çeşitli aktiviteler, 60sn polling
+  // Activities - Dönem bağımsız, WS invalidation ile güncellenir
   const {
     data: activities,
     isLoading: activitiesLoading,
@@ -177,13 +226,10 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
   } = useSWR<ActivityItem[]>(
     "/api/dashboard/activity?limit=8&diverse=true",
     fetcher,
-    {
-      ...periodIndependentConfig,
-      refreshInterval: 60000, // 60 saniye polling - memory kullanımını azalt
-    }
+    adaptiveIndependentConfig
   );
 
-  // Upcoming - Dönem bağımsız
+  // Upcoming - Dönem bağımsız, WS invalidation ile güncellenir
   const {
     data: upcomingData,
     isLoading: upcomingLoading,
@@ -191,7 +237,7 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
   } = useSWR<UpcomingData>(
     "/api/dashboard/upcoming?limit=3&days=30",
     fetcher,
-    periodIndependentConfig
+    adaptiveIndependentConfig
   );
 
   // ============================================
@@ -287,26 +333,34 @@ export function useDashboardData(options: UseDashboardDataOptions = {}) {
 // ============================================
 
 /**
- * Dashboard verilerini önceden yükle
- * Sidebar'da dashboard linkine hover edildiğinde çağrılabilir
+ * Dashboard verilerini önceden yükle (batch)
+ * Sidebar'da dashboard linkine hover edildiğinde çağrılabilir.
+ * Tek roundtrip ile tüm widget'ları çeker ve SWR cache'ine yazar.
  */
 export function prefetchDashboardData() {
   const { defaultYear, defaultMonth } = getDefaultPeriod();
 
-  // Preload all dashboard data - fetch and cache
-  const urls = [
-    `/api/dashboard/stats?year=${defaultYear}&month=${defaultMonth}`,
-    "/api/dashboard/alerts",
-    "/api/dashboard/activity?limit=8&diverse=true",
-    "/api/dashboard/upcoming?limit=3&days=30",
-  ];
-
-  urls.forEach(url => {
-    // Trigger fetch and populate SWR cache
-    fetcher(url).then(data => {
-      mutate(url, data, false);
-    }).catch(() => {
-      // Silent fail for prefetch
+  fetch("/api/dashboard/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      widgets: ["stats", "alerts", "activity", "upcoming"],
+      params: {
+        stats: { year: String(defaultYear), month: String(defaultMonth) },
+        activity: { limit: "8", diverse: "true" },
+        upcoming: { limit: "3", days: "30" },
+      },
+    }),
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      const statsUrl = `/api/dashboard/stats?year=${defaultYear}&month=${defaultMonth}`;
+      if (data.stats?.ok) mutate(statsUrl, data.stats.data, false);
+      if (data.alerts?.ok) mutate("/api/dashboard/alerts", data.alerts.data, false);
+      if (data.activity?.ok) mutate("/api/dashboard/activity?limit=8&diverse=true", data.activity.data, false);
+      if (data.upcoming?.ok) mutate("/api/dashboard/upcoming?limit=3&days=30", data.upcoming.data, false);
+    })
+    .catch(() => {
+      // Batch başarısız olursa sessizce devam et
     });
-  });
 }

@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { mutate as swrMutate } from "swr";
 import { useBotLog } from "@/context/bot-log-context";
 import { useBotResult } from "@/context/bot-result-context";
 import type { GibBotResult } from "@/types/gib";
@@ -240,6 +241,16 @@ export function GlobalBotListener() {
                             const sgkError = message.data?.error || "SGK sorgulama hatası";
                             setLiveMessageRef.current(`SGK Hata: ${sgkError}`, "error");
 
+                        } else if (message.type === "dashboard:invalidate") {
+                            // Dashboard invalidation — WS üzerinden gelen SWR revalidation sinyali
+                            const keys = (message.data as { keys?: string[] })?.keys;
+                            if (keys?.length) {
+                                swrMutate(
+                                    (key: unknown) => typeof key === 'string' && keys.some(k => key.includes(`/api/dashboard/${k}`)),
+                                    undefined,
+                                    { revalidate: true }
+                                );
+                            }
                         } else if (message.type === "electron:status") {
                             const connected = message.data?.connected === true;
                             setElectronConnectedRef.current(connected);

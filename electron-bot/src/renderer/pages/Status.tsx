@@ -10,12 +10,12 @@ export default function Status({ user, onLogout }: StatusProps) {
     const [botMessage, setBotMessage] = useState<string>('Veriler işleniyor, lütfen bekleyiniz...');
 
     useEffect(() => {
-        // Listen for bot commands from website via WebSocket
+        // WebSocket üzerinden web sitesinden gelen bot komutlarını dinle
         window.electron?.onBotCommand((data) => {
             if (data.type === 'start') {
                 setBotStatus('Çalışıyor');
                 setBotMessage('Bot başlatıldı...');
-                // Minimize to tray
+                // Sistem tepsisine küçült
                 window.electron?.minimize();
             } else if (data.type === 'progress') {
                 setBotStatus('İşleniyor');
@@ -25,14 +25,14 @@ export default function Status({ user, onLogout }: StatusProps) {
                 setBotMessage('İşlem başarıyla tamamlandı!');
             } else if (data.type === 'error') {
                 setBotStatus('Hata');
-                setBotMessage(data.message || 'Bir hata oluştu.');
+                setBotMessage(data.message || 'Beklenmeyen bir hata oluştu. Lütfen botu yeniden başlatmayı deneyin.');
             }
         });
 
-        // Body background color change for dark theme of this page
+        // Bu sayfanın karanlık teması için body arka plan rengini değiştir
         document.body.style.backgroundColor = '#0f172a';
         return () => {
-            document.body.style.backgroundColor = '#ffffff'; // Reset to white on unmount
+            document.body.style.backgroundColor = '#ffffff'; // Bileşen kaldırıldığında beyaza sıfırla
         };
     }, []);
 
@@ -63,7 +63,7 @@ export default function Status({ user, onLogout }: StatusProps) {
                 <p>{botMessage}</p>
             </div>
 
-            {/* Optional Logout Button for Development/Testing */}
+            {/* Geliştirme/Test için Çıkış Butonu */}
             <div className="absolute bottom-4 right-4">
                 <button
                     onClick={onLogout}

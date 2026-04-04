@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 
 // Beyanname türü istatistikleri
 interface DeclarationTypeStats {
@@ -66,6 +67,11 @@ export async function GET(req: NextRequest) {
 
     const year = parseInt(searchParams.get("year") || String(defaultYear));
     const month = parseInt(searchParams.get("month") || String(defaultMonth));
+
+    // Server-side cache kontrolu
+    const cacheKey = `${tenantId}:declaration-stats:${year}:${month}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     // Aktif müşterileri getir
     const customers = await prisma.customers.findMany({
@@ -331,7 +337,7 @@ export async function GET(req: NextRequest) {
     const effectiveTotal = totalAll - verilmeyecekAll;
     const completionRate = effectiveTotal > 0 ? Math.round((verildiAll / effectiveTotal) * 100) : 0;
 
-    return NextResponse.json({
+    const result = {
       declarations: activeDeclarations,
       summary: {
         total: totalAll,
@@ -339,7 +345,10 @@ export async function GET(req: NextRequest) {
         completionRate,
       },
       period: { year, month },
-    });
+    };
+
+    serverCache.set(cacheKey, result, 60_000); // 60 saniye TTL
+    return NextResponse.json(result);
   } catch (error) {
     console.error("[Dashboard Declaration Stats API] Error:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { adminUploadFile, generateStoragePath } from "@/lib/storage-supabase";
+import { ensureBeyannameFolderChainLocked } from "@/lib/file-system";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -110,6 +111,16 @@ export async function POST(req: NextRequest) {
           item.filename
         );
 
+        // Klasör zinciri oluştur: Beyannameler → Yıl → TürKodu
+        const targetFolderId = await ensureBeyannameFolderChainLocked(
+          user.tenantId,
+          customerId,
+          "Beyannameler",
+          "beyanname",
+          item.year,
+          item.turKodu
+        );
+
         // Önce Supabase'e yükle, sonra DB kaydı oluştur (sıralı — race condition önleme)
         await adminUploadFile(storagePath, buffer, "application/pdf");
         const docResult = await prisma.documents.create({
@@ -128,6 +139,7 @@ export async function POST(req: NextRequest) {
             fileCategory: "BEYANNAME",
             customerId,
             tenantId: user.tenantId,
+            parentId: targetFolderId,
           },
         });
 

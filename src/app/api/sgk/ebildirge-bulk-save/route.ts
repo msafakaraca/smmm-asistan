@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { adminUploadFile, generateStoragePath } from "@/lib/storage-supabase";
+import { ensureSgkFolderChainLocked } from "@/lib/file-system";
 
 interface BulkSaveItem {
   pdfBase64: string;
@@ -157,6 +158,15 @@ export async function POST(req: NextRequest) {
               };
             }
 
+            // Klasör zinciri oluştur: SGK Tahakkuk ve Hizmet Listesi → Tip → Ay/Yıl
+            const targetFolderId = await ensureSgkFolderChainLocked(
+              user.tenantId,
+              customerId,
+              fileCategory,
+              year,
+              month
+            );
+
             // DB kayıt
             const categoryLabel = fileCategory === "SGK_TAHAKKUK" ? "SGK Tahakkuk" : "Hizmet Listesi";
             const originalName = `${categoryLabel} - ${belgeMahiyeti || belgeTuru} ${monthPadded}/${year}${fileIndex > 0 ? ` (${fileIndex + 1})` : ""}`;
@@ -178,6 +188,7 @@ export async function POST(req: NextRequest) {
                 fileIndex,
                 customerId,
                 tenantId: user.tenantId,
+                parentId: targetFolderId,
               },
             });
 

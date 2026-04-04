@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import { z } from "zod";
 
 // Request validation schema
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
       { kolonKod, kolonBaslik, value, valueLabel }
     );
 
+    invalidateDashboard(tenantId, ['takip-stats', 'takip-column-stats']);
     return NextResponse.json({
       success: true,
       message: `${satirIds.length} satır "${kolonKod}" kolonu "${valueLabel}" olarak güncellendi`,

@@ -29,15 +29,12 @@
     --text-color-light: #f8fafc;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Reset: Tailwind base layer zaten bu reset'i yapıyor.
+   Burada tekrar tanımlamak @layer utilities sınıflarını ezer. */
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--background);
+    background: #f1f5f9;
     color: var(--foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -228,4 +225,22 @@ input:focus {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Custom Scrollbar — Dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }

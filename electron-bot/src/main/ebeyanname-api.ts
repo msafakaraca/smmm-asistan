@@ -12,6 +12,7 @@ import { parseKdvTahakkuk, KdvTahakkukParsed } from './kdv-parser';
 import { parseKdv2Tahakkuk, Kdv2TahakkukParsed } from './kdv2-parser';
 import { parseKdv9015Tahakkuk, Kdv9015TahakkukParsed } from './kdv9015-parser';
 import { parseGeciciVergiTahakkuk, GeciciVergiTahakkukParsed } from './gecici-vergi-parser';
+import { getApiUrl } from './config';
 
 // ═══════════════════════════════════════════════════════════════════
 // CONFIG
@@ -423,7 +424,7 @@ async function getEbeyanToken(dijitalToken: string): Promise<string | null> {
         }
     }
 
-    log.error('E-Beyanname token alınamadı');
+    log.error('E-Beyanname oturum anahtarı alınamadı — GİB giriş bilgilerini kontrol edin');
     return null;
 }
 
@@ -760,7 +761,7 @@ async function downloadPdf(
         }
     }
 
-    return { success: false, error: 'Max retry exceeded' };
+    return { success: false, error: 'Maksimum deneme sayısına ulaşıldı. GİB sunucusu yanıt vermiyor.' };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -964,7 +965,7 @@ async function downloadSgkPdf(
         }
     }
 
-    return { success: false, error: 'Max retry exceeded' };
+    return { success: false, error: 'Maksimum deneme sayısına ulaşıldı. GİB sunucusu yanıt vermiyor.' };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -979,7 +980,7 @@ async function getPreDownloadedCustomers(
     const result = new Map<string, PreDownloadCheck>();
 
     try {
-        const apiUrl = process.env.API_URL || 'http://localhost:3000';
+        const apiUrl = getApiUrl();
         const response = await fetch(`${apiUrl}/api/gib/pre-downloaded?year=${year}&month=${month}`, {
             headers: {
                 'Authorization': `Bearer ${apiToken}`,
@@ -1102,7 +1103,7 @@ export async function runEbeyannamePipeline(options: BotOptions) {
 
     // CAPTCHA key kontrolu
     if (!captchaKey && !ocrSpaceApiKey) {
-        const error = createGibError('CAPTCHA API anahtarı tanımlı değil');
+        const error = createGibError('CAPTCHA API anahtarı tanımlı değil. Lütfen Ayarlar sayfasından CAPTCHA servis anahtarınızı girin.');
         onProgress('error', { error: error.message, gibError: error });
         return;
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 import type { DashboardAlert } from "@/types/dashboard";
 
 /**
@@ -20,6 +21,12 @@ export async function GET(req: NextRequest) {
     }
 
     const tenantId = user.tenantId;
+
+    // Server-side cache kontrolu
+    const cacheKey = `${tenantId}:alerts`;
+    const cached = serverCache.get<DashboardAlert[]>(cacheKey);
+    if (cached) return NextResponse.json(cached);
+
     const now = new Date();
     const alerts: DashboardAlert[] = [];
 
@@ -174,6 +181,7 @@ export async function GET(req: NextRequest) {
       (a, b) => priorityOrder[a.type] - priorityOrder[b.type]
     );
 
+    serverCache.set(cacheKey, alerts, 60_000); // 60 saniye TTL
     return NextResponse.json(alerts);
   } catch (error) {
     console.error("[Dashboard Alerts API] Error:", error);

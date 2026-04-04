@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
 import { auditLog } from "@/lib/audit";
+import { invalidateDashboard } from "@/lib/dashboard-invalidation";
 import type { UpdateReminderInput } from "@/types/reminder";
 
 type RouteContext = {
@@ -191,6 +192,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       { title: updated.title, status: updated.status }
     );
 
+    invalidateDashboard(user.tenantId, ['upcoming']);
+
     return NextResponse.json(mappedReminder);
   } catch (error) {
     console.error("[PATCH /api/reminders/[id]] Error:", error);
@@ -252,6 +255,8 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
       reminderId,
       { title: existing.title }
     );
+
+    invalidateDashboard(user.tenantId, ['upcoming']);
 
     return NextResponse.json({ success: true, message: "Anımsatıcı silindi" });
   } catch (error) {

@@ -2,6 +2,8 @@
   SMMM ASİSTAN - VS CODE TERMİNAL BAŞLATMA KOMUTLARI
 ═══════════════════════════════════════════════════════════════════
 
+claude --dangerously-skip-permissions
+
 Bu dosya, SMMM Asistan projesini VS Code terminalinde başlatmak için
 gereken tüm komutları içerir.
 

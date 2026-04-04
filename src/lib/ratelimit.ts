@@ -8,11 +8,14 @@
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { Redis } from "@upstash/redis/cloudflare";
 
-// Redis client - environment variables'dan otomatik okur
+// Redis client - environment variables'dan okur
 // UPSTASH_REDIS_REST_URL ve UPSTASH_REDIS_REST_TOKEN gerekli
-const redis = Redis.fromEnv();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 /**
  * Genel API rate limiter

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
+import { serverCache } from "@/lib/server-cache";
 
 /**
  * GET /api/dashboard/announcement-stats
@@ -12,6 +13,11 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Server-side cache kontrolu
+    const cacheKey = `${user.tenantId}:announcement-stats`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -76,7 +82,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({
+    const result = {
       total,
       sent,
       failed,
@@ -86,7 +92,10 @@ export async function GET() {
         whatsapp: { total: whatsappTotal, sent: whatsappSent },
       },
       upcoming: upcomingList,
-    });
+    };
+
+    serverCache.set(cacheKey, result, 120_000); // 120 saniye TTL
+    return NextResponse.json(result);
   } catch (error) {
     console.error("[Announcement Stats] Error:", error);
     return NextResponse.json(
