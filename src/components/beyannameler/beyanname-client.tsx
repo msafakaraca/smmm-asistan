@@ -1028,12 +1028,13 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
         open={bulkDialogOpen}
         onOpenChange={setBulkDialogOpen}
         customers={customers}
-        basAy={basAy}
-        basYil={basYil}
-        bitAy={bitAy}
-        bitYil={bitYil}
-        onStart={handleBulkStart}
-        isRunning={bulkQuery.status === "running"}
+        bulkQueryState={bulkQuery}
+        onStart={(customerIds: string[], bAy: string, bYil: string, btAy: string, btYil: string) => {
+          bulkQuery.startBulkQuery(customerIds, bAy, bYil, btAy, btYil);
+        }}
+        onCancel={bulkQuery.cancelBulkQuery}
+        onReset={bulkQuery.resetBulkQuery}
+        onCustomerClick={() => {}}
       />
 
       {/* Arşiv Overlap Dialog */}

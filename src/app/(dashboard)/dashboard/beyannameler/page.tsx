@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
-import BeyannameClient from "@/components/beyannameler/beyanname-client";
+import BeyannameArsivClient from "@/components/beyannameler/beyanname-arsiv-client";
 
 interface MinimalCustomer {
   id: string;
@@ -9,6 +9,8 @@ interface MinimalCustomer {
   kisaltma: string | null;
   vknTckn: string;
   hasGibCredentials: boolean;
+  email: string | null;
+  telefon1: string | null;
 }
 
 export default async function Page() {
@@ -26,6 +28,8 @@ export default async function Page() {
       siraNo: true,
       gibKodu: true,
       gibSifre: true,
+      email: true,
+      telefon1: true,
     },
     orderBy: [
       { sirketTipi: "asc" },
@@ -40,7 +44,9 @@ export default async function Page() {
     kisaltma: c.kisaltma,
     vknTckn: c.vknTckn,
     hasGibCredentials: !!(c.gibKodu && c.gibSifre),
+    email: c.email ?? null,
+    telefon1: c.telefon1 ?? null,
   }));
 
-  return <BeyannameClient initialCustomers={customers} />;
+  return <BeyannameArsivClient initialCustomers={customers} />;
 }

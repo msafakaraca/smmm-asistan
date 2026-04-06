@@ -1,20 +1,17 @@
 /**
- * Beyanname Arşiv Sayfası
- * =======================
- * Mükellef seçimi + Filtrele butonu ile arşivdeki tüm beyannameleri
- * BeyannameGroupList (mikro kart) tasarımında gösterir.
- * Sorgulama sayfasıyla birebir aynı görsel dil.
- *
- * Optimizasyon: /api/query-archives/customer-bulk endpoint'i ile
- * tek sorguda tüm resultData çekilir (N+1 problemi yok).
+ * Beyanname Arşiv Sayfası (Ana Sayfa)
+ * =====================================
+ * Varsayılan olarak arşiv gösterir.
+ * "Sorgula" → tekli sorgulama dialog
+ * "Toplu Sorgula" → toplu sorgulama dialog
+ * Sorgulama bitince arşiv otomatik o mükellefi filtreler.
  */
 
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
-  Archive,
-  ArrowLeft,
+  ScrollText,
   Loader2,
   Search,
   Download,
@@ -23,8 +20,8 @@ import {
   ChevronsUpDown,
   Check,
   Trash2,
+  Users,
 } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,8 +32,13 @@ import {
 import { toast } from "sonner";
 import type { BeyannameItem } from "./hooks/use-beyanname-query";
 import type { PdfPreviewData } from "./pdf-preview-dialog";
+import { useBulkQuery } from "./hooks/use-bulk-query";
 import BeyannameGroupList from "./beyanname-group-list";
 import PdfPreviewDialog from "./pdf-preview-dialog";
+import BeyannameQueryDialog from "./beyanname-query-dialog";
+import BeyannameBulkQueryDialog from "./beyanname-bulk-query-dialog";
+import BeyannameWhatsAppDialog from "./beyanname-whatsapp-dialog";
+import BeyannameMailDialog from "./beyanname-mail-dialog";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tipler
@@ -47,7 +49,10 @@ interface Customer {
   unvan: string;
   kisaltma: string | null;
   vknTckn: string;
+  hasGibCredentials: boolean;
   lastBeyannameQueryAt: string | null;
+  email: string | null;
+  telefon1: string | null;
 }
 
 interface BeyannameArsivClientProps {
@@ -56,6 +61,9 @@ interface BeyannameArsivClientProps {
     unvan: string;
     kisaltma: string | null;
     vknTckn: string;
+    hasGibCredentials: boolean;
+    email: string | null;
+    telefon1: string | null;
   }[];
 }
 
@@ -192,7 +200,10 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
   const [customers, setCustomers] = useState<Customer[]>(() =>
     (initialCustomers || []).map((c) => ({
       ...c,
+      hasGibCredentials: c.hasGibCredentials ?? false,
       lastBeyannameQueryAt: null,
+      email: c.email ?? null,
+      telefon1: c.telefon1 ?? null,
     }))
   );
   const [customersLoading, setCustomersLoading] = useState(!initialCustomers);
@@ -215,17 +226,27 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
   const [pdfCache, setPdfCache] = useState<Record<string, string>>({});
   const pdfCacheRef = useRef<Record<string, string>>({});
   pdfCacheRef.current = pdfCache;
-  const signedUrlCacheRef = useRef<Record<string, string>>({}); // beyoid → signedUrl (API bypass)
+  const signedUrlCacheRef = useRef<Record<string, string>>({});
   const preloadAbortRef = useRef<AbortController | null>(null);
   const [pdfPreview, setPdfPreview] = useState<PdfPreviewData | null>(null);
   const hoverPreloadRef = useRef<string | null>(null);
   const archiveBeyannamelerRef = useRef<BeyannameItem[]>([]);
   archiveBeyannamelerRef.current = archiveBeyannameler;
 
-  // PDF mevcut değil takibi — preload sonrası belirlenir
+  // PDF mevcut değil takibi
   const [unavailableBeyoids, setUnavailableBeyoids] = useState<Set<string>>(new Set());
   const unavailableBeyoidsRef = useRef<Set<string>>(new Set());
   unavailableBeyoidsRef.current = unavailableBeyoids;
+
+  // Dialog'lar
+  const [queryDialogOpen, setQueryDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
+  const [mailDialogOpen, setMailDialogOpen] = useState(false);
+  const [sendTargetItem, setSendTargetItem] = useState<BeyannameItem | null>(null);
+
+  // Toplu sorgulama hook
+  const bulkQuery = useBulkQuery();
 
   // Fallback: initialCustomers yoksa client-side yükle
   useEffect(() => {
@@ -239,12 +260,15 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
         }
         const data = await res.json();
         const mapped: Customer[] = (data || []).map(
-          (c: { id: string; unvan: string; kisaltma: string | null; vknTckn: string }) => ({
+          (c: { id: string; unvan: string; kisaltma: string | null; vknTckn: string; email?: string | null; telefon1?: string | null }) => ({
             id: c.id,
             unvan: c.unvan,
             kisaltma: c.kisaltma,
             vknTckn: c.vknTckn,
+            hasGibCredentials: false,
             lastBeyannameQueryAt: null,
+            email: c.email ?? null,
+            telefon1: c.telefon1 ?? null,
           })
         );
         setCustomers(mapped);
@@ -257,7 +281,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     loadCustomers();
   }, [initialCustomers]);
 
-  // Sorgulama durumlarını arka planda yükle (combobox'ı bloklamaz)
+  // Sorgulama durumlarını arka planda yükle
   useEffect(() => {
     if (customersLoading || statusLoadedRef.current || customers.length === 0) return;
     statusLoadedRef.current = true;
@@ -293,7 +317,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     [customers, selectedCustomerId]
   );
 
-  // Benzersiz yıllar + adetleri (büyükten küçüğe)
+  // Benzersiz yıllar + adetleri
   const availableYears = useMemo(() => {
     const counts = new Map<string, number>();
     for (const b of archiveBeyannameler) {
@@ -315,7 +339,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     );
   }, [archiveBeyannameler, yearFilter]);
 
-  // PDF preload — toplu signed URL al + cache'le, arka planda agresif indir
+  // PDF preload
   const preloadPdfs = useCallback((custId: string, items: BeyannameItem[]) => {
     if (preloadAbortRef.current) preloadAbortRef.current.abort();
 
@@ -328,7 +352,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
     (async () => {
       try {
-        // Tek istek ile tüm signed URL'leri al
         const res = await fetch("/api/intvrg/beyanname-pdf", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -348,10 +371,8 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
         const { signedUrls } = await res.json() as { signedUrls: Record<string, string> };
         if (!signedUrls || signal.aborted) return;
 
-        // Signed URL'leri hemen cache'le — tıklamada API bypass için
         signedUrlCacheRef.current = { ...signedUrlCacheRef.current, ...signedUrls };
 
-        // PDF'i olmayan beyoid'leri tespit et
         const availableSet = new Set(Object.keys(signedUrls));
         const newUnavailable = new Set<string>();
         for (const item of uncached) {
@@ -363,7 +384,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
           setUnavailableBeyoids(newUnavailable);
         }
 
-        // 8'li paralel batch — agresif preload
         const entries = Object.entries(signedUrls);
         const CONCURRENCY = 8;
         for (let i = 0; i < entries.length; i += CONCURRENCY) {
@@ -381,17 +401,18 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
                     setPdfCache(prev => ({ ...prev, [beyoid]: blobUrl }));
                   }
                 }
-              } catch { /* abort veya network — sessiz geç */ }
+              } catch { /* abort veya network */ }
             })
           );
         }
-      } catch { /* API hatası — sessiz geç */ }
+      } catch { /* API hatası */ }
     })();
   }, []);
 
   // Filtrele — tek sorgu ile arşivden tüm veriyi çek
-  const handleFilter = useCallback(async () => {
-    if (!selectedCustomerId) {
+  const handleFilter = useCallback(async (customerId?: string) => {
+    const targetId = customerId || selectedCustomerId;
+    if (!targetId) {
       toast.error("Lütfen bir mükellef seçin");
       return;
     }
@@ -402,10 +423,11 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     setFilterDone(false);
     setUnavailableBeyoids(new Set());
 
+    const targetCustomer = customers.find((c) => c.id === targetId);
+
     try {
-      // Tek HTTP isteği — PostgreSQL tarafında JSON birleştirme
       const res = await fetch(
-        `/api/query-archives/customer-bulk?customerId=${selectedCustomerId}&queryType=beyanname`
+        `/api/query-archives/customer-bulk?customerId=${targetId}&queryType=beyanname`
       );
 
       if (!res.ok) {
@@ -425,7 +447,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
         return;
       }
 
-      // Dedup (aynı beyoid birden fazla arşivde olabilir)
+      // Dedup
       const seen = new Set<string>();
       const uniqueItems: BeyannameItem[] = [];
       for (const item of items) {
@@ -438,21 +460,17 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
       setArchiveBeyannameler(uniqueItems);
       setArchiveCustomerName(
-        selectedCustomer?.kisaltma || selectedCustomer?.unvan || ""
+        targetCustomer?.kisaltma || targetCustomer?.unvan || ""
       );
       setFilterDone(true);
 
-      // Arka planda PDF'leri preload et
       if (uniqueItems.length > 0) {
-        preloadPdfs(selectedCustomerId, uniqueItems);
-      }
-
-      if (uniqueItems.length === 0) {
-        toast.info("Bu mükellef için arşivde beyanname bulunamadı");
-      } else {
+        preloadPdfs(targetId, uniqueItems);
         toast.success(
-          `${selectedCustomer?.kisaltma || selectedCustomer?.unvan} için ${uniqueItems.length} beyanname arşivden yüklendi`
+          `${targetCustomer?.kisaltma || targetCustomer?.unvan} için ${uniqueItems.length} beyanname arşivden yüklendi`
         );
+      } else {
+        toast.info("Bu mükellef için arşivde beyanname bulunamadı");
       }
     } catch {
       toast.error("Arşiv verileri yüklenemedi");
@@ -460,7 +478,59 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     } finally {
       setArchiveLoading(false);
     }
-  }, [selectedCustomerId, selectedCustomer, preloadPdfs]);
+  }, [selectedCustomerId, customers, preloadPdfs]);
+
+  // Müşteri status'unu yeniden yükle (sorgulama sonrası tarih güncelleme)
+  const refreshCustomerStatuses = useCallback(() => {
+    fetch("/api/query-archives/customer-status?queryType=beyanname")
+      .then((r) => (r.ok ? r.json() : { statuses: {} }))
+      .then((data) => {
+        const statuses: Record<string, string> = data.statuses || {};
+        setCustomers((prev) =>
+          prev.map((c) => ({
+            ...c,
+            lastBeyannameQueryAt: statuses[c.id] || c.lastBeyannameQueryAt,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  // Sorgulama tamamlandığında callback — dialog'dan çağrılır
+  // Batch save dialog içinde beklendiği için burada anında çalışır
+  const handleQueryComplete = useCallback((customerId: string) => {
+    // Combobox'taki sorgulanma tarihini anında güncelle
+    setCustomers((prev) =>
+      prev.map((c) =>
+        c.id === customerId
+          ? { ...c, lastBeyannameQueryAt: new Date().toISOString() }
+          : c
+      )
+    );
+    setSelectedCustomerId(customerId);
+    handleFilter(customerId);
+    // Arka planda tüm statüsleri de senkronize et (DB'deki gerçek tarih)
+    refreshCustomerStatuses();
+  }, [handleFilter, refreshCustomerStatuses]);
+
+  // Toplu sorgulama başlat
+  const handleBulkStart = useCallback(
+    (customerIds: string[], basAy: string, basYil: string, bitAy: string, bitYil: string) => {
+      bulkQuery.startBulkQuery(customerIds, basAy, basYil, bitAy, bitYil);
+    },
+    [bulkQuery.startBulkQuery]
+  );
+
+  // Toplu sorgulama dialog kapandığında statüsleri güncelle
+  const handleBulkDialogChange = useCallback(
+    (open: boolean) => {
+      setBulkDialogOpen(open);
+      if (!open) {
+        refreshCustomerStatuses();
+      }
+    },
+    [refreshCustomerStatuses]
+  );
 
   // Temizle
   const handleClear = useCallback(() => {
@@ -498,10 +568,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       const data = await res.json();
       toast.success(`${data.deletedCount} arşiv kaydı silindi`);
 
-      // UI'ı temizle
       handleClear();
-
-      // Müşteri listesindeki sorgulama durumlarını sıfırla
       setCustomers(prev => prev.map(c => ({ ...c, lastBeyannameQueryAt: null })));
     } catch {
       toast.error("Silme işlemi sırasında hata oluştu");
@@ -510,13 +577,12 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     }
   }, [handleClear]);
 
-  // PDF görüntüleme — dialog ANINDA açılır, PDF ultra-hızlı yüklenir
+  // PDF görüntüleme
   const handleViewPdf = useCallback(async (beyoid: string) => {
     if (!selectedCustomerId) return;
 
-    // PDF mevcut değilse atla
     if (unavailableBeyoidsRef.current.has(beyoid)) {
-      toast.error("Bu beyannamenin PDF'i mevcut değil. Sorgulama sayfasından tekrar sorgulayın.");
+      toast.error("Bu beyannamenin PDF'i mevcut değil. Sorgulama yaparak tekrar indirin.");
       return;
     }
 
@@ -526,7 +592,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     const customerName = selectedCustomer?.kisaltma || selectedCustomer?.unvan || "";
     const donem = formatDonemSlash(item.donem);
 
-    // 1. Blob cache'de varsa → ANINDA göster (0ms)
     if (pdfCacheRef.current[beyoid]) {
       setPdfPreview({
         blobUrl: pdfCacheRef.current[beyoid],
@@ -537,7 +602,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       return;
     }
 
-    // Dialog'u HEMEN aç (loading spinner ile)
     setPdfPreview({
       blobUrl: null,
       turAdi: item.turAdi,
@@ -548,8 +612,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     try {
       let signedUrl = signedUrlCacheRef.current[beyoid];
 
-      // 2. Signed URL cache'de varsa → tek fetch (API bypass, ~500ms tasarruf)
-      // 3. Hiçbir cache yoksa → API'den al + fetch
       if (!signedUrl) {
         const params = new URLSearchParams({
           customerId: selectedCustomerId,
@@ -567,16 +629,14 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
         const data = await metaRes.json();
         signedUrl = data.signedUrl;
-        // Signed URL'i cache'le
         signedUrlCacheRef.current[beyoid] = signedUrl;
       }
 
       const pdfRes = await fetch(signedUrl);
 
       if (!pdfRes.ok) {
-        // Signed URL geçersiz olabilir — cache'den sil
         delete signedUrlCacheRef.current[beyoid];
-        toast.error("PDF dosyası bulunamadı. Sorgulama sayfasından tekrar sorgulayın.");
+        toast.error("PDF dosyası bulunamadı. Sorgulama yaparak tekrar indirin.");
         setPdfPreview(null);
         return;
       }
@@ -604,7 +664,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     }
   }, [selectedCustomerId, selectedCustomer]);
 
-  // Hover intent preload — signed URL cache ile tek fetch, API bypass
+  // Hover intent preload
   const handleHoverStart = useCallback((item: BeyannameItem) => {
     if (!item.beyoid || !selectedCustomerId) return;
     if (unavailableBeyoidsRef.current.has(item.beyoid)) return;
@@ -617,7 +677,6 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       try {
         let signedUrl = signedUrlCacheRef.current[item.beyoid];
 
-        // Signed URL cache'de yoksa API'den al
         if (!signedUrl) {
           const params = new URLSearchParams({
             customerId: selectedCustomerId,
@@ -643,12 +702,24 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     })();
   }, [selectedCustomerId]);
 
-  // PDF dialog kapatma — blob URL cache'de kalır, revoke etme
+  // WhatsApp dialog aç
+  const handleWhatsApp = useCallback((item: BeyannameItem) => {
+    setSendTargetItem(item);
+    setWhatsappDialogOpen(true);
+  }, []);
+
+  // Mail dialog aç
+  const handleMail = useCallback((item: BeyannameItem) => {
+    setSendTargetItem(item);
+    setMailDialogOpen(true);
+  }, []);
+
+  // PDF dialog kapatma
   const closePdfPreview = useCallback(() => {
     setPdfPreview(null);
   }, []);
 
-  // Cleanup: blob URL'ler ve preload abort
+  // Cleanup
   useEffect(() => {
     return () => {
       if (preloadAbortRef.current) preloadAbortRef.current.abort();
@@ -662,13 +733,8 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
     <div className="flex flex-col gap-6 p-4 md:p-6">
       {/* Başlık */}
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/beyannameler">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Archive className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Beyanname Arşivi</h1>
+        <ScrollText className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Beyannameler</h1>
         <div className="ml-auto">
           <Button
             variant="destructive"
@@ -686,7 +752,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
         </div>
       </div>
 
-      {/* Filtreler — Tek satır: Combobox + Filtrele + Export butonları */}
+      {/* Filtreler — Combobox + Filtrele + Sorgula + Toplu Sorgula + Export */}
       <div className="rounded-lg border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           {/* Mükellef Seçimi — Combobox */}
@@ -779,7 +845,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
           {/* Filtrele Butonu */}
           <Button
-            onClick={handleFilter}
+            onClick={() => handleFilter()}
             disabled={archiveLoading || !selectedCustomerId}
             className="shrink-0"
           >
@@ -794,6 +860,26 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
                 Filtrele
               </>
             )}
+          </Button>
+
+          {/* Sorgula Butonu */}
+          <Button
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setQueryDialogOpen(true)}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Sorgula
+          </Button>
+
+          {/* Toplu Sorgula Butonu */}
+          <Button
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setBulkDialogOpen(true)}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Toplu Sorgula
           </Button>
 
           {/* Export + Temizle Butonları */}
@@ -874,16 +960,18 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
           selectedCustomerId={selectedCustomerId}
           onHoverStart={handleHoverStart}
           unavailableBeyoids={unavailableBeyoids}
+          onWhatsApp={handleWhatsApp}
+          onMail={handleMail}
         />
       )}
 
       {/* Boş Durum — Henüz filtrelenmemiş */}
       {!archiveLoading && archiveBeyannameler.length === 0 && !filterDone && (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
-          <Archive className="h-12 w-12 opacity-30" />
+          <ScrollText className="h-12 w-12 opacity-30" />
           <p className="text-center">
-            Mükellef seçip <strong>Filtrele</strong> butonuna tıklayarak
-            arşivdeki beyannameleri görüntüleyin.
+            Mükellef seçip <strong>Filtrele</strong> ile arşivdeki beyannameleri görüntüleyin
+            veya <strong>Sorgula</strong> ile GİB'den yeni sorgulama yapın.
           </p>
         </div>
       )}
@@ -891,15 +979,63 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       {/* Boş Durum — Filtrelendi ama sonuç yok */}
       {!archiveLoading && archiveBeyannameler.length === 0 && filterDone && (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
-          <Archive className="h-12 w-12 opacity-30" />
+          <ScrollText className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Seçilen mükellef için arşivde beyanname bulunamadı.
+            <br />
+            <strong>Sorgula</strong> butonuyla GİB'den sorgulama yapabilirsiniz.
           </p>
         </div>
       )}
 
       {/* PDF Önizleme Dialog */}
       <PdfPreviewDialog data={pdfPreview} onClose={closePdfPreview} />
+
+      {/* Tekli Sorgulama Dialog */}
+      <BeyannameQueryDialog
+        open={queryDialogOpen}
+        onOpenChange={setQueryDialogOpen}
+        customers={customers.map((c) => ({
+          id: c.id,
+          unvan: c.unvan,
+          kisaltma: c.kisaltma,
+          vknTckn: c.vknTckn,
+          hasGibCredentials: c.hasGibCredentials,
+        }))}
+        onQueryComplete={handleQueryComplete}
+      />
+
+      {/* Toplu Sorgulama Dialog */}
+      <BeyannameBulkQueryDialog
+        open={bulkDialogOpen}
+        onOpenChange={handleBulkDialogChange}
+        customers={customers}
+        bulkQueryState={bulkQuery}
+        onStart={handleBulkStart}
+        onCancel={bulkQuery.cancelBulkQuery}
+        onReset={bulkQuery.resetBulkQuery}
+        onCustomerClick={handleQueryComplete}
+      />
+
+      {/* WhatsApp Gönderim Dialog */}
+      <BeyannameWhatsAppDialog
+        open={whatsappDialogOpen}
+        onOpenChange={setWhatsappDialogOpen}
+        item={sendTargetItem}
+        customerName={selectedCustomer?.kisaltma || selectedCustomer?.unvan || ""}
+        customerId={selectedCustomerId}
+        customerTelefon1={selectedCustomer?.telefon1 ?? null}
+      />
+
+      {/* Mail Gönderim Dialog */}
+      <BeyannameMailDialog
+        open={mailDialogOpen}
+        onOpenChange={setMailDialogOpen}
+        item={sendTargetItem}
+        customerName={selectedCustomer?.kisaltma || selectedCustomer?.unvan || ""}
+        customerId={selectedCustomerId}
+        customerEmail={selectedCustomer?.email ?? null}
+      />
     </div>
   );
 }

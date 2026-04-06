@@ -8,8 +8,8 @@
 
 "use client";
 
-import { memo, useState, useCallback, useMemo } from "react";
-import { ChevronDown, ChevronRight, Eye, Loader2 } from "lucide-react";
+import { memo, useState, useCallback, useMemo, useRef } from "react";
+import { ChevronDown, ChevronRight, Eye, Loader2, Mail } from "lucide-react";
 import type { BeyannameItem } from "./hooks/use-beyanname-query";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -38,6 +38,8 @@ interface BeyannameGroupListProps {
   saveProgress?: { saved: number; skipped: number; failed: number; total: number };
   onHoverStart?: (item: BeyannameItem) => void;
   unavailableBeyoids?: Set<string>;
+  onWhatsApp?: (item: BeyannameItem) => void;
+  onMail?: (item: BeyannameItem) => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -81,6 +83,8 @@ interface BeyannameItemCardProps {
   showProgress: boolean;
   onHoverStart?: (item: BeyannameItem) => void;
   isUnavailable?: boolean;
+  onWhatsApp?: (item: BeyannameItem) => void;
+  onMail?: (item: BeyannameItem) => void;
 }
 
 const BeyannameItemCard = memo(function BeyannameItemCard({
@@ -91,27 +95,40 @@ const BeyannameItemCard = memo(function BeyannameItemCard({
   showProgress,
   onHoverStart,
   isUnavailable = false,
+  onWhatsApp,
+  onMail,
 }: BeyannameItemCardProps) {
   const isLoadingPdf = pdfLoading === item.beyoid;
   const hasBeyoid = !!item.beyoid;
   const isClickable = hasBeyoid && !isUnavailable;
   const isDuzeltme = !!item.aciklama?.trim();
+  const rowRef = useRef<HTMLDivElement>(null);
   return (
     <div
-      className={`flex items-center gap-3 rounded-md border border-l-2 px-3 py-2 transition-colors ${
+      ref={rowRef}
+      className={`flex items-center gap-3 rounded-md border border-l-2 px-3 py-2 transition-[colors,transform] ${
         isUnavailable
           ? "border-l-slate-300 bg-slate-50/60 dark:border-l-slate-600 dark:bg-slate-950/20 opacity-50"
           : "border-l-blue-400 bg-blue-50/60 dark:border-l-blue-500 dark:bg-blue-950/20"
       } ${
         isClickable
-          ? "hover:bg-blue-100/80 dark:hover:bg-blue-950/40 cursor-pointer active:scale-[0.99]"
+          ? "hover:bg-blue-100/80 dark:hover:bg-blue-950/40 cursor-pointer"
           : isUnavailable
             ? "cursor-not-allowed"
             : "hover:bg-blue-100/50 dark:hover:bg-blue-950/30"
       }`}
-      onClick={() => {
-        if (isClickable && !isLoadingPdf) onViewPdf(item.beyoid);
+      onClick={(e) => {
+        if (!isClickable || isLoadingPdf) return;
+        if ((e.target as HTMLElement).closest("button")) return;
+        onViewPdf(item.beyoid);
       }}
+      onMouseDown={(e) => {
+        if (!isClickable) return;
+        if ((e.target as HTMLElement).closest("button")) return;
+        rowRef.current?.style.setProperty("transform", "scale(0.99)");
+      }}
+      onMouseUp={() => rowRef.current?.style.removeProperty("transform")}
+      onMouseLeave={() => rowRef.current?.style.removeProperty("transform")}
       onMouseEnter={() => isClickable && onHoverStart?.(item)}
       title={isUnavailable ? "PDF mevcut değil — sorgulama sayfasından tekrar sorgulayın" : hasBeyoid ? `${item.turAdi} - ${formatDonem(item.donem)} PDF görüntüle` : undefined}
     >
@@ -158,6 +175,32 @@ const BeyannameItemCard = memo(function BeyannameItemCard({
         </div>
       )}
 
+      {/* WhatsApp Butonu */}
+      {onWhatsApp && (
+        <button
+          type="button"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-all duration-200 hover:bg-green-100 dark:hover:bg-green-900/30"
+          onClick={() => onWhatsApp(item)}
+          title="WhatsApp ile gönder"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="#4aba5a">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Mail Butonu */}
+      {onMail && (
+        <button
+          type="button"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0 transition-all duration-200 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+          onClick={() => onMail(item)}
+          title="Mail ile gönder"
+        >
+          <Mail className="h-5 w-5" />
+        </button>
+      )}
+
       {/* PDF İkonu */}
       <span
         className={`inline-flex items-center justify-center h-7 w-7 rounded-full shrink-0 transition-all duration-200 ${
@@ -194,6 +237,8 @@ interface TypeGroupSectionProps {
   showProgress: boolean;
   onHoverStart?: (item: BeyannameItem) => void;
   unavailableBeyoids: Set<string>;
+  onWhatsApp?: (item: BeyannameItem) => void;
+  onMail?: (item: BeyannameItem) => void;
 }
 
 const TypeGroupSection = memo(function TypeGroupSection({
@@ -206,6 +251,8 @@ const TypeGroupSection = memo(function TypeGroupSection({
   showProgress,
   onHoverStart,
   unavailableBeyoids,
+  onWhatsApp,
+  onMail,
 }: TypeGroupSectionProps) {
   const downloadedInGroup = useMemo(() => {
     if (!showProgress) return 0;
@@ -272,6 +319,8 @@ const TypeGroupSection = memo(function TypeGroupSection({
               showProgress={showProgress}
               onHoverStart={onHoverStart}
               isUnavailable={unavailableBeyoids.has(item.beyoid)}
+              onWhatsApp={onWhatsApp}
+              onMail={onMail}
             />
           ))}
         </div>
@@ -311,6 +360,8 @@ export default memo(function BeyannameGroupList({
   saveProgress = { saved: 0, skipped: 0, failed: 0, total: 0 },
   onHoverStart,
   unavailableBeyoids = new Set<string>(),
+  onWhatsApp,
+  onMail,
 }: BeyannameGroupListProps) {
   // Progress göster: pipeline aktif veya bazı PDF'ler indirilmiş
   const showProgress = isPipelineActive || saveProgress.saved + saveProgress.skipped > 0;
@@ -400,6 +451,8 @@ export default memo(function BeyannameGroupList({
                   showProgress={showProgress}
                   onHoverStart={onHoverStart}
                   unavailableBeyoids={unavailableBeyoids}
+                  onWhatsApp={onWhatsApp}
+                  onMail={onMail}
                 />
               );
             })}

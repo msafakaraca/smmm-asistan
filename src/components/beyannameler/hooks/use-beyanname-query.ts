@@ -60,6 +60,7 @@ interface BeyannameQueryState {
   // Pipeline PDF indirme takibi
   downloadedBeyoids: string[];
   isPipelineActive: boolean;
+  savesComplete: boolean;
 }
 
 /** PDF dialog'da gösterilecek veri */
@@ -211,6 +212,7 @@ const initialState: BeyannameQueryState = {
   saveProgress: { saved: 0, skipped: 0, failed: 0, total: 0 },
   downloadedBeyoids: [],
   isPipelineActive: false,
+  savesComplete: false,
 };
 
 function reducer(state: BeyannameQueryState, action: Action): BeyannameQueryState {
@@ -370,6 +372,7 @@ function reducer(state: BeyannameQueryState, action: Action): BeyannameQueryStat
       return {
         ...state,
         isPipelineActive: false,
+        savesComplete: true,
         progress: {
           status: `Tamamlandı: ${sp.saved} PDF kaydedildi${sp.skipped > 0 ? `, ${sp.skipped} atlandı` : ''}${sp.failed > 0 ? `, ${sp.failed} başarısız` : ''}`,
           customerName: state.progress.customerName,

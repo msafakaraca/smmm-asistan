@@ -89,7 +89,7 @@ const navItems = [
                 icon: Bot,
             },
             {
-                title: "Beyanname Sorgulama",
+                title: "Beyannameler",
                 href: "/dashboard/beyannameler",
                 icon: ScrollText,
             },
