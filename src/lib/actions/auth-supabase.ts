@@ -159,16 +159,25 @@ export async function loginAction(formData: {
 }): Promise<AuthResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: formData.email,
-    password: formData.password,
-  });
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
 
-  if (error) {
-    console.error('Login error:', error);
-    return { error: 'Email veya şifre hatalı' };
+    if (error) {
+      console.error('Login error:', error);
+      if (error.status === 429) {
+        return { error: 'Çok fazla giriş denemesi. Lütfen biraz bekleyip tekrar deneyin.' };
+      }
+      return { error: 'Email veya şifre hatalı' };
+    }
+  } catch (err) {
+    console.error('Login unexpected error:', err);
+    return { error: 'Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.' };
   }
 
+  // redirect() try-catch dışında olmalı (Next.js 15)
   revalidatePath('/', 'layout');
   redirect('/dashboard');
 }

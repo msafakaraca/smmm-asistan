@@ -18,12 +18,24 @@ const redis = new Redis({
 });
 
 /**
+ * Rate Limit Stratejisi:
+ *
+ * Internal çağrılar (server.ts → API): Middleware'de X-Internal-Token ile BYPASS
+ * Aşağıdaki limitler sadece dış dünyadan gelen istekler için geçerli.
+ *
+ * SMMM ofisi profili (500-600 mükellef):
+ * - Tarama sırasında dashboard açık: sync, invalidation, beyanname-takip sorguları
+ * - Aynı anda birden fazla sekme/kullanıcı olabilir
+ * - Bot işlemleri internal bypass ile geçiyor, buradaki limitler sadece frontend
+ */
+
+/**
  * Genel API rate limiter
- * Dakikada 100 istek - normal kullanım için
+ * Dakikada 200 istek - dashboard navigasyon, veri yükleme
  */
 export const generalRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(100, "1 m"),
+  limiter: Ratelimit.slidingWindow(200, "1 m"),
   analytics: true,
   prefix: "ratelimit:general",
 });
@@ -40,42 +52,43 @@ export const authRatelimit = new Ratelimit({
 });
 
 /**
- * Bot işlemleri rate limiter
- * Dakikada 10 istek - yoğun işlemler için
+ * Bot/GİB endpoint rate limiter (sadece frontend çağrıları)
+ * Dakikada 60 istek - tarama başlatma, sync, durum sorgulama
+ * Not: Asıl yoğun trafik (process-results) internal bypass ile geçer
  */
 export const botRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
   analytics: true,
   prefix: "ratelimit:bot",
 });
 
 /**
  * Bulk operations rate limiter
- * Dakikada 5 istek - toplu işlemler için
+ * Dakikada 30 istek - toplu işlemler (import, export)
  */
 export const bulkRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "1 m"),
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
   analytics: true,
   prefix: "ratelimit:bulk",
 });
 
 /**
  * File upload rate limiter
- * Dakikada 20 istek - dosya yüklemeleri için
+ * Dakikada 60 istek - dosya yükleme/indirme
  */
 export const uploadRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(20, "1 m"),
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
   analytics: true,
   prefix: "ratelimit:upload",
 });
 
 /**
- * Credentials/Passwords rate limiter - KRITIK GUVENLIK
+ * Credentials/Passwords rate limiter - KRİTİK GÜVENLİK
  * Dakikada 10 istek - brute force koruması
- * Hassas sifre islemleri icin sıkı sınırlama
+ * Hassas şifre işlemleri için sıkı sınırlama
  */
 export const credentialsRatelimit = new Ratelimit({
   redis,
@@ -86,11 +99,11 @@ export const credentialsRatelimit = new Ratelimit({
 
 /**
  * Settings rate limiter
- * Dakikada 15 istek - ayar değişiklikleri için
+ * Dakikada 30 istek - ayar değişiklikleri
  */
 export const settingsRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(15, "1 m"),
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
   analytics: true,
   prefix: "ratelimit:settings",
 });

@@ -51,12 +51,8 @@ export function LoginForm() {
       if (result?.error) {
         toast.error(result.error);
       }
-    } catch (error: unknown) {
-      // Server Action redirect hatalarını yakala
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        return;
-      }
-      toast.error("Giriş yapılırken bir hata oluştu");
+    } catch {
+      // redirect() server action'dan fırlatılır — başarılı login demek
     } finally {
       setIsLoading(false);
     }

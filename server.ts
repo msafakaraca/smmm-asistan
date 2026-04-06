@@ -56,6 +56,42 @@ interface WSMessage {
 // Connected clients
 const clients = new Map<string, Client>();
 
+// ═══════════════════════════════════════════════════════════════════
+// BATCH TRACKING — bot:complete'i tüm batch'ler bitene kadar beklet
+// process-results zaten BeyannameTakip'i upsert ediyor, sync gereksiz.
+// Sorun: Electron bot:complete gönderdiğinde server'da hâlâ batch işleniyor olabiliyor.
+// Çözüm: Pending batch sayısını takip et, 0 olunca complete'i relay et.
+// ═══════════════════════════════════════════════════════════════════
+interface PendingBotState {
+  pendingBatches: number;
+  completeMessage?: unknown;   // bot:complete data (bekletiliyorsa)
+  clientTenantId?: string;
+}
+const pendingBotStates = new Map<string, PendingBotState>(); // tenantId → state
+
+function getOrCreateBotState(tenantId: string): PendingBotState {
+  if (!pendingBotStates.has(tenantId)) {
+    pendingBotStates.set(tenantId, { pendingBatches: 0 });
+  }
+  return pendingBotStates.get(tenantId)!;
+}
+
+function tryRelayBotComplete(tenantId: string) {
+  const state = pendingBotStates.get(tenantId);
+  if (!state || state.pendingBatches > 0 || !state.completeMessage) return;
+
+  // Tüm batch'ler bitti ve complete mesajı bekliyor — relay et
+  console.log(`[WS] ✅ Tüm batch'ler tamamlandı, bot:complete relay ediliyor (tenant: ${tenantId})`);
+  broadcastToTenant(tenantId, {
+    type: 'bot:complete',
+    data: state.completeMessage
+  });
+  broadcastDashboardInvalidation(tenantId, ['stats', 'declaration-stats', 'activity']);
+
+  // State temizle
+  pendingBotStates.delete(tenantId);
+}
+
 // Internal API token helper (internal-auth.ts ile aynı mantık)
 function getInternalHeaders(tenantId: string): Record<string, string> {
   const secret = process.env.INTERNAL_API_SECRET || process.env.JWT_SECRET;
@@ -215,16 +251,21 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
       }
       break;
 
-    case 'bot:complete':
-      // Relay bot completion to tenant (for auto-refresh)
-      console.log('[WS] Bot complete event, relaying to tenant:', client.tenantId);
-      broadcastToTenant(client.tenantId, {
-        type: 'bot:complete',
-        data: message.data
-      });
-      // Dashboard invalidation — bot tamamlanınca dashboard'u güncelle
-      broadcastDashboardInvalidation(client.tenantId, ['stats', 'declaration-stats', 'activity']);
+    case 'bot:complete': {
+      // bot:complete geldi ama server'da hâlâ batch işleniyor olabilir
+      // Tüm batch'ler bitene kadar beklet, sonra relay et
+      const completeState = getOrCreateBotState(client.tenantId);
+      completeState.completeMessage = message.data;
+
+      if (completeState.pendingBatches === 0) {
+        // Tüm batch'ler zaten bitti — hemen relay et
+        console.log('[WS] Bot complete event, tüm batch\'ler zaten tamamlanmış — relay ediliyor');
+        tryRelayBotComplete(client.tenantId);
+      } else {
+        console.log(`[WS] Bot complete event bekletiliyor — ${completeState.pendingBatches} batch hâlâ işleniyor`);
+      }
       break;
+    }
 
     case 'bot:error':
       // Relay bot error to tenant with error code
@@ -241,8 +282,11 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
       });
       break;
 
-    case 'bot:batch-results':
+    case 'bot:batch-results': {
       // Process batch results from Electron bot - Call API endpoint to save files and update BeyannameTakip
+      const batchState = getOrCreateBotState(client.tenantId);
+      batchState.pendingBatches++;
+
       try {
         const batchData = message.data as { beyannameler?: unknown[]; startDate?: string; tenantId?: string };
         const beyannameler = batchData?.beyannameler || [];
@@ -258,18 +302,30 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
           }
 
           // Call internal API endpoint which handles file saving and BeyannameTakip update
-          const response = await fetch(`${internalApiBaseUrl}/api/gib/process-results`, {
-            method: 'POST',
-            headers: getInternalHeaders(tenantId),
-            body: JSON.stringify({ beyannameler, startDate })
-          });
+          // 429 rate limit hatası için retry mekanizması
+          let response: Response | null = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            response = await fetch(`${internalApiBaseUrl}/api/gib/process-results`, {
+              method: 'POST',
+              headers: getInternalHeaders(tenantId),
+              body: JSON.stringify({ beyannameler, startDate })
+            });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
+            if (response.status === 429 && attempt < 3) {
+              const retryAfter = parseInt(response.headers.get('Retry-After') || '10', 10);
+              console.warn(`[WS] ⚠️ Rate limit (429), ${retryAfter}s sonra yeniden denenecek (${attempt}/3)`);
+              await new Promise(r => setTimeout(r, retryAfter * 1000));
+              continue;
+            }
+            break;
           }
 
-          const result = await response.json();
+          if (!response!.ok) {
+            const errorText = await response!.text();
+            throw new Error(`API error: ${response!.status} ${response!.statusText} - ${errorText}`);
+          }
+
+          const result = await response!.json();
 
           console.log(`[WS] ✅ Batch processing completed:`, {
             matched: result.stats?.matched || 0,
@@ -343,25 +399,7 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
             }
           }
 
-          // ═══════════════════════════════════════════════════════════════════
-          // SYNC: Documents → BeyannameTakip senkronizasyonu
-          // Bot işlemi sonrası eksik kayıtları tamamla
-          // ═══════════════════════════════════════════════════════════════════
-          try {
-            console.log(`[WS] 🔄 BeyannameTakip senkronizasyonu başlatılıyor...`);
-            const syncResponse = await fetch(`${internalApiBaseUrl}/api/beyanname-takip/sync`, {
-              method: 'POST',
-              headers: getInternalHeaders(tenantId),
-              body: JSON.stringify({})
-            });
-
-            if (syncResponse.ok) {
-              const syncResult = await syncResponse.json();
-              console.log(`[WS] ✅ Sync tamamlandı: ${syncResult.stats?.updated || 0} güncellendi, ${syncResult.stats?.created || 0} oluşturuldu`);
-            }
-          } catch (syncError) {
-            console.error('[WS] ⚠️ Sync hatası (kritik değil):', syncError);
-          }
+          // NOT: Sync artık her batch'te değil, bot:complete'te tek sefer çalışır
 
           // Notify tenant clients about processed batch (createdCustomers ile)
           broadcastToTenant(tenantId, {
@@ -375,8 +413,7 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
             }
           });
 
-          // Dashboard invalidation — bot batch işlemi sonrası dashboard'u güncelle
-          broadcastDashboardInvalidation(tenantId, ['stats', 'declaration-stats', 'activity']);
+          // NOT: Dashboard invalidation artık bot:complete'te tek sefer gönderiliyor
         } else {
           console.log('[WS] No beyannameler in batch to process');
         }
@@ -387,8 +424,18 @@ async function handleMessage(ws: WebSocket, client: Client, message: WSMessage):
           type: 'bot:batch-error',
           data: { error: (error as Error).message }
         });
+      } finally {
+        // Batch bitti (başarılı veya hatalı) — counter'ı azalt
+        batchState.pendingBatches = Math.max(0, batchState.pendingBatches - 1);
+        console.log(`[WS] Batch tamamlandı, kalan: ${batchState.pendingBatches}`);
+
+        // Tüm batch'ler bittiyse ve bot:complete bekliyorsa → relay et
+        if (batchState.pendingBatches === 0 && batchState.completeMessage) {
+          tryRelayBotComplete(client.tenantId);
+        }
       }
       break;
+    }
 
     case 'gib:mukellef-import-complete':
       // Relay import completion to tenant

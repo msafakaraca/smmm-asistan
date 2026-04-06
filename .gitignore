@@ -114,3 +114,7 @@ SUPABASE.txt
 # Vite build cache
 .vite/
 electron-bot/.vite/
+
+# VPS / Server credentials
+vps-credentials.txt
+server-credentials.*

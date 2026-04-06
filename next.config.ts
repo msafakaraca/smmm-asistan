@@ -43,7 +43,7 @@ const securityHeaders = [
             "style-src 'self' 'unsafe-inline'", // Tailwind için gerekli
             "img-src 'self' data: https: blob:",
             "font-src 'self' data:",
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.iconify.design ws://localhost:3001 wss://localhost:3001",
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://213.142.150.183 https://213.142.150.183 ws://213.142.150.183 wss://213.142.150.183 https://api.iconify.design ws://localhost:3001 wss://localhost:3001",
             "frame-src 'self' blob:",
             "frame-ancestors 'none'",
             "base-uri 'self'",
@@ -84,6 +84,7 @@ const nextConfig: NextConfig = {
             },
         ];
     },
+
 };
 
 export default nextConfig;

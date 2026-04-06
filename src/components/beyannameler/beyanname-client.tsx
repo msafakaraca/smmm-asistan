@@ -310,6 +310,24 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
   const [overlapInfo, setOverlapInfo] = useState<OverlapInfo | null>(null);
   const { checkOverlap, loadArchiveDetail } = useQueryArchives();
 
+  // Overlap verisini önceden yükle (buton tıklamasında gecikme olmasın)
+  const cachedOverlapRef = useRef<OverlapInfo | null>(null);
+  const overlapFetchIdRef = useRef(0);
+  useEffect(() => {
+    if (!selectedCustomerId) {
+      cachedOverlapRef.current = null;
+      return;
+    }
+    const month = parseInt(bitAy, 10);
+    const year = parseInt(bitYil, 10);
+    const fetchId = ++overlapFetchIdRef.current;
+    checkOverlap("beyanname", selectedCustomerId, month, year).then((result) => {
+      if (fetchId === overlapFetchIdRef.current) {
+        cachedOverlapRef.current = result;
+      }
+    });
+  }, [selectedCustomerId, bitAy, bitYil, checkOverlap]);
+
   // Fallback: initialCustomers yoksa client-side yükle
   useEffect(() => {
     if (initialCustomers) return;
@@ -415,7 +433,7 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
   // Çoklu yıl tespiti
   const isMultiYear = basYil !== bitYil;
 
-  // Sorgula (overlap kontrolü ile)
+  // Sorgula (önceden yüklenmiş overlap verisiyle — 0ms gecikme)
   const handleQuery = useCallback(async () => {
     if (!selectedCustomerId) {
       toast.error("Lütfen bir mükellef seçin");
@@ -437,11 +455,9 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
       return;
     }
 
-    // Bitiş ayı için overlap kontrolü
-    const month = parseInt(bitAy, 10);
-    const year = parseInt(bitYil, 10);
-    const overlap = await checkOverlap("beyanname", selectedCustomerId, month, year);
-    if (overlap.hasOverlap) {
+    // Önceden yüklenmiş overlap kontrolü (senkron — gecikme yok)
+    const overlap = cachedOverlapRef.current;
+    if (overlap?.hasOverlap) {
       setOverlapInfo({
         ...overlap,
         customerName: selectedCustomer?.kisaltma || selectedCustomer?.unvan || "",
@@ -451,7 +467,7 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
     }
 
     await startQuery(selectedCustomerId, basAy, basYil, bitAy, bitYil, savedBeyoids);
-  }, [selectedCustomerId, selectedCustomer, basAy, basYil, bitAy, bitYil, startQuery, checkOverlap, savedBeyoids]);
+  }, [selectedCustomerId, selectedCustomer, basAy, basYil, bitAy, bitYil, startQuery, savedBeyoids]);
 
   // Arşivden göster (overlap dialog'dan)
   const handleShowFromArchive = useCallback(async () => {
@@ -888,7 +904,7 @@ export default function BeyannameClient({ initialCustomers }: BeyannameClientPro
           <div className="flex items-center gap-2 mb-3 text-sm font-medium text-blue-700 dark:text-blue-300">
             <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
             <span>
-              Beyanname Sorgulanıyor ({multiQueryProgress.completedYears.length + 1}/{multiQueryProgress.totalChunks})
+              Beyanname Sorgulanıyor ({Math.min(multiQueryProgress.completedYears.length + 1, multiQueryProgress.totalChunks)}/{multiQueryProgress.totalChunks})
             </span>
           </div>
           {/* İlerleme çubuğu */}

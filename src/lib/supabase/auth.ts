@@ -86,11 +86,18 @@ export async function getUserProfile(userId: string) {
 export const getUserWithProfile = cache(async function getUserWithProfile() {
   const supabase = await createClient();
 
-  // 1. Auth user check (required for authentication)
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  // 1. Auth user check
+  // Middleware zaten getUser() ile token doğrulaması yapıyor.
+  // API route'larda getSession() yeterli — GoTrue'ya ekstra istek gitmez,
+  // cookie'den okur. Bu sayede Kong rate limit'e takılma riski ortadan kalkar.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (supabase.auth as any).suppressGetSessionWarning = true;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
     return null;
   }
+
+  const user = session.user;
 
   // 2. Get user profile with permissions
   const { data: profile, error: profileError } = await supabase

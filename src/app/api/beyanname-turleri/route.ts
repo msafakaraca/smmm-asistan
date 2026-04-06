@@ -34,22 +34,21 @@ const DEFAULT_BEYANNAME_TURLERI = [
     { kod: "BASIT",      aciklama: "Basit Usul Ticari Kazanç Beyannamesi",       kisaAd: "BASIT",   kategori: "Gelir",    siraNo: 12, donemSecenekleri: ["yillik"] },
     { kod: "GELIR1001E", aciklama: "Gelir 1001E Beyannamesi",                    kisaAd: "1001E",   kategori: "Gelir",    siraNo: 13, donemSecenekleri: ["yillik"] },
     { kod: "GMSI",       aciklama: "Gayrimenkul Sermaye İradı Beyannamesi",      kisaAd: "GMSI",    kategori: "Gelir",    siraNo: 14, donemSecenekleri: ["yillik"] },
-    { kod: "TURIZM",     aciklama: "Turizm Payı Beyannamesi",                    kisaAd: "TURZ",    kategori: "Diğer",    siraNo: 15, donemSecenekleri: ["aylik", "3aylik"] },
+    { kod: "TURZ",       aciklama: "Turizm Payı Beyannamesi",                    kisaAd: "TURZ",    kategori: "Diğer",    siraNo: 15, donemSecenekleri: ["aylik", "3aylik"] },
     { kod: "MUHSGK2",    aciklama: "Muhtasar ve Prim Hizmet 2",                  kisaAd: "MUH2",    kategori: "Muhtasar", siraNo: 16, donemSecenekleri: ["aylik", "3aylik", "dilekce"] },
     { kod: "OTV3B",      aciklama: "ÖTV 3B Beyannamesi",                         kisaAd: "ÖTV3B",   kategori: "ÖTV",      siraNo: 17, donemSecenekleri: ["aylik", "3aylik"] },
     { kod: "OTV1",       aciklama: "ÖTV 1 Beyannamesi",                          kisaAd: "ÖTV1",    kategori: "ÖTV",      siraNo: 18, donemSecenekleri: ["15gunluk", "aylik", "3aylik"] },
     { kod: "OTV3A",      aciklama: "ÖTV 3A Beyannamesi",                         kisaAd: "ÖTV3A",   kategori: "ÖTV",      siraNo: 19, donemSecenekleri: ["aylik", "3aylik"] },
     { kod: "OTV4",       aciklama: "ÖTV 4 Beyannamesi",                          kisaAd: "ÖTV4",    kategori: "ÖTV",      siraNo: 20, donemSecenekleri: ["aylik", "3aylik"] },
     { kod: "OIV",        aciklama: "ÖİV Beyannamesi",                            kisaAd: "ÖİV",     kategori: "Diğer",    siraNo: 21, donemSecenekleri: ["aylik"] },
-    { kod: "KONAKLAMA",  aciklama: "Konaklama Vergisi Beyannamesi",              kisaAd: "KONK",    kategori: "Diğer",    siraNo: 22, donemSecenekleri: ["aylik"] },
+    { kod: "KONK",       aciklama: "Konaklama Vergisi Beyannamesi",              kisaAd: "KONK",    kategori: "Diğer",    siraNo: 22, donemSecenekleri: ["aylik"] },
     { kod: "KDV9015",    aciklama: "KDV Tevkifat Beyannamesi",                   kisaAd: "9015",    kategori: "KDV",      siraNo: 23, donemSecenekleri: ["aylik"] },
 ];
 
 // Eski türler — silmek yerine aktif: false yapılacak
 const DEPRECATED_KODLAR = ["FORMBA", "FORMBS", "MUH"];
 
-// "Vergi"/"VERGİ" kategorisindeki duplike türler — KONAKLAMA/TURIZM zaten "Diğer" altında var
-const VERGI_DUPLIKE_KODLAR = ["KONK", "TURZ"];
+// Eski duplike listesi kaldırıldı — TURZ/KONK artık DEFAULT'taki doğru kodlarla eşleşiyor
 
 // GET - Tenant için aktif beyanname türlerini getir
 export async function GET(req: NextRequest) {
@@ -121,16 +120,36 @@ export async function GET(req: NextRequest) {
                 needsRefresh = true;
             }
 
-            // "Vergi"/"VERGİ" kategorisindeki duplike türleri (KONK, TURZ) deaktif et
-            const vergiDuplikeler = turler.filter(
-                t => VERGI_DUPLIKE_KODLAR.includes(t.kod) && t.aktif
-            );
-            if (vergiDuplikeler.length > 0) {
-                await prisma.beyanname_turleri.updateMany({
-                    where: { id: { in: vergiDuplikeler.map(t => t.id) }, tenantId },
-                    data: { aktif: false },
-                });
-                needsRefresh = true;
+            // Eski TURIZM/KONAKLAMA kodlarını TURZ/KONK'a migrate et
+            const kodMigrations: Record<string, string> = { "TURIZM": "TURZ", "KONAKLAMA": "KONK" };
+            for (const [eskiKod, yeniKod] of Object.entries(kodMigrations)) {
+                const eskiEntry = turler.find(t => t.kod === eskiKod);
+                const yeniEntry = turler.find(t => t.kod === yeniKod);
+                if (eskiEntry && !yeniEntry) {
+                    // Eski kodu yeni koda güncelle
+                    await prisma.beyanname_turleri.update({
+                        where: { id: eskiEntry.id },
+                        data: { kod: yeniKod, aktif: true },
+                    });
+                    needsRefresh = true;
+                } else if (eskiEntry && yeniEntry) {
+                    // Her ikisi de varsa eski olanı sil, yeniyi aktif et
+                    await prisma.beyanname_turleri.delete({ where: { id: eskiEntry.id } });
+                    if (!yeniEntry.aktif) {
+                        await prisma.beyanname_turleri.update({
+                            where: { id: yeniEntry.id },
+                            data: { aktif: true },
+                        });
+                    }
+                    needsRefresh = true;
+                } else if (yeniEntry && !yeniEntry.aktif) {
+                    // Sadece yeni var ama deaktif — aktif et
+                    await prisma.beyanname_turleri.update({
+                        where: { id: yeniEntry.id },
+                        data: { aktif: true },
+                    });
+                    needsRefresh = true;
+                }
             }
 
             // Mevcut türlerin donemSecenekleri boşsa DEFAULT'tan doldur

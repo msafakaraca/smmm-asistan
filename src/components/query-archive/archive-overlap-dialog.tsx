@@ -69,7 +69,7 @@ export default function ArchiveOverlapDialog({
           Son sorgu: {lastDate}
         </div>
 
-        <DialogFooter className="flex gap-2 sm:gap-0">
+        <DialogFooter className="flex gap-3 sm:gap-3">
           <Button variant="outline" onClick={onShowArchive}>
             <Archive className="h-4 w-4 mr-2" />
             Arşivden Göster

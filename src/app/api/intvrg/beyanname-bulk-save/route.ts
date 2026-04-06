@@ -182,13 +182,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Arşiv merge — response öncesi await (serverless'ta bağlantı kopmasını önler)
-    const savedItems = toSave.filter(
-      (_, i) => saveResults[i].status === "fulfilled"
-    );
-    if (savedItems.length > 0) {
+    // Arşiv merge — TÜM sorgulanan öğeler için çalıştır (kaydedilen + atlanan)
+    // Not: Sadece yeni kaydedilenlerle sınırlamak, atlanmış öğelerde arşiv kaydı oluşmama sorununa yol açıyordu
+    if (enriched.length > 0) {
       try {
-        await bulkArchiveMerge(user.tenantId, user.id, customerId, savedItems);
+        await bulkArchiveMerge(user.tenantId, user.id, customerId, enriched);
       } catch (err) {
         console.error("[BULK-SAVE] Arşiv merge hatası:", err);
       }

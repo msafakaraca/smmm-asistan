@@ -33,8 +33,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth/");
   const isPostRequest = request.method === "POST";
 
-  const shouldRateLimit = pathname.startsWith("/api") ||
-    (isAuthRoute && isPostRequest);
+  // Internal API çağrılarını rate limit'ten muaf tut
+  // server.ts → /api/* çağrılarında X-Internal-Token header'ı gönderir
+  // Token doğrulaması API route'larda verifyBearerOrInternal() ile yapılır
+  const isInternalCall = !!request.headers.get("X-Internal-Token");
+
+  const shouldRateLimit = !isInternalCall && (
+    pathname.startsWith("/api") ||
+    (isAuthRoute && isPostRequest)
+  );
 
   if (shouldRateLimit && isRateLimitEnabled()) {
     try {

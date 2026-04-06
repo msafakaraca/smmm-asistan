@@ -28,6 +28,9 @@
 - **[Geliştirme Kılavuzu](./development-guide.md)** - Kurulum, komutlar, kod standartları
 - **[CLAUDE.md](../CLAUDE.md)** - Claude Code için detaylı rehber
 
+### Altyapı
+- **[Maliyet Raporu](./maliyet-raporu.md)** - Sunucu maliyet karşılaştırması, VPS detayları, ölçekleme planı
+
 ---
 
 ## 📋 Hızlı Referans
