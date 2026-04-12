@@ -104,100 +104,104 @@ export function KgeciciDetayPage() {
   const allCustomerIds = filteredData.map((d) => d.customerId);
 
   return (
-    <div className="h-[calc(100vh-6rem)] xl:h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/dashboard/kontrol-cizelgesi")}
-          className="h-10 w-10"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <Building2 className="h-8 w-8 text-rose-600" />
-        <div>
-          <h1 className="text-2xl font-bold">Kurum Geçici Vergi Detay</h1>
-          <p className="text-muted-foreground">
-            Kurum geçici vergi tahakkuk takibi (Firma mükellefleri)
-          </p>
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/dashboard/kontrol-cizelgesi")}
+            className="h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Building2 className="h-8 w-8 text-rose-600" />
+          <div>
+            <h1 className="text-2xl font-bold">Kurum Geçici Vergi Detay</h1>
+            <p className="text-muted-foreground">
+              Kurum geçici vergi tahakkuk takibi (Firma mükellefleri)
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Info Alert */}
-      <Alert className="bg-rose-50 border-rose-200 mt-4 xl:mt-6 flex-shrink-0">
-        <Info className="h-4 w-4 text-rose-600" />
-        <AlertDescription className="text-rose-700">
-          <strong>Bilgi:</strong> Bu sayfa sadece <strong>firma</strong> tipi mükelleflerin kurum geçici vergi (0033 KGV) tahakkuklarını gösterir.
-          Çeyreklik dönemler: Q1 (Ocak-Mart), Q2 (Nisan-Haziran), Q3 (Temmuz-Eylül), Q4 (Ekim-Aralık).
-        </AlertDescription>
-      </Alert>
+        {/* Info Alert */}
+        <div className="px-6 py-3 border-b flex-shrink-0">
+          <Alert className="bg-rose-50 border-rose-200">
+            <Info className="h-4 w-4 text-rose-600" />
+            <AlertDescription className="text-rose-700">
+              <strong>Bilgi:</strong> Bu sayfa sadece <strong>firma</strong> tipi mükelleflerin kurum geçici vergi (0033 KGV) tahakkuklarını gösterir.
+              Çeyreklik dönemler: Q1 (Ocak-Mart), Q2 (Nisan-Haziran), Q3 (Temmuz-Eylül), Q4 (Ekim-Aralık).
+            </AlertDescription>
+          </Alert>
+        </div>
 
-      {/* Filters */}
-      <div className="mt-4 xl:mt-6 flex-shrink-0">
-        <GeciciVergiKontrolFilters
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          activeCardFilter={activeCardFilter}
-          setActiveCardFilter={setActiveCardFilter}
-          selectedGroupId={selectedGroupId}
-          setSelectedGroupId={setSelectedGroupId}
-          groups={groups}
-          stats={stats}
-          isSelectionMode={isSelectionMode}
-          onToggleSelectionMode={toggleSelectionMode}
-        />
-      </div>
-
-      {/* Table */}
-      <div className="mt-4 xl:mt-6 flex-1 min-h-0">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Building2 className="h-12 w-12 mb-4 opacity-50" />
-            <p>Bu dönem için kurum geçici vergi veren firma bulunamadı.</p>
-          </div>
-        ) : (
-          <GeciciVergiKontrolTable
-            data={filteredData}
-            onUpdateStatus={updateStatus}
-            vergiTuru="KGECICI"
+        {/* Filters */}
+        <div className="px-6 py-3 border-b flex-shrink-0">
+          <GeciciVergiKontrolFilters
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            activeCardFilter={activeCardFilter}
+            setActiveCardFilter={setActiveCardFilter}
+            selectedGroupId={selectedGroupId}
+            setSelectedGroupId={setSelectedGroupId}
+            groups={groups}
+            stats={stats}
             isSelectionMode={isSelectionMode}
-            selectedIds={selectedIds}
-            onToggleRow={toggleRow}
+            onToggleSelectionMode={toggleSelectionMode}
           />
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 min-h-0">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Building2 className="h-12 w-12 mb-4 opacity-50" />
+              <p>Bu dönem için kurum geçici vergi veren firma bulunamadı.</p>
+            </div>
+          ) : (
+            <GeciciVergiKontrolTable
+              data={filteredData}
+              onUpdateStatus={updateStatus}
+              vergiTuru="KGECICI"
+              isSelectionMode={isSelectionMode}
+              selectedIds={selectedIds}
+              onToggleRow={toggleRow}
+            />
+          )}
+        </div>
+
+        {/* Bulk Action Bar */}
+        {isSelectionMode && (
+          <BulkActionBar
+            selectedCount={selectedCount}
+            totalCount={filteredData.length}
+            onSelectAll={() => selectAll(allCustomerIds)}
+            onDeselectAll={deselectAll}
+            onCancel={exitSelectionMode}
+          >
+            <Button
+              size="sm"
+              onClick={() => setStatusDialogOpen(true)}
+              disabled={selectedCount === 0}
+              className="h-9 px-4 bg-rose-600 hover:bg-rose-700"
+            >
+              <Edit3 className="h-4 w-4 mr-1.5" />
+              Durum Değiştir
+            </Button>
+          </BulkActionBar>
         )}
       </div>
-
-      {/* Bulk Action Bar */}
-      {isSelectionMode && (
-        <BulkActionBar
-          selectedCount={selectedCount}
-          totalCount={filteredData.length}
-          onSelectAll={() => selectAll(allCustomerIds)}
-          onDeselectAll={deselectAll}
-          onCancel={exitSelectionMode}
-        >
-          <Button
-            size="sm"
-            onClick={() => setStatusDialogOpen(true)}
-            disabled={selectedCount === 0}
-            className="h-9 px-4 bg-rose-600 hover:bg-rose-700"
-          >
-            <Edit3 className="h-4 w-4 mr-1.5" />
-            Durum Değiştir
-          </Button>
-        </BulkActionBar>
-      )}
 
       {/* Status Change Dialog */}
       <StatusChangeDialog

@@ -299,9 +299,10 @@ export default function EdefterKontrolPage() {
   }, [aylar, selectedCustomer, yil, basAy, bitAy, tamamlanan, eksik]);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex flex-col h-full p-1">
+     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <BookCheck className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold">E-Defter Kontrol</h1>
@@ -312,7 +313,7 @@ export default function EdefterKontrolPage() {
       </div>
 
       {/* Form */}
-      <div className="space-y-3 p-4 bg-card border rounded-lg">
+      <div className="space-y-3 px-6 py-3 border-b">
         {/* Mükellef Seçimi */}
         <div className="flex items-center gap-3">
           <div className="flex-1">
@@ -485,6 +486,9 @@ export default function EdefterKontrolPage() {
         </div>
       </div>
 
+      {/* İçerik alanı */}
+      <div className="flex-1 overflow-auto p-6 space-y-4">
+
       {/* GİB bilgileri eksik uyarısı */}
       {selectedCustomer && !hasGibCredentials && (
         <Alert variant="destructive">
@@ -536,14 +540,14 @@ export default function EdefterKontrolPage() {
       {/* Özet kartlar (sorgulama sonrası) */}
       {hasQueried && !isLoading && !error && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-card border rounded-lg text-center">
+          <div className="p-4 border border-border/60 rounded-lg text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <span className="text-sm text-muted-foreground">Tamam</span>
             </div>
             <p className="text-2xl font-bold text-green-600">{tamamlanan}</p>
           </div>
-          <div className="p-4 bg-card border rounded-lg text-center">
+          <div className="p-4 border border-border/60 rounded-lg text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
               <XCircle className="h-4 w-4 text-red-600" />
               <span className="text-sm text-muted-foreground">Eksik</span>
@@ -555,7 +559,7 @@ export default function EdefterKontrolPage() {
 
       {/* Sonuç Tablosu */}
       {aylar.length > 0 && (
-        <div className="bg-card border rounded-lg overflow-hidden">
+        <div className="border border-border/60 rounded-lg overflow-hidden">
           {/* Tablo başlığı */}
           <div className="px-4 py-3 border-b bg-muted/30">
             <span className="text-sm font-medium text-muted-foreground">
@@ -594,6 +598,9 @@ export default function EdefterKontrolPage() {
           </p>
         </div>
       )}
+
+      </div>
+     </div>
     </div>
   );
 }

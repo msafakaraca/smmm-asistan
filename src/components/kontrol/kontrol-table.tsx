@@ -8,6 +8,7 @@
 
 import { memo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { Icon } from "@iconify/react";
 import {
   Tooltip,
@@ -61,8 +62,12 @@ interface KontrolTableProps {
   fullHeight?: boolean;
 }
 
-// Virtual scrolling threshold
-const VIRTUAL_THRESHOLD = 200;
+// Virtual scrolling her zaman aktif
+
+// Stabil boş obje referansı — her render'da yeni {} oluşturulmasını önler
+// Bu olmazsa customerStatuses={beyannameStatuses[customer.id] || {}} her seferinde
+// yeni obje referansı üretir ve KontrolCustomerRow memo comparator'ı bozulur
+const EMPTY_STATUSES: Record<string, never> = {};
 
 export const KontrolTable = memo(function KontrolTable({
   customers,
@@ -92,29 +97,29 @@ export const KontrolTable = memo(function KontrolTable({
   fullHeight = false,
 }: KontrolTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const useVirtual = customers.length > VIRTUAL_THRESHOLD;
 
   const rowVirtualizer = useVirtualizer({
     count: customers.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 40,
-    overscan: 10,
-    enabled: useVirtual,
+    overscan: 15,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
 
   // Virtual scrolling için padding hesapla
-  const paddingTop = useVirtual && virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
   const paddingBottom =
-    useVirtual && virtualRows.length > 0
+    virtualRows.length > 0
       ? totalSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
       : 0;
 
   return (
-    <div className={`border-2 border-border rounded-lg overflow-hidden ${fullHeight ? 'h-full flex flex-col' : ''}`}>
-      <div ref={parentRef} className={`overflow-x-auto overflow-y-auto ${fullHeight ? 'flex-1' : 'max-h-[calc(100vh-280px)]'}`}>
+    <TooltipProvider delayDuration={200} skipDelayDuration={0}>
+    <div className={`overflow-hidden ${fullHeight ? 'h-full flex flex-col' : 'border border-border/60 rounded-lg'}`}>
+      <div ref={parentRef} className={`overflow-x-auto overflow-y-auto ${fullHeight ? 'flex-1 min-h-0' : 'max-h-[calc(100vh-280px)]'}`}>
         <table className="w-full text-xs border-separate border-spacing-0" data-print-table>
           <thead className="sticky top-0 z-20 bg-muted">
             <tr className="bg-muted">
@@ -173,10 +178,9 @@ export const KontrolTable = memo(function KontrolTable({
               {beyannameTurleri.map((tur) => (
                 <th
                   key={tur.kod}
-                  className="border border-border px-2 py-2 font-bold text-center min-w-[48px] cursor-pointer hover:bg-muted/50 transition-colors sticky top-0 bg-muted"
+                  className="border border-border px-2 py-2 font-bold text-center min-w-[48px] cursor-pointer hover:bg-muted/50 sticky top-0 bg-muted"
                   onClick={() => onColumnSort(tur.kod)}
                 >
-                  <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-pointer flex items-center justify-center gap-1 w-full">
                         <span>{tur.kisaAd || tur.kod}</span>
@@ -198,61 +202,25 @@ export const KontrolTable = memo(function KontrolTable({
                         </p>
                       </TooltipContent>
                     </Tooltip>
-                  </TooltipProvider>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {useVirtual ? (
-              <>
-                {paddingTop > 0 && (
-                  <tr>
-                    <td style={{ height: paddingTop }} colSpan={beyannameTurleri.length + 2} />
-                  </tr>
-                )}
-                {virtualRows.map((virtualRow) => {
-                  const customer = customers[virtualRow.index];
-                  return (
-                    <KontrolCustomerRow
-                      key={customer.id}
-                      customer={customer}
-                      index={virtualRow.index}
-                      beyannameTurleri={beyannameTurleri}
-                      customerStatuses={beyannameStatuses[customer.id] || {}}
-                      editingSiraNo={editingSiraNo}
-                      editingSiraNoValue={editingSiraNoValue}
-                      editingUnvan={editingUnvan}
-                      editingUnvanValue={editingUnvanValue}
-                      onSiraNoClick={onSiraNoClick}
-                      onSiraNoChange={onSiraNoChange}
-                      onSiraNoSave={onSiraNoSave}
-                      onSiraNoCancel={onSiraNoCancel}
-                      onUnvanClick={onUnvanClick}
-                      onUnvanChange={onUnvanChange}
-                      onUnvanSave={onUnvanSave}
-                      onUnvanCancel={onUnvanCancel}
-                      onOpenCustomer={onOpenCustomer}
-                      onDeleteCustomer={onDeleteCustomer}
-                      onLeftClick={onLeftClick}
-                      onRightClick={onRightClick}
-                    />
-                  );
-                })}
-                {paddingBottom > 0 && (
-                  <tr>
-                    <td style={{ height: paddingBottom }} colSpan={beyannameTurleri.length + 2} />
-                  </tr>
-                )}
-              </>
-            ) : (
-              customers.map((customer, index) => (
+            {paddingTop > 0 && (
+              <tr>
+                <td style={{ height: paddingTop }} colSpan={beyannameTurleri.length + 2} />
+              </tr>
+            )}
+            {virtualRows.map((virtualRow) => {
+              const customer = customers[virtualRow.index];
+              return (
                 <KontrolCustomerRow
                   key={customer.id}
                   customer={customer}
-                  index={index}
+                  index={virtualRow.index}
                   beyannameTurleri={beyannameTurleri}
-                  customerStatuses={beyannameStatuses[customer.id] || {}}
+                  customerStatuses={beyannameStatuses[customer.id] || EMPTY_STATUSES}
                   editingSiraNo={editingSiraNo}
                   editingSiraNoValue={editingSiraNoValue}
                   editingUnvan={editingUnvan}
@@ -270,7 +238,12 @@ export const KontrolTable = memo(function KontrolTable({
                   onLeftClick={onLeftClick}
                   onRightClick={onRightClick}
                 />
-              ))
+              );
+            })}
+            {paddingBottom > 0 && (
+              <tr>
+                <td style={{ height: paddingBottom }} colSpan={beyannameTurleri.length + 2} />
+              </tr>
             )}
           </tbody>
         </table>
@@ -286,5 +259,6 @@ export const KontrolTable = memo(function KontrolTable({
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 });

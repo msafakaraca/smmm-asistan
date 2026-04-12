@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import { FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { toTitleCase } from "@/lib/utils/text";
 import type { BeyannameData } from "@/components/kontrol/types";
 
@@ -26,6 +27,7 @@ export const BulunanTab = React.memo(function BulunanTab({
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 15,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   if (beyannameler.length === 0) {

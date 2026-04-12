@@ -353,15 +353,16 @@ export default function PosClient() {
   }, [clearResults]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col h-full p-1">
+     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <CreditCard className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">POS Sorgulama</h1>
       </div>
 
       {/* Filtreler */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="px-6 py-3 border-b">
         <div className="flex flex-col gap-4">
           {/* Mükellef Seçimi — Combobox */}
           <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -516,6 +517,9 @@ export default function PosClient() {
         </div>
       </div>
 
+      {/* İçerik alanı */}
+      <div className="flex-1 overflow-auto p-6 space-y-4">
+
       {/* GİB bilgileri eksik uyarısı */}
       {selectedCustomer && !selectedCustomer.hasGibCredentials && (
         <Alert variant="destructive">
@@ -564,7 +568,7 @@ export default function PosClient() {
 
       {/* Sonuç Tablosu */}
       {posBilgileri.length > 0 && (
-        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
+        <div className="rounded-lg border border-border/60 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-border bg-muted/50">
@@ -616,7 +620,7 @@ export default function PosClient() {
 
       {/* Boş Durum — henüz sorgu yapılmadı */}
       {!isLoading && !error && posBilgileri.length === 0 && meta === null && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/60 p-12 text-muted-foreground">
           <CreditCard className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Mükellef seçip dönem belirledikten sonra <strong>Sorgula</strong> butonuna tıklayın.
@@ -626,6 +630,9 @@ export default function PosClient() {
           </p>
         </div>
       )}
+
+      </div>
+     </div>
     </div>
   );
 }

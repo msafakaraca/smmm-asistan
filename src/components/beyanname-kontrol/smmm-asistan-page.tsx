@@ -366,9 +366,10 @@ export function SmmmAsistanPage() {
   const isError = syncStatus === "error";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* 1. Header + Status Badge */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-6 py-4 border-b">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Bot className="h-7 w-7 text-primary" />
@@ -381,6 +382,8 @@ export function SmmmAsistanPage() {
         <div className="flex items-center gap-2">{getStatusBadge()}</div>
       </div>
 
+      {/* Ana İçerik */}
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-4">
       {/* 2. GİB Bilgileri + Tarih */}
       {!isRunning && !isSuccess ? (
         <BotBasicSettings
@@ -395,7 +398,7 @@ export function SmmmAsistanPage() {
           isRunning={isRunning}
         />
       ) : (
-        <div className="rounded-lg border bg-card px-4 py-3 shadow-sm">
+        <div className="px-4 py-3 rounded-lg bg-muted/30">
           <p className="text-sm text-muted-foreground">{compactSummary}</p>
         </div>
       )}
@@ -403,7 +406,7 @@ export function SmmmAsistanPage() {
       {/* 3. Gelişmiş Seçenekler (idle/error'da görünür) */}
       {(isIdle || isError) && (
         <Collapsible>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg]:rotate-180">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/30 px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg]:rotate-180">
             <span className="flex items-center gap-2">
               <Settings className="h-4 w-4 text-muted-foreground" />
               Gelişmiş Seçenekler
@@ -411,7 +414,7 @@ export function SmmmAsistanPage() {
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="rounded-lg border bg-card px-4 pb-4 shadow-sm mt-1">
+            <div className="px-4 pb-4 mt-1">
               <BotAdvancedSettings
                 vergiNo={vergiNo}
                 setVergiNo={setVergiNo}
@@ -516,7 +519,7 @@ export function SmmmAsistanPage() {
           aria-live="polite"
           className="grid grid-cols-3 gap-3"
         >
-          <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/20 p-4 text-center">
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4 text-center">
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
               {summaryStats.total}
             </p>
@@ -524,7 +527,7 @@ export function SmmmAsistanPage() {
               Bulundu
             </p>
           </div>
-          <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4 text-center">
+          <div className="rounded-lg bg-green-50 dark:bg-green-950/20 p-4 text-center">
             <p className="text-2xl font-bold text-green-700 dark:text-green-400">
               {summaryStats.matched}
             </p>
@@ -532,7 +535,7 @@ export function SmmmAsistanPage() {
               Eşleşti
             </p>
           </div>
-          <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-4 text-center">
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 p-4 text-center">
             <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
               {summaryStats.unmatched}
             </p>
@@ -549,7 +552,7 @@ export function SmmmAsistanPage() {
       {/* 9. Bulunan Beyannameler */}
       {beyannameler.length > 0 && (
         <Collapsible defaultOpen>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/30 px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
             <span className="flex items-center gap-2">
               Bulunan Beyannameler
               <Badge variant="secondary">{beyannameler.length}</Badge>
@@ -557,7 +560,7 @@ export function SmmmAsistanPage() {
             <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="rounded-lg border bg-card p-4 shadow-sm mt-1">
+            <div className="p-4 mt-1">
               <BulunanTab
                 beyannameler={beyannameler}
                 startDate={startDate}
@@ -571,7 +574,7 @@ export function SmmmAsistanPage() {
       {/* 10. Eşleşmeyenler */}
       {unmatchedDeclarations.length > 0 && (
         <Collapsible defaultOpen>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/30 px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
             <span className="flex items-center gap-2">
               Eşleşmeyenler
               <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800">
@@ -581,7 +584,7 @@ export function SmmmAsistanPage() {
             <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="rounded-lg border bg-card p-4 shadow-sm mt-1 space-y-3">
+            <div className="p-4 mt-1 space-y-3">
               <EslesmeyenlerTab
                 unmatchedDeclarations={unmatchedDeclarations}
               />
@@ -600,7 +603,7 @@ export function SmmmAsistanPage() {
       {/* 11. Son Taramalar */}
       {scanHistory.length > 0 && (
         <Collapsible>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/30 px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
             <span className="flex items-center gap-2">
               Son Taramalar
               <Badge variant="secondary">{scanHistory.length}</Badge>
@@ -608,7 +611,7 @@ export function SmmmAsistanPage() {
             <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="rounded-lg border bg-card p-4 shadow-sm mt-1">
+            <div className="p-4 mt-1">
               <TaramalarTab scanHistory={scanHistory} />
             </div>
           </CollapsibleContent>
@@ -617,7 +620,7 @@ export function SmmmAsistanPage() {
 
       {/* 12. INTVRG Test */}
       <Collapsible>
-        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 shadow-sm text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/30 px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors [&[data-state=open]>svg.chevron]:rotate-180">
           <span className="flex items-center gap-2">
             <FlaskConical className="h-4 w-4 text-violet-500" />
             INTVRG Beyanname Test
@@ -628,11 +631,16 @@ export function SmmmAsistanPage() {
           <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="rounded-lg border bg-card p-4 shadow-sm mt-1">
+          <div className="p-4 mt-1">
             <IntrvrgTestTab />
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      </div>
+      {/* /Ana İçerik */}
+      </div>
+      {/* /Çerçeve */}
 
       {/* Modallar */}
       <BotReportModal

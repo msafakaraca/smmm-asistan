@@ -516,15 +516,16 @@ export default function TahsilatClient() {
   }, [clearResults]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col h-full p-1">
+     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <Receipt className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Vergi Tahsil Alındıları</h1>
       </div>
 
       {/* Filtreler */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="px-6 py-3 border-b">
         <div className="flex flex-col gap-4">
           {/* Mükellef Seçimi — Combobox (arama + dropdown tek bileşen) */}
           <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -713,6 +714,9 @@ export default function TahsilatClient() {
         </div>
       </div>
 
+      {/* Ana içerik alanı */}
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-4">
+
       {/* GİB bilgileri eksik uyarısı */}
       {selectedCustomer && !selectedCustomer.hasGibCredentials && (
         <Alert variant="destructive">
@@ -761,7 +765,7 @@ export default function TahsilatClient() {
 
       {/* Meta Bilgi */}
       {meta && tahsilatlar.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 rounded-lg border bg-card p-4 text-sm sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/40 p-4 text-sm sm:grid-cols-4">
           <div>
             <span className="text-muted-foreground">Mükellef:</span>
             <div className="font-medium">{meta.adsoyadunvan}</div>
@@ -783,7 +787,7 @@ export default function TahsilatClient() {
 
       {/* Vergi Türü Filtresi */}
       {tahsilatlar.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/40 p-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Filter className="h-4 w-4" />
             <span>Vergi Türü:</span>
@@ -821,7 +825,7 @@ export default function TahsilatClient() {
 
       {/* Tahsilat Tablosu */}
       {filteredTahsilatlar.length > 0 && (
-        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
+        <div className="rounded-lg border border-border/40 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-border bg-muted/50">
@@ -849,7 +853,7 @@ export default function TahsilatClient() {
 
       {/* Filtre sonucu boş */}
       {tahsilatlar.length > 0 && filteredTahsilatlar.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-8 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/40 p-8 text-muted-foreground">
           <Filter className="h-10 w-10 opacity-30" />
           <p className="text-center text-sm">
             <strong>{vergiTuruFilter}</strong> türünde tahsilat bulunamadı.
@@ -862,7 +866,7 @@ export default function TahsilatClient() {
 
       {/* Boş Durum */}
       {!isLoading && !error && tahsilatlar.length === 0 && meta === null && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/40 p-12 text-muted-foreground">
           <Receipt className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Mükellef seçip dönem belirledikten sonra <strong>Sorgula</strong> butonuna tıklayın.
@@ -872,7 +876,7 @@ export default function TahsilatClient() {
 
       {/* Sonuç yok */}
       {!isLoading && !error && tahsilatlar.length === 0 && meta !== null && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border/40 p-12 text-muted-foreground">
           <Receipt className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Seçilen dönemde tahsilat alındısı bulunamadı.
@@ -880,6 +884,8 @@ export default function TahsilatClient() {
         </div>
       )}
 
+      </div>{/* Ana içerik sonu */}
+     </div>{/* İç çerçeve sonu */}
     </div>
   );
 }

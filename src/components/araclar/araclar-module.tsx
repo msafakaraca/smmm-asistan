@@ -788,59 +788,64 @@ export function AraclarModule() {
     }, []);
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Icon
-                        icon="solar:documents-bold"
-                        className="h-6 w-6 text-primary"
-                    />
-                    PDF Araçları
-                </h1>
-                <p className="text-muted-foreground">
-                    PDF dosyalarınızı kolayca birleştirin, ayırın, sıkıştırın ve
-                    dönüştürün.
-                </p>
-            </div>
-
-            {/* Tools Grid */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {PDF_TOOLS.map((tool) => (
-                    <ToolCard
-                        key={tool.id}
-                        tool={tool}
-                        onClick={() => handleToolClick(tool)}
-                    />
-                ))}
-            </div>
-
-            {/* Info Card */}
-            <Card className="border-primary/20 bg-primary/5">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
+        <div className="flex flex-col h-full p-1">
+            <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+                {/* Header */}
+                <div className="px-6 py-4 border-b">
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Icon
-                            icon="solar:info-circle-bold"
-                            className="h-5 w-5 text-primary"
+                            icon="solar:documents-bold"
+                            className="h-6 w-6 text-primary"
                         />
-                        Bilgilendirme
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-2">
-                    <p>
-                        <strong>Güvenlik:</strong> Tüm dosyalar sunucuda
-                        işlendikten sonra otomatik olarak silinir.
+                        PDF Araçları
+                    </h1>
+                    <p className="text-muted-foreground">
+                        PDF dosyalarınızı kolayca birleştirin, ayırın, sıkıştırın ve
+                        dönüştürün.
                     </p>
-                    <p>
-                        <strong>Boyut Limiti:</strong> Maksimum 50MB boyutunda
-                        dosya yükleyebilirsiniz.
-                    </p>
-                    <p>
-                        <strong>Desteklenen Formatlar:</strong> PDF, DOC, DOCX,
-                        XLS, XLSX
-                    </p>
-                </CardContent>
-            </Card>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-auto p-6 space-y-6">
+                    {/* Tools Grid */}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {PDF_TOOLS.map((tool) => (
+                            <ToolCard
+                                key={tool.id}
+                                tool={tool}
+                                onClick={() => handleToolClick(tool)}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Info Card */}
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Icon
+                                    icon="solar:info-circle-bold"
+                                    className="h-5 w-5 text-primary"
+                                />
+                                Bilgilendirme
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm text-muted-foreground space-y-2">
+                            <p>
+                                <strong>Güvenlik:</strong> Tüm dosyalar sunucuda
+                                işlendikten sonra otomatik olarak silinir.
+                            </p>
+                            <p>
+                                <strong>Boyut Limiti:</strong> Maksimum 50MB boyutunda
+                                dosya yükleyebilirsiniz.
+                            </p>
+                            <p>
+                                <strong>Desteklenen Formatlar:</strong> PDF, DOC, DOCX,
+                                XLS, XLSX
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
 
             {/* Tool Dialog */}
             <ToolDialog

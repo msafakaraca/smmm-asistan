@@ -1,0 +1,144 @@
+{
+  "session_id": "session-2026-04-12-0053",
+  "started": "2026-04-12T21:53:29.729Z",
+  "files_read": {
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx": {
+      "count": 8,
+      "tokens": 3137,
+      "first_read": "2026-04-12T21:55:55.425Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/package.json": {
+      "count": 2,
+      "tokens": 1264,
+      "first_read": "2026-04-12T21:55:55.644Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css": {
+      "count": 1,
+      "tokens": 1221,
+      "first_read": "2026-04-12T21:56:02.021Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-file-row.tsx": {
+      "count": 2,
+      "tokens": 1665,
+      "first_read": "2026-04-12T21:56:06.553Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-client.tsx": {
+      "count": 2,
+      "tokens": 29836,
+      "first_read": "2026-04-12T21:56:06.996Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dialog.tsx": {
+      "count": 3,
+      "tokens": 1183,
+      "first_read": "2026-04-12T21:56:07.216Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/popover.tsx": {
+      "count": 1,
+      "tokens": 383,
+      "first_read": "2026-04-12T21:56:07.628Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dropdown-menu.tsx": {
+      "count": 1,
+      "tokens": 2481,
+      "first_read": "2026-04-12T21:56:07.834Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-module.tsx": {
+      "count": 1,
+      "tokens": 21788,
+      "first_read": "2026-04-12T21:56:17.345Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/button.tsx": {
+      "count": 5,
+      "tokens": 592,
+      "first_read": "2026-04-12T21:56:40.692Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/bot-report-modal.tsx": {
+      "count": 1,
+      "tokens": 2387,
+      "first_read": "2026-04-12T21:57:23.225Z"
+    },
+    "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx": {
+      "count": 2,
+      "tokens": 558,
+      "first_read": "2026-04-12T21:58:18.646Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "C:/Users/msafa/.claude/plans/async-knitting-harbor.md",
+      "action": "create",
+      "tokens": 770,
+      "at": "2026-04-12T22:10:20.258Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+      "action": "create",
+      "tokens": 4356,
+      "at": "2026-04-12T22:12:36.460Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+      "action": "edit",
+      "tokens": 56,
+      "at": "2026-04-12T22:12:42.163Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+      "action": "edit",
+      "tokens": 38,
+      "at": "2026-04-12T22:12:46.910Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+      "action": "edit",
+      "tokens": 230,
+      "at": "2026-04-12T22:12:53.466Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+      "action": "edit",
+      "tokens": 11,
+      "at": "2026-04-12T22:15:55.891Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+      "action": "edit",
+      "tokens": 371,
+      "at": "2026-04-12T22:16:09.602Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+      "action": "edit",
+      "tokens": 51,
+      "at": "2026-04-12T22:16:15.938Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+      "action": "edit",
+      "tokens": 60,
+      "at": "2026-04-12T22:16:21.523Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+      "action": "edit",
+      "tokens": 32,
+      "at": "2026-04-12T22:16:28.695Z"
+    },
+    {
+      "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+      "action": "edit",
+      "tokens": 39,
+      "at": "2026-04-12T22:16:33.879Z"
+    }
+  ],
+  "edit_counts": {
+    "../../../.claude/plans/async-knitting-harbor.md": 1,
+    "src/components/calculator/calculator-widget.tsx": 5,
+    "src/components/dashboard/header.tsx": 5
+  },
+  "anatomy_hits": 12,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 17,
+  "cerebrum_warnings": 0,
+  "stop_count": 2
+}

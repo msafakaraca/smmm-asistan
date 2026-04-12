@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserWithProfile } from "@/lib/supabase/auth";
 import { prisma } from "@/lib/db";
-import { getSignedUrl } from "@/lib/storage-supabase";
+import { getSignedUrl, getSignedUrls } from "@/lib/storage-supabase";
 
 /**
  * GET /api/intvrg/beyanname-pdf?customerId=X&turKodu=Y&donem=Z
@@ -232,19 +232,28 @@ async function handleBulkSigned(
     select: { path: true, name: true },
   });
 
-  // filename → signed URL (paralel oluştur)
+  // Geçerli path'leri filtrele
+  const validDocs = docs.filter((d) => d.path);
+  if (validDocs.length === 0) {
+    return NextResponse.json({ signedUrls: {} });
+  }
+
+  // Batch signed URL — tek Supabase çağrısı
+  const paths = validDocs.map((d) => d.path!);
+  let signedData: Array<{ signedUrl: string }>;
+  try {
+    signedData = await getSignedUrls(paths, 600);
+  } catch {
+    return NextResponse.json({ signedUrls: {} });
+  }
+
+  // filename → signed URL
   const filenameToUrl = new Map<string, string>();
-  await Promise.all(
-    docs.map(async (doc) => {
-      if (!doc.path) return;
-      try {
-        const url = await getSignedUrl(doc.path, 600);
-        filenameToUrl.set(doc.name, url);
-      } catch {
-        // Dosya Storage'da yok — sessizce atla
-      }
-    })
-  );
+  for (let i = 0; i < validDocs.length; i++) {
+    if (signedData[i]?.signedUrl) {
+      filenameToUrl.set(validDocs[i].name, signedData[i].signedUrl);
+    }
+  }
 
   // beyoid → signed URL eşlemesi
   const signedUrls: Record<string, string> = {};

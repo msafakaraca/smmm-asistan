@@ -10,14 +10,14 @@ interface SplitLayoutProps {
 
 export function SplitLayout({ year, month }: SplitLayoutProps) {
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-10rem)] xl:h-[calc(100vh-12rem)] gap-4 lg:gap-4 xl:gap-6">
+    <div className="flex flex-col lg:flex-row h-full">
       {/* Sol Panel - Notlar */}
-      <div className="flex-1 min-h-[50vh] lg:min-h-0 bg-card rounded-xl border overflow-hidden">
+      <div className="flex-1 min-h-[50vh] lg:min-h-0 lg:border-r overflow-hidden">
         <NotesPanel year={year} month={month} />
       </div>
 
       {/* Sağ Panel - Anımsatıcılar */}
-      <div className="flex-1 min-h-[50vh] lg:min-h-0 bg-card rounded-xl border overflow-hidden">
+      <div className="flex-1 min-h-[50vh] lg:min-h-0 border-t lg:border-t-0 overflow-hidden">
         <RemindersPanel year={year} month={month} />
       </div>
     </div>

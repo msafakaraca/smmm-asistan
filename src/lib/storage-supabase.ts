@@ -99,6 +99,23 @@ export async function getSignedUrl(path: string, expiresIn: number = 3600) {
 }
 
 /**
+ * Batch signed URL oluştur — birden fazla dosya için tek istekte
+ */
+export async function getSignedUrls(paths: string[], expiresIn: number = 3600) {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .createSignedUrls(paths, expiresIn);
+
+  if (error) {
+    throw new Error(`Batch signed URL creation failed: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
  * Delete file from Supabase Storage
  *
  * @param path - Storage path

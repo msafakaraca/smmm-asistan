@@ -299,9 +299,10 @@ export function AsgariIscilikHesaplama() {
     const hasInput = periodValue || classificationId || groupId || areaInput || formerBaseAmountInput;
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col h-full p-1">
+          <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
             {/* Başlık */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
                 <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                         <Icon icon="solar:buildings-3-bold-duotone" className="h-5 w-5 text-primary" />
@@ -323,8 +324,9 @@ export function AsgariIscilikHesaplama() {
                 )}
             </div>
 
+            <div className="flex-1 overflow-auto p-6 space-y-6">
             {/* Bölüm 1: Yapı Bilgileri */}
-            <Card className="border-2 border-border/60 shadow-sm">
+            <Card className="border shadow-none">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-base flex items-center gap-2">
                         <Icon icon="solar:ruler-angular-bold-duotone" className="h-5 w-5 text-blue-500" />
@@ -473,7 +475,7 @@ export function AsgariIscilikHesaplama() {
             </Card>
 
             {/* Bölüm 2: Prim Tablosu */}
-            <Card className="border-2 border-border/60 shadow-sm">
+            <Card className="border shadow-none">
                 <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-base flex items-center gap-2">
@@ -703,6 +705,8 @@ export function AsgariIscilikHesaplama() {
                     </p>
                 </div>
             </div>
+            </div>
+          </div>
         </div>
     );
 }

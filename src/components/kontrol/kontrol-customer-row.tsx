@@ -7,7 +7,6 @@
  */
 
 import React from "react";
-import { Icon } from "@iconify/react";
 import {
   CheckCircle2,
   Clock,
@@ -16,12 +15,14 @@ import {
   FileText,
   FileCheck,
   Minus,
+  Pencil,
+  FolderOpen,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type {
@@ -137,7 +138,7 @@ function KontrolCustomerRowComponent({
 }: KontrolCustomerRowProps) {
   return (
     <tr
-      className="hover:bg-muted/80 transition-colors"
+      className="hover:bg-muted/80"
     >
       {/* No - Read Only (Mükellef listesinden düzenlenir) */}
       <td className="border border-border px-1 py-1 text-center font-mono text-muted-foreground w-16 bg-background">
@@ -192,19 +193,16 @@ function KontrolCustomerRowComponent({
             >
               {toTitleCase(customer.unvan)}
             </span>
-            <Icon
-              icon="solar:pen-bold"
-              className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            <Pencil
+              className="h-3 w-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 cursor-pointer"
               onClick={() => onUnvanClick(customer.id, customer.unvan)}
             />
-            <Icon
-              icon="solar:folder-open-bold"
-              className="h-3 w-3 text-blue-500/70 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            <FolderOpen
+              className="h-3 w-3 text-blue-500/70 opacity-0 group-hover:opacity-100 cursor-pointer"
               onClick={() => onOpenCustomer(customer.id)}
             />
-            <Icon
-              icon="solar:trash-bin-trash-bold"
-              className="h-3 w-3 text-red-500/70 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            <Trash2
+              className="h-3 w-3 text-red-500/70 opacity-0 group-hover:opacity-100 cursor-pointer"
               onClick={() => onDeleteCustomer(customer.id)}
             />
           </div>
@@ -253,7 +251,7 @@ interface BeyannameCellProps {
   ) => void;
 }
 
-function BeyannameCell({
+const BeyannameCell = React.memo(function BeyannameCell({
   customerId,
   turKod,
   status,
@@ -305,7 +303,7 @@ function BeyannameCell({
       onContextMenu={(e) => onRightClick(e, customerId, turKod)}
       title={cellTitle}
       className={`
-        border border-border text-center select-none h-8 transition-colors
+        border border-border text-center select-none h-8
         ${status === "donem_disi"
           ? "cursor-not-allowed bg-muted/20"
           : isLocked
@@ -316,7 +314,6 @@ function BeyannameCell({
     >
       {/* Onaylandı veya Verildi — Yeşil tik + dosya linkleri */}
       {isVerildi && meta && (
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center justify-center w-full h-full gap-0.5">
@@ -329,7 +326,7 @@ function BeyannameCell({
                         onClick={(e) =>
                           openPdf(e, files?.beyanname || { path: meta?.beyannamePath })
                         }
-                        className="w-5 h-5 flex items-center justify-center bg-red-100 hover:bg-red-300 text-red-600 rounded-[3px] cursor-pointer border border-red-200 hover:border-red-400 transition-colors"
+                        className="w-5 h-5 flex items-center justify-center bg-red-100 hover:bg-red-300 text-red-600 rounded-[3px] cursor-pointer border border-red-200 hover:border-red-400 "
                         title="Beyanname PDF"
                       >
                         <span className="text-[10px] font-bold">B</span>
@@ -341,7 +338,7 @@ function BeyannameCell({
                         onClick={(e) =>
                           openPdf(e, files?.tahakkuk || { path: meta?.tahakkukPath })
                         }
-                        className="w-5 h-5 flex items-center justify-center bg-orange-100 hover:bg-orange-300 text-orange-600 rounded-[3px] cursor-pointer border border-orange-200 hover:border-orange-400 transition-colors"
+                        className="w-5 h-5 flex items-center justify-center bg-orange-100 hover:bg-orange-300 text-orange-600 rounded-[3px] cursor-pointer border border-orange-200 hover:border-orange-400 "
                         title="Tahakkuk PDF"
                       >
                         <span className="text-[10px] font-bold">T</span>
@@ -354,7 +351,7 @@ function BeyannameCell({
                           onClick={(e) =>
                             openPdf(e, files?.sgkTahakkuk || { path: meta?.sgkTahakkukPath })
                           }
-                          className="w-5 h-5 flex items-center justify-center bg-blue-100 hover:bg-blue-300 text-blue-600 rounded-[3px] cursor-pointer border border-blue-200 hover:border-blue-400 transition-colors"
+                          className="w-5 h-5 flex items-center justify-center bg-blue-100 hover:bg-blue-300 text-blue-600 rounded-[3px] cursor-pointer border border-blue-200 hover:border-blue-400"
                           title="SGK Tahakkuk PDF"
                         >
                           <span className="text-[10px] font-bold">S</span>
@@ -372,7 +369,7 @@ function BeyannameCell({
                             openPdf(e, files?.sgkTahakkuk || { path: meta?.sgkTahakkukPath });
                           }
                         }}
-                        className="w-5 h-5 flex items-center justify-center bg-purple-100 hover:bg-purple-300 text-purple-600 rounded-[3px] cursor-pointer border border-purple-200 hover:border-purple-400 transition-colors"
+                        className="w-5 h-5 flex items-center justify-center bg-purple-100 hover:bg-purple-300 text-purple-600 rounded-[3px] cursor-pointer border border-purple-200 hover:border-purple-400"
                         title="Hizmet Listesi PDF"
                       >
                         <span className="text-[10px] font-bold">H</span>
@@ -412,7 +409,6 @@ function BeyannameCell({
               </div>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
       )}
 
       {/* Onaylandı/Verildi — meta yoksa sadece ikon */}
@@ -424,7 +420,6 @@ function BeyannameCell({
 
       {/* Onay Bekliyor — Turuncu saat (3 aylık ise "3A" badge + kapsam tooltip) */}
       {status === "onay_bekliyor" && meta?.donem === "3aylik" && (
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center justify-center w-full h-full gap-0.5">
@@ -436,7 +431,6 @@ function BeyannameCell({
               3 Aylık — {meta?.kapsam || "Dönem bilgisi yok"}
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
       )}
       {status === "onay_bekliyor" && meta?.donem !== "3aylik" && (
         <div className="flex items-center justify-center w-full h-full">
@@ -453,7 +447,6 @@ function BeyannameCell({
 
       {/* Dönem Dışı — Gri pasif, tıklanamaz (3 aylık beyanname) */}
       {status === "donem_disi" && (
-        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center justify-center w-full h-full gap-0.5">
@@ -465,7 +458,6 @@ function BeyannameCell({
               <span className="text-red-500">3 Aylık — Bu ay dönem dışı</span>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
       )}
 
       {/* Gönderilmeyecek — Gri ban (kilitli) */}
@@ -495,7 +487,7 @@ function BeyannameCell({
       )}
     </td>
   );
-}
+});
 
 // React.memo ile sarmalayarak gereksiz re-render'ları önle
 export const KontrolCustomerRow = React.memo(

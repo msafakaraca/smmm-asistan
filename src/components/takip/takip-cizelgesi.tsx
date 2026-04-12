@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Icon } from "@iconify/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 
 // Custom icons for specific use cases
 const RotateCcwIcon = ({ className }: { className?: string }) => (
@@ -471,6 +472,7 @@ export function TakipCizelgesi({ currentUser }: TakipCizelgesiProps) {
     estimateSize: () => 36,
     overscan: 15,
     enabled: useVirtual,
+    observeElementRect: observeElementRectHeightOnly,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();

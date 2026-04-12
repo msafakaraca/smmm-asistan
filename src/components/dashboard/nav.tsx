@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     LayoutDashboard,
     ClipboardCheck,
@@ -48,7 +49,12 @@ import {
     FileSpreadsheet,
     ScrollText,
     BookCheck,
+    FileCheck,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from "lucide-react";
+
+const SIDEBAR_KEY = "smmm-sidebar-collapsed";
 
 const navItems = [
     {
@@ -122,6 +128,11 @@ const navItems = [
                 title: "E-Defter Kontrol",
                 href: "/dashboard/e-defter-kontrol",
                 icon: BookCheck,
+            },
+            {
+                title: "Vergi Levhası",
+                href: "/dashboard/vergi-levhasi",
+                icon: FileCheck,
             },
         ],
     },
@@ -302,23 +313,20 @@ interface NavItemType {
     children?: NavItemType[];
 }
 
-// Memoized nav item component with sub menu support
+// Genişletilmiş sidebar nav item bileşeni
 const NavItem = React.memo(function NavItem({
     item,
     isActive,
     pathname,
     isOpen,
     onToggle,
-    onNavigate
 }: {
     item: NavItemType;
     isActive: boolean;
     pathname: string;
     isOpen?: boolean;
     onToggle?: () => void;
-    onNavigate?: () => void;
 }) {
-    // Sub menü olan item
     if (item.children) {
         const isChildActive = item.children.some(
             child => pathname === child.href || pathname.startsWith(child.href + "/")
@@ -340,13 +348,13 @@ const NavItem = React.memo(function NavItem({
                         <span className="truncate">{item.title}</span>
                     </div>
                     {isOpen ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
                     ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
                     )}
                 </button>
                 {isOpen && (
-                    <div className="mt-1 ml-4 pl-3 border-l-2 border-border space-y-1">
+                    <div className="mt-1 ml-3 pl-2 border-l-2 border-border space-y-1">
                         {item.children.map((child) => {
                             const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
                             return (
@@ -371,11 +379,9 @@ const NavItem = React.memo(function NavItem({
         );
     }
 
-    // Normal item
     return (
         <Link
             href={item.href}
-            onClick={onNavigate}
             className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm min-w-0",
                 isActive
@@ -389,13 +395,96 @@ const NavItem = React.memo(function NavItem({
     );
 });
 
+// Daraltılmış sidebar nav item bileşeni — sadece ikon + tooltip
+const CollapsedNavItem = React.memo(function CollapsedNavItem({
+    item,
+    isActive,
+    onExpand,
+}: {
+    item: NavItemType;
+    isActive: boolean;
+    onExpand: () => void;
+}) {
+    if (item.children) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        onClick={onExpand}
+                        className={cn(
+                            "w-full flex items-center justify-center p-2.5 rounded-lg transition-colors",
+                            isActive
+                                ? "bg-primary/10 text-primary"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                    >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                    {item.title}
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Link
+                    href={item.href}
+                    className={cn(
+                        "flex items-center justify-center p-2.5 rounded-lg transition-colors",
+                        isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-medium">
+                {item.title}
+            </TooltipContent>
+        </Tooltip>
+    );
+});
+
 export const DashboardNav = React.memo(function DashboardNav() {
     const pathname = usePathname();
+    const [collapsed, setCollapsed] = React.useState(false);
+    const [isHovered, setIsHovered] = React.useState(false);
+    const hoverTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Açık menüleri takip et (children olan menüler için)
+    // Etkin daraltma durumu: kullanıcı tercihi + hover
+    const effectiveCollapsed = collapsed && !isHovered;
+
+    // localStorage'dan başlangıç durumunu oku (hydration sonrası)
+    React.useEffect(() => {
+        const saved = localStorage.getItem(SIDEBAR_KEY);
+        if (saved === "true") setCollapsed(true);
+    }, []);
+
+    // Timeout cleanup
+    React.useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        };
+    }, []);
+
+    const handleMouseEnter = React.useCallback(() => {
+        if (!collapsed) return;
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsHovered(true);
+    }, [collapsed]);
+
+    const handleMouseLeave = React.useCallback(() => {
+        if (!collapsed) return;
+        hoverTimeoutRef.current = setTimeout(() => setIsHovered(false), 300);
+    }, [collapsed]);
+
     const [openMenus, setOpenMenus] = React.useState<Set<string>>(() => {
         const initial = new Set<string>();
-        // Aktif sayfanın parent menüsünü otomatik aç
         navItems.forEach(item => {
             if (item.children?.some(child => pathname === child.href || pathname.startsWith(child.href + "/"))) {
                 initial.add(item.title);
@@ -404,10 +493,8 @@ export const DashboardNav = React.memo(function DashboardNav() {
         return initial;
     });
 
-    // Memoize active states calculation
     const activeStates = React.useMemo(() => {
         return navItems.map(item => {
-            // Sub menü olan itemler için children kontrolü yap
             if (item.children) {
                 return item.children.some(
                     child => pathname === child.href || pathname.startsWith(child.href + "/")
@@ -418,7 +505,21 @@ export const DashboardNav = React.memo(function DashboardNav() {
         });
     }, [pathname]);
 
-    // Sub menü toggle
+    const toggleCollapsed = React.useCallback(() => {
+        setCollapsed(prev => {
+            const next = !prev;
+            localStorage.setItem(SIDEBAR_KEY, String(next));
+            return next;
+        });
+    }, []);
+
+    // Daraltıldığında açık menüleri kapat
+    React.useEffect(() => {
+        if (collapsed) {
+            setOpenMenus(new Set());
+        }
+    }, [collapsed]);
+
     const handleToggle = React.useCallback((title: string) => {
         setOpenMenus(prev => {
             const next = new Set(prev);
@@ -431,42 +532,101 @@ export const DashboardNav = React.memo(function DashboardNav() {
         });
     }, []);
 
-    // Normal menüye tıklandığında tüm sub menüleri kapat
-    const handleNavigate = React.useCallback(() => {
-        setOpenMenus(new Set());
+    // Pathname değiştiğinde ilgili parent menüyü açık tut
+    React.useEffect(() => {
+        navItems.forEach(item => {
+            if (item.children?.some(child => pathname === child.href || pathname.startsWith(child.href + "/"))) {
+                setOpenMenus(prev => {
+                    if (prev.has(item.title)) return prev;
+                    const next = new Set(prev);
+                    next.add(item.title);
+                    return next;
+                });
+            }
+        });
+    }, [pathname]);
+
+    // Daraltılmış modda bir üst menüye tıklandığında sidebar'ı aç ve menüyü genişlet
+    const handleExpandWithMenu = React.useCallback((title: string) => {
+        setCollapsed(false);
+        localStorage.setItem(SIDEBAR_KEY, "false");
+        setOpenMenus(new Set([title]));
     }, []);
 
     return (
-        <aside className="w-64 xl:w-72 border-r bg-card flex flex-col sticky top-0 h-screen">
+        <div
+            className={cn(
+                "flex-shrink-0 relative",
+                collapsed ? "w-16" : "w-64 xl:w-72"
+            )}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+        <aside
+            className={cn(
+                "border-r bg-card flex flex-col h-screen overflow-hidden rounded-r-2xl",
+                collapsed
+                    ? cn(
+                        "absolute top-0 left-0 z-50 transition-[width,box-shadow] duration-200 ease-out",
+                        isHovered ? "w-64 xl:w-72 shadow-2xl" : "w-16 shadow-none"
+                      )
+                    : "w-64 xl:w-72"
+            )}
+        >
             {/* Logo */}
-            <div className="h-16 flex items-center px-4 border-b">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                    <Building2 className="h-6 w-6 text-primary" />
-                    <span className="font-bold text-lg">SMMM Asistan</span>
+            <div className="h-16 flex items-center justify-center border-b flex-shrink-0 overflow-hidden">
+                <Link href="/dashboard" className={cn("flex items-center", effectiveCollapsed ? "justify-center" : "gap-2")}>
+                    <Building2 className="h-6 w-6 text-primary flex-shrink-0" />
+                    <span className={cn(
+                        "font-bold text-lg whitespace-nowrap transition-[opacity,width] duration-200",
+                        effectiveCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+                    )}>SMMM Asistan</span>
                 </Link>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {navItems.map((item, index) => (
-                    <NavItem
-                        key={item.href + item.title}
-                        item={item as NavItemType}
-                        isActive={activeStates[index]}
-                        pathname={pathname}
-                        isOpen={openMenus.has(item.title)}
-                        onToggle={() => handleToggle(item.title)}
-                        onNavigate={handleNavigate}
-                    />
-                ))}
+            <nav className="flex-1 overflow-y-auto scrollbar-thin">
+                <div className={cn("space-y-1 p-2", effectiveCollapsed ? "block" : "hidden")} aria-hidden={!effectiveCollapsed}>
+                    {navItems.map((item, index) => (
+                        <CollapsedNavItem
+                            key={item.href + item.title}
+                            item={item as NavItemType}
+                            isActive={activeStates[index]}
+                            onExpand={() => handleExpandWithMenu(item.title)}
+                        />
+                    ))}
+                </div>
+                <div className={cn("space-y-1 px-2 py-3", effectiveCollapsed ? "hidden" : "block")} aria-hidden={effectiveCollapsed}>
+                    {navItems.map((item, index) => (
+                        <NavItem
+                            key={item.href + item.title}
+                            item={item as NavItemType}
+                            isActive={activeStates[index]}
+                            pathname={pathname}
+                            isOpen={openMenus.has(item.title)}
+                            onToggle={() => handleToggle(item.title)}
+                        />
+                    ))}
+                </div>
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t">
-                <div className="text-xs text-muted-foreground text-center">
-                    © 2025 SMMM Asistan
-                </div>
+            <div className="h-12 flex items-center justify-center border-t flex-shrink-0">
+                {effectiveCollapsed ? (
+                    <button
+                        onClick={toggleCollapsed}
+                        className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Sidebar'ı genişlet"
+                    >
+                        <PanelLeftOpen className="h-4 w-4" />
+                    </button>
+                ) : (
+                    <span className="text-xs text-muted-foreground">
+                        © 2025 SMMM Asistan
+                    </span>
+                )}
             </div>
         </aside>
+        </div>
     );
 });

@@ -73,9 +73,10 @@ export function FinansmanGiderKisitlamasi() {
     const hasInput = d4Input || d5Input || d8Input || d9Input;
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col h-full p-1">
+          <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
             {/* Başlık */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
                 <div className="flex items-center gap-3">
                     <Calculator className="h-6 w-6 text-primary" />
                     <div>
@@ -95,6 +96,7 @@ export function FinansmanGiderKisitlamasi() {
                 )}
             </div>
 
+            <div className="flex-1 overflow-auto p-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Hesaplama Tablosu */}
                 <div className="lg:col-span-2 space-y-4">
@@ -430,6 +432,8 @@ export function FinansmanGiderKisitlamasi() {
                     </div>
                 </CardContent>
             </Card>
+            </div>
+          </div>
         </div>
     );
 }

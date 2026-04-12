@@ -116,6 +116,13 @@ export default function BeyannameMailDialog({
     return generateAutoSubject(customerName, item);
   }, [item, customerName]);
 
+  const autoBody = useMemo(() => {
+    if (!item) return "";
+    const donemLabel = formatDonemLabel(item);
+    const donemPart = donemLabel ? ` ${donemLabel} dönemi` : "";
+    return `Sayın ${customerName},\n\n${item.turAdi}${donemPart} ekte gönderilmiştir.\n\nBilginize.`;
+  }, [item, customerName]);
+
   // Dialog açıldığında otomatik konuyu doldur
   useEffect(() => {
     if (open && item) {
@@ -215,9 +222,14 @@ export default function BeyannameMailDialog({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Boş bırakılırsa otomatik şablon kullanılır..."
-              rows={5}
+              rows={3}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm resize-none"
             />
+            {!body && (
+              <div className="mt-1.5 p-2 rounded bg-muted/50 text-xs text-muted-foreground whitespace-pre-line">
+                {autoBody}
+              </div>
+            )}
           </div>
         </div>
 

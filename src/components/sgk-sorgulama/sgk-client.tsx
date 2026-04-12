@@ -216,7 +216,7 @@ function InfoItem({ label, value, className }: { label: string; value: string; c
 
 function IsyeriInfoPanel({ info }: { info: IsyeriInfo }) {
   return (
-    <div className="rounded-lg border bg-card p-5 shadow-sm">
+    <div className="p-4">
       <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
         <Building2 className="h-4 w-4" />
         İşyeri Bilgileri
@@ -402,15 +402,16 @@ export default function SgkClient() {
   }, [bildirgeler, yearFilter]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <Building2 className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">SGK Sorgulama</h1>
       </div>
 
       {/* Filtreler */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="px-6 py-3 border-b">
         <div className="flex flex-col gap-4">
           {/* Mükellef Seçimi — Combobox */}
           <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -621,6 +622,8 @@ export default function SgkClient() {
         </div>
       </div>
 
+      {/* Ana İçerik */}
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-4">
       {/* SGK bilgileri eksik uyarısı */}
       {selectedCustomer && !selectedCustomer.hasSgkCredentials && (
         <Alert variant="destructive">
@@ -747,7 +750,7 @@ export default function SgkClient() {
 
       {/* Boş Durum */}
       {!isLoading && !error && bildirgeler.length === 0 && !queryDone && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 p-12 text-muted-foreground">
           <Building2 className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Mükellef seçip dönem belirledikten sonra <strong>Sorgula</strong> butonuna tıklayın.
@@ -757,13 +760,18 @@ export default function SgkClient() {
 
       {/* Sonuç yok */}
       {!isLoading && !error && bildirgeler.length === 0 && queryDone && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 p-12 text-muted-foreground">
           <Building2 className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Seçilen dönemde bildirge bulunamadı.
           </p>
         </div>
       )}
+
+      </div>
+      {/* /Ana İçerik */}
+      </div>
+      {/* /Çerçeve */}
 
       {/* PDF Önizleme Dialog */}
       <PdfPreviewDialog

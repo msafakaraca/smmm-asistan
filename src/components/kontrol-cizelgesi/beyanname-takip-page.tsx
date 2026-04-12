@@ -321,6 +321,15 @@ export function BeyannameTakipPage() {
     window.open(`/dashboard/mukellefler/${customerId}`, "_blank");
   }, []);
 
+  // Stabil callback referansları — inline arrow function'lar her render'da yeni closure
+  // oluşturarak React.memo'yu bypass eder, bu da sidebar animasyonu sırasında
+  // gereksiz re-render cascade'e neden olur
+  const noopFn = useCallback(() => {}, []);
+  const handleUnvanCancel = useCallback(() => setEditingUnvan(null), []);
+  const handleShowAddModal = useCallback(() => setShowAddModal(true), []);
+  const handleCloseAddModal = useCallback(() => setShowAddModal(false), []);
+  const handleClosePopover = useCallback(() => setPopover(null), []);
+
   const handleAddCustomer = useCallback((customer: Customer) => {
     setCustomers((prev) => [...prev, customer]);
   }, [setCustomers]);
@@ -362,9 +371,10 @@ export function BeyannameTakipPage() {
   }, [selectedMonth, selectedYear]);
 
   return (
-    <div className="h-[calc(100vh-6rem)] xl:h-[calc(100vh-7rem)] flex flex-col overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4rem-2rem)] xl:h-[calc(100vh-4rem-3rem)] p-1 overflow-hidden">
+     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 flex-shrink-0 px-6 py-4 border-b">
         <PageHeader
           title="Beyanname Takip"
           description="Mükelleflerin beyanname durumlarını takip edin"
@@ -423,22 +433,15 @@ export function BeyannameTakipPage() {
             <Icon icon="solar:trash-bin-trash-bold" className="h-4 w-4" />
             Temizle
           </Button>
-          <Button onClick={() => setShowAddModal(true)} className="gap-2">
+          <Button onClick={handleShowAddModal} className="gap-2">
             <Icon icon="solar:user-plus-bold" className="h-4 w-4" />
             Mükellef Ekle
           </Button>
         </div>
       </div>
 
-      {/* Add Customer Dialog */}
-      <AddCustomerDialog
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddCustomer}
-      />
-
       {/* Filters */}
-      <div className="mt-4 xl:mt-6 flex-shrink-0">
+      <div className="px-6 py-3 border-b flex-shrink-0">
         <KontrolFilters
           selectedMonth={selectedMonth}
           setSelectedMonth={setSelectedMonth}
@@ -455,7 +458,7 @@ export function BeyannameTakipPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-4 xl:mt-6 flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {customersLoading ? (
           <div className="flex items-center justify-center h-full">
             <Icon icon="solar:refresh-bold" className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -467,7 +470,7 @@ export function BeyannameTakipPage() {
             <p className="text-muted-foreground mb-4">
               Çizelgeyi görüntülemek için önce mükellef eklemeniz gerekiyor.
             </p>
-            <Button onClick={() => setShowAddModal(true)} className="gap-2">
+            <Button onClick={handleShowAddModal} className="gap-2">
               <Icon icon="solar:user-plus-bold" className="h-4 w-4" />
               Mükellef Ekle
             </Button>
@@ -486,14 +489,14 @@ export function BeyannameTakipPage() {
             editingSiraNoValue=""
             editingUnvan={editingUnvan}
             editingUnvanValue={editingUnvanValue}
-            onSiraNoClick={() => {}}
-            onSiraNoChange={() => {}}
-            onSiraNoSave={() => {}}
-            onSiraNoCancel={() => {}}
+            onSiraNoClick={noopFn}
+            onSiraNoChange={noopFn}
+            onSiraNoSave={noopFn}
+            onSiraNoCancel={noopFn}
             onUnvanClick={handleUnvanClick}
             onUnvanChange={setEditingUnvanValue}
             onUnvanSave={handleUnvanSave}
-            onUnvanCancel={() => setEditingUnvan(null)}
+            onUnvanCancel={handleUnvanCancel}
             onOpenCustomer={handleOpenCustomer}
             onDeleteCustomer={handleDeleteCustomer}
             onLeftClick={handleLeftClick}
@@ -503,18 +506,8 @@ export function BeyannameTakipPage() {
         )}
       </div>
 
-      {/* Statü Popover */}
-      {popover && (
-        <StatusPopover
-          currentStatus={popover.currentStatus}
-          anchorEl={popover.anchorEl}
-          onSelect={handlePopoverSelect}
-          onClose={() => setPopover(null)}
-        />
-      )}
-
       {/* Footer Legend */}
-      <div className="flex items-center justify-between gap-4 text-[10px] font-medium text-muted-foreground py-3 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4 text-[10px] font-medium text-muted-foreground px-6 py-2 border-t flex-shrink-0">
         <div className="flex items-center gap-4">
           <a
             href="/dashboard/beyanname-kontrol"
@@ -549,6 +542,24 @@ export function BeyannameTakipPage() {
           <span>Sol tık: Durum | Sağ tık: Gönderilmeyecek</span>
         </div>
       </div>
+     </div>
+
+      {/* Add Customer Dialog */}
+      <AddCustomerDialog
+        isOpen={showAddModal}
+        onClose={handleCloseAddModal}
+        onAdd={handleAddCustomer}
+      />
+
+      {/* Statü Popover */}
+      {popover && (
+        <StatusPopover
+          currentStatus={popover.currentStatus}
+          anchorEl={popover.anchorEl}
+          onSelect={handlePopoverSelect}
+          onClose={handleClosePopover}
+        />
+      )}
     </div>
   );
 }

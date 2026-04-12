@@ -9,6 +9,7 @@
 
 import { memo, useMemo, useRef, useState, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { ArrowUpDown, Download, Search, Mail, MailOpen, FileText, Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -454,6 +455,7 @@ export const EtebligatTable = memo(function EtebligatTable({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 40,
     overscan: 20,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   // Sayılar

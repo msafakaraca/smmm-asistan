@@ -89,43 +89,47 @@ const cards: DashboardCard[] = [
 
 export function DashboardCards() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Icon icon="solar:clipboard-check-bold-duotone" className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kontrol Çizelgesi</h1>
-          <p className="text-muted-foreground">
-            Beyanname, SGK ve KDV durumlarını takip edin
-          </p>
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b">
+          <Icon icon="solar:clipboard-check-bold-duotone" className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Kontrol Çizelgesi</h1>
+            <p className="text-muted-foreground">
+              Beyanname, SGK ve KDV durumlarını takip edin
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {cards.map((card) => (
-          <Link key={card.href} href={card.href}>
-            <Card
-              className={`border-2 ${card.borderColor} ${card.hoverColor} transition-all duration-200 cursor-pointer hover:shadow-md h-full`}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Icon icon={card.icon} className={`h-10 w-10 ${card.iconColor}`} />
-                  <div>
-                    <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <CardDescription>{card.description}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-end text-sm text-muted-foreground">
-                  <span>Çizelgeyi görüntüle</span>
-                  <Icon icon="solar:arrow-right-linear" className="h-4 w-4 ml-2" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {/* İçerik alanı */}
+        <div className="flex-1 overflow-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            {cards.map((card) => (
+              <Link key={card.href} href={card.href}>
+                <Card
+                  className={`border-2 ${card.borderColor} ${card.hoverColor} transition-all duration-200 cursor-pointer hover:shadow-md h-full`}
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Icon icon={card.icon} className={`h-10 w-10 ${card.iconColor}`} />
+                      <div>
+                        <CardTitle className="text-lg">{card.title}</CardTitle>
+                        <CardDescription>{card.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-end text-sm text-muted-foreground">
+                      <span>Çizelgeyi görüntüle</span>
+                      <Icon icon="solar:arrow-right-linear" className="h-4 w-4 ml-2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

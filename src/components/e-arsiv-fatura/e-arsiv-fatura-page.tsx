@@ -191,9 +191,10 @@ export default function EarsivFaturaPage() {
   const periodLabel = useMemo(() => getPeriodLabel(startDate, endDate), [startDate, endDate]);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <Receipt className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold">E-Arşiv Alış Faturaları</h1>
@@ -204,7 +205,7 @@ export default function EarsivFaturaPage() {
       </div>
 
       {/* GİB sorgulama limiti bilgisi */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-4 py-2 border-b">
         <Info className="h-3.5 w-3.5 shrink-0" />
         <span>
           GİB e-Arşiv sorgulaması yalnızca içinde bulunulan aydan önceki 2 aya kadar yapılabilir.
@@ -212,7 +213,7 @@ export default function EarsivFaturaPage() {
       </div>
 
       {/* Form */}
-      <div className="space-y-3 p-4 bg-card border rounded-lg">
+      <div className="space-y-3 px-6 py-4 border-b">
         {/* Mükellef Seçimi — Combobox (arama + dropdown tek bileşen) */}
         <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
           <PopoverTrigger asChild>
@@ -329,6 +330,8 @@ export default function EarsivFaturaPage() {
         </div>
       </div>
 
+      {/* İçerik alanı */}
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-4">
       {/* GİB bilgileri eksik uyarısı */}
       {selectedCustomer && !hasGibCredentials && (
         <Alert variant="destructive">
@@ -447,6 +450,8 @@ export default function EarsivFaturaPage() {
           </p>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }

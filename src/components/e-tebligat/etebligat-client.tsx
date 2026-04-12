@@ -148,224 +148,230 @@ export default function EtebligatClient() {
   const hasQueried = tebligatlar.length > 0 || error !== null || (totalCount === 0 && !isLoading && progress.status === "Sorgulama tamamlandı");
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Başlık */}
-      <div className="flex items-center gap-3">
-        <MailOpen className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">E-Tebligat Sorgulama</h1>
-          <p className="text-sm text-muted-foreground">
-            GİB Dijital Vergi Dairesi üzerinden e-Tebligatları sorgulayın
-          </p>
-        </div>
-      </div>
-
-      {/* Uyarı banner */}
-      <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
-        <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-          <span>
-            <span className="font-medium">Dikkat: </span>
-            Zarf açıldığında tebligat kalıcı olarak &quot;okundu&quot; işaretlenir. Bu işlem geri alınamaz.
-          </span>
-        </AlertDescription>
-      </Alert>
-
-      {/* Form */}
-      <div className="space-y-3 p-4 bg-card border rounded-lg">
-        {/* Mükellef Seçimi + Sorgula */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  disabled={isLoading || customersLoading}
-                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => setComboboxOpen(true)}
-                >
-                  <span className={selectedCustomer ? "text-foreground" : "text-muted-foreground"}>
-                    {customersLoading
-                      ? "Yükleniyor..."
-                      : selectedCustomer
-                        ? (selectedCustomer.kisaltma || selectedCustomer.unvan)
-                        : "Mükellef ara veya seçin..."
-                    }
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="p-0"
-                style={{ width: "var(--radix-popover-trigger-width)" }}
-                align="start"
-              >
-                <div className="p-2">
-                  <Input
-                    ref={inputRef}
-                    placeholder="Mükellef ara (ünvan, kısaltma veya VKN)..."
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    className="h-8"
-                    autoFocus
-                  />
-                </div>
-                <div className="max-h-[360px] overflow-y-auto">
-                  {filteredCustomers.length === 0 ? (
-                    <div className="py-4 px-3 text-center text-sm text-muted-foreground">
-                      {customerSearch ? "Sonuç bulunamadı" : "Mükellef yok"}
-                    </div>
-                  ) : (
-                    filteredCustomers.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                        onClick={() => {
-                          setSelectedCustomerId(c.id);
-                          setCustomerSearch("");
-                          setComboboxOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={`h-4 w-4 shrink-0 ${
-                            selectedCustomerId === c.id ? "opacity-100" : "opacity-0"
-                          }`}
-                        />
-                        <span className="truncate">{c.kisaltma || c.unvan}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          ({c.vknTckn})
-                        </span>
-                        {!c.hasGibCredentials && (
-                          <span className="text-xs text-destructive shrink-0">GİB eksik</span>
-                        )}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+        {/* Başlık */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b">
+          <MailOpen className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">E-Tebligat Sorgulama</h1>
+            <p className="text-sm text-muted-foreground">
+              GİB Dijital Vergi Dairesi üzerinden e-Tebligatları sorgulayın
+            </p>
           </div>
-
-          {/* Sorgula butonu */}
-          <Button
-            onClick={handleQuery}
-            disabled={!selectedCustomerId || isLoading || !hasGibCredentials}
-            className="h-9"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sorgulanıyor...
-              </>
-            ) : (
-              <>
-                <MailOpen className="h-4 w-4 mr-2" />
-                Sorgula
-              </>
-            )}
-          </Button>
         </div>
-      </div>
 
-      {/* GİB bilgileri eksik uyarısı */}
-      {selectedCustomer && !hasGibCredentials && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="flex items-center gap-2">
-            {selectedCustomer.kisaltma || selectedCustomer.unvan} için GİB Dijital Vergi Dairesi bilgileri eksik.
-            <a
-              href="/dashboard/sifreler"
-              className="inline-flex items-center gap-1 underline hover:no-underline"
+        {/* Form bar */}
+        <div className="px-6 py-3 border-b">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isLoading || customersLoading}
+                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => setComboboxOpen(true)}
+                  >
+                    <span className={selectedCustomer ? "text-foreground" : "text-muted-foreground"}>
+                      {customersLoading
+                        ? "Yükleniyor..."
+                        : selectedCustomer
+                          ? (selectedCustomer.kisaltma || selectedCustomer.unvan)
+                          : "Mükellef ara veya seçin..."
+                      }
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0"
+                  style={{ width: "var(--radix-popover-trigger-width)" }}
+                  align="start"
+                >
+                  <div className="p-2">
+                    <Input
+                      ref={inputRef}
+                      placeholder="Mükellef ara (ünvan, kısaltma veya VKN)..."
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-[360px] overflow-y-auto">
+                    {filteredCustomers.length === 0 ? (
+                      <div className="py-4 px-3 text-center text-sm text-muted-foreground">
+                        {customerSearch ? "Sonuç bulunamadı" : "Mükellef yok"}
+                      </div>
+                    ) : (
+                      filteredCustomers.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                          onClick={() => {
+                            setSelectedCustomerId(c.id);
+                            setCustomerSearch("");
+                            setComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`h-4 w-4 shrink-0 ${
+                              selectedCustomerId === c.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          <span className="truncate">{c.kisaltma || c.unvan}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            ({c.vknTckn})
+                          </span>
+                          {!c.hasGibCredentials && (
+                            <span className="text-xs text-destructive shrink-0">GİB eksik</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Sorgula butonu */}
+            <Button
+              onClick={handleQuery}
+              disabled={!selectedCustomerId || isLoading || !hasGibCredentials}
+              className="h-9"
             >
-              Şifreler sayfasından girin
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Progress */}
-      {isLoading && progress.status && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-          <span className="text-sm text-blue-700 dark:text-blue-300">
-            {progress.status}
-          </span>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sorgulanıyor...
+                </>
+              ) : (
+                <>
+                  <MailOpen className="h-4 w-4 mr-2" />
+                  Sorgula
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      )}
 
-      {/* Hata mesajı */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {error}
-            {errorCode === "AUTH_FAILED" && (
-              <span className="ml-2">
-                <a
-                  href="/dashboard/sifreler"
-                  className="inline-flex items-center gap-1 underline hover:no-underline"
-                >
-                  Şifreler sayfasından GİB bilgilerini güncelleyin
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </span>
+        {/* İçerik alanı */}
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-6 p-6">
+            {/* Uyarı banner */}
+            <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
+              <AlertDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                <span>
+                  <span className="font-medium">Dikkat: </span>
+                  Zarf açıldığında tebligat kalıcı olarak &quot;okundu&quot; işaretlenir. Bu işlem geri alınamaz.
+                </span>
+              </AlertDescription>
+            </Alert>
+
+            {/* GİB bilgileri eksik uyarısı */}
+            {selectedCustomer && !hasGibCredentials && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="flex items-center gap-2">
+                  {selectedCustomer.kisaltma || selectedCustomer.unvan} için GİB Dijital Vergi Dairesi bilgileri eksik.
+                  <a
+                    href="/dashboard/sifreler"
+                    className="inline-flex items-center gap-1 underline hover:no-underline"
+                  >
+                    Şifreler sayfasından girin
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </AlertDescription>
+              </Alert>
             )}
-          </AlertDescription>
-        </Alert>
-      )}
 
-      {/* Sayı kartları (sorgulama sonrası) */}
-      {sayilar && !isLoading && (
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-card border rounded-lg text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <MailOpen className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">Okunmuş</span>
-            </div>
-            <p className="text-2xl font-bold text-green-600">{sayilar.okunmus}</p>
-          </div>
-          <div className="p-4 bg-card border rounded-lg text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Mail className="h-4 w-4 text-amber-600" />
-              <span className="text-sm text-muted-foreground">Okunmamış</span>
-            </div>
-            <p className="text-2xl font-bold text-amber-600">{sayilar.okunmamis}</p>
-          </div>
-          <div className="p-4 bg-card border rounded-lg text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Arşivlenmiş</span>
-            </div>
-            <p className="text-2xl font-bold">{sayilar.arsivlenmis}</p>
+            {/* Progress */}
+            {isLoading && progress.status && (
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm text-blue-700 dark:text-blue-300">
+                  {progress.status}
+                </span>
+              </div>
+            )}
+
+            {/* Hata mesajı */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {error}
+                  {errorCode === "AUTH_FAILED" && (
+                    <span className="ml-2">
+                      <a
+                        href="/dashboard/sifreler"
+                        className="inline-flex items-center gap-1 underline hover:no-underline"
+                      >
+                        Şifreler sayfasından GİB bilgilerini güncelleyin
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Sayı kartları (sorgulama sonrası) */}
+            {sayilar && !isLoading && (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <MailOpen className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-muted-foreground">Okunmuş</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">{sayilar.okunmus}</p>
+                </div>
+                <div className="p-4 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Mail className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm text-muted-foreground">Okunmamış</span>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-600">{sayilar.okunmamis}</p>
+                </div>
+                <div className="p-4 rounded-lg text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Arşivlenmiş</span>
+                  </div>
+                  <p className="text-2xl font-bold">{sayilar.arsivlenmis}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Tebligat Tablosu */}
+            <EtebligatTable
+              tebligatlar={tebligatlar}
+              isLoading={isLoading}
+              customerName={selectedCustomer?.kisaltma || selectedCustomer?.unvan}
+              zarfLoading={zarfLoading}
+              pdfLoading={pdfLoading}
+              onOpenZarf={handleOpenZarf}
+              onViewPdf={handleViewPdf}
+            />
+
+            {/* Boş sonuç */}
+            {!isLoading && tebligatlar.length === 0 && hasQueried && !error && (
+              <div className="text-center py-12 text-muted-foreground">
+                <MailOpen className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p className="text-lg font-medium">Tebligat bulunamadı</p>
+                <p className="text-sm">
+                  Bu mükellefe ait e-Tebligat bulunmamaktadır
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Tebligat Tablosu */}
-      <EtebligatTable
-        tebligatlar={tebligatlar}
-        isLoading={isLoading}
-        customerName={selectedCustomer?.kisaltma || selectedCustomer?.unvan}
-        zarfLoading={zarfLoading}
-        pdfLoading={pdfLoading}
-        onOpenZarf={handleOpenZarf}
-        onViewPdf={handleViewPdf}
-      />
-
-      {/* Boş sonuç */}
-      {!isLoading && tebligatlar.length === 0 && hasQueried && !error && (
-        <div className="text-center py-12 text-muted-foreground">
-          <MailOpen className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">Tebligat bulunamadı</p>
-          <p className="text-sm">
-            Bu mükellefe ait e-Tebligat bulunmamaktadır
-          </p>
-        </div>
-      )}
-
-      {/* Zarf Açma Onay Dialog */}
+      {/* Zarf Açma Onay Dialog — çerçeve dışında */}
       <AlertDialog open={zarfDialogOpen} onOpenChange={setZarfDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -411,28 +411,31 @@ export function MtvHesaplama() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Başlık */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Car className="h-6 w-6 text-primary" />
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            MTV Hesaplama
-                        </h1>
-                        <p className="text-muted-foreground text-sm mt-1">
-                            GİB üzerinden motorlu taşıtlar vergisi hesaplayın
-                        </p>
+        <div className="flex flex-col h-full p-1">
+            <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+                {/* Başlık */}
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Car className="h-6 w-6 text-primary" />
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">
+                                MTV Hesaplama
+                            </h1>
+                            <p className="text-muted-foreground text-sm mt-1">
+                                GİB üzerinden motorlu taşıtlar vergisi hesaplayın
+                            </p>
+                        </div>
                     </div>
+                    {(hasInput || result !== null) && (
+                        <Button variant="outline" size="sm" onClick={handleReset}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Sıfırla
+                        </Button>
+                    )}
                 </div>
-                {(hasInput || result !== null) && (
-                    <Button variant="outline" size="sm" onClick={handleReset}>
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Sıfırla
-                    </Button>
-                )}
-            </div>
 
+                {/* Content */}
+                <div className="flex-1 overflow-auto p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Sol: Giriş ve Sonuç */}
                 <div className="lg:col-span-2 space-y-4">
@@ -779,6 +782,8 @@ export function MtvHesaplama() {
                             </div>
                         </CardContent>
                     </Card>
+                </div>
+            </div>
                 </div>
             </div>
         </div>

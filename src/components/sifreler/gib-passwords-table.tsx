@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,6 +120,7 @@ export function GibPasswordsTable() {
     estimateSize: () => 64,
     overscan: 5,
     enabled: useVirtual,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();

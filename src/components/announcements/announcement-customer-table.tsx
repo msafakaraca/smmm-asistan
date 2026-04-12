@@ -11,6 +11,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -77,16 +78,22 @@ export function AnnouncementCustomerTable({
         accessorKey: "unvan",
         header: "Ünvan",
         cell: ({ row }) => (
-          <div className="flex flex-col min-w-0">
-            <span className="font-medium text-foreground truncate">
-              {row.original.kisaltma || row.original.unvan}
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
-              {row.original.vknTckn}
-            </span>
-          </div>
+          <span className="font-medium text-foreground truncate block">
+            {row.original.kisaltma || row.original.unvan}
+          </span>
         ),
-        size: 200,
+        size: 280,
+      },
+      {
+        accessorKey: "vknTckn",
+        header: "VKN/TCKN",
+        cell: ({ row }) => (
+          <span className="text-sm font-mono text-muted-foreground">
+            {row.original.vknTckn}
+          </span>
+        ),
+        size: 110,
+        enableSorting: false,
       },
       {
         accessorKey: "email",
@@ -111,25 +118,18 @@ export function AnnouncementCustomerTable({
         accessorKey: "telefon1",
         header: "Telefon",
         cell: ({ row }) => (
-          <div className="flex flex-col min-w-0 gap-0.5">
+          <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
             {row.original.telefon1 ? (
-              <div className="flex items-center gap-1.5">
+              <>
                 <Icon icon="solar:phone-bold" className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                <span className="text-sm text-muted-foreground">{row.original.telefon1}</span>
-              </div>
-            ) : null}
-            {row.original.telefon2 ? (
-              <div className="flex items-center gap-1.5">
-                <Icon icon="solar:phone-bold" className="w-3.5 h-3.5 text-green-400 shrink-0" />
-                <span className="text-xs text-muted-foreground">{row.original.telefon2}</span>
-              </div>
-            ) : null}
-            {!row.original.telefon1 && !row.original.telefon2 && (
+                <span className="text-sm text-muted-foreground truncate">{row.original.telefon1}</span>
+              </>
+            ) : (
               <span className="text-xs text-muted-foreground italic">Telefon yok</span>
             )}
           </div>
         ),
-        size: 150,
+        size: 140,
       },
       {
         accessorKey: "sirketTipi",
@@ -198,12 +198,14 @@ export function AnnouncementCustomerTable({
   });
 
   // Virtual rows for performance with large datasets
+  const ROW_HEIGHT = 52;
   const { rows } = table.getRowModel();
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 56,
-    overscan: 10,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   const virtualRows = virtualizer.getVirtualItems();
@@ -241,10 +243,15 @@ export function AnnouncementCustomerTable({
   }
 
   return (
-    <div className="flex flex-col h-full border border-border rounded-lg bg-background overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Table Container with Virtual Scrolling */}
       <div ref={parentRef} className="flex-1 overflow-auto">
-        <table className="w-full">
+        <table className="w-full table-fixed">
+          <colgroup>
+            {table.getAllColumns().map((col) => (
+              <col key={col.id} style={{ width: col.getSize() }} />
+            ))}
+          </colgroup>
           {/* Sticky Header */}
           <thead className="bg-muted sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -296,18 +303,17 @@ export function AnnouncementCustomerTable({
               return (
                 <tr
                   key={row.id}
-                  data-index={virtualRow.index}
-                  ref={virtualizer.measureElement}
                   className={cn(
-                    "border-b border-border transition-colors",
+                    "border-b border-border",
                     isSelected && "bg-blue-50 dark:bg-blue-500/10",
                     !isSelected && "hover:bg-muted"
                   )}
+                  style={{ height: ROW_HEIGHT }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-3 py-2.5 text-sm"
+                      className="px-3 py-2 text-sm overflow-hidden text-ellipsis whitespace-nowrap"
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

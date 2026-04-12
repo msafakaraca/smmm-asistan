@@ -2673,6 +2673,130 @@ function connectWebSocket(token: string) {
         }
     });
 
+    // ═══════════════════════════════════════════════════════════════
+    // Vergi Levhası Sorgulama Handler
+    // ═══════════════════════════════════════════════════════════════
+
+    const activeVergiLevhasiQueries = new Map<string, boolean>();
+
+    wsClient.on('intvrg:vergi-levhasi-query', async (data: BotCommandData) => {
+        const requesterId = data.userId as string | undefined;
+
+        console.log('═══════════════════════════════════════════════════════════════');
+        console.log('[MAIN] 📜 Vergi Levhası Sorgulama başlatılıyor...');
+        const maskedUserid = data.userid ? `${String(data.userid).slice(0, 3)}***${String(data.userid).slice(-2)}` : 'N/A';
+        console.log('[MAIN] Userid:', maskedUserid);
+        console.log(`[MAIN] Mükellef sayısı: ${(data.mukellefler as unknown[])?.length || 0}`);
+        console.log('═══════════════════════════════════════════════════════════════');
+
+        mainWindow?.webContents.send('bot:command', { type: 'vergi-levhasi-query-start' });
+
+        const queryKey = `vergi-levhasi-${data.userid}`;
+        if (activeVergiLevhasiQueries.has(queryKey)) {
+            wsClient?.send('intvrg:vergi-levhasi-error', {
+                error: 'Zaten bir vergi levhası sorgulaması devam ediyor',
+                errorCode: 'QUERY_IN_PROGRESS',
+                requesterId,
+            });
+            return;
+        }
+        activeVergiLevhasiQueries.set(queryKey, true);
+
+        const TIMEOUT_MS = 10 * 60 * 1000; // 10 dakika
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
+        );
+
+        try {
+            const { queryVergiLevhalari } = await import('./intvrg-vergi-levhasi-api');
+
+            const mukellefler = (data.mukellefler as Array<{
+                customerId: string;
+                vknTckn: string;
+                tcKimlikNo: string | null;
+                unvan: string;
+                sirketTipi: string;
+            }>) || [];
+
+            if (!wsClient?.connected) {
+                throw new Error('WebSocket bağlantısı kopmuş');
+            }
+
+            wsClient?.send('intvrg:vergi-levhasi-progress', {
+                status: 'Vergi levhası sorgulaması başlatılıyor...',
+                current: 0, total: mukellefler.length, requesterId,
+            });
+
+            const queryWork = async () => {
+                return await queryVergiLevhalari(
+                    {
+                        userid: data.userid as string,
+                        password: data.password as string,
+                        captchaApiKey: data.captchaApiKey as string,
+                        ocrSpaceApiKey: data.ocrSpaceApiKey as string | undefined,
+                    },
+                    mukellefler,
+                    (status, current, total, customerId) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:vergi-levhasi-progress', {
+                                status, current, total, customerId, requesterId,
+                            });
+                        }
+                    },
+                    (result) => {
+                        if (wsClient?.connected) {
+                            wsClient.send('intvrg:vergi-levhasi-result', {
+                                ...result, requesterId,
+                            });
+                        }
+                    },
+                );
+            };
+
+            const result = await Promise.race([queryWork(), timeoutPromise]) as {
+                success: boolean;
+                totalQueried: number;
+                totalDownloaded: number;
+                totalFailed: number;
+            };
+
+            wsClient?.send('intvrg:vergi-levhasi-complete', {
+                ...result, requesterId,
+            });
+        } catch (e: any) {
+            let errorCode = 'UNKNOWN_ERROR';
+            let errorMessage = e.message || 'Vergi levhası sorgulama hatası';
+
+            if (e.message === 'TIMEOUT') {
+                errorCode = 'TIMEOUT';
+                errorMessage = 'Sorgulama zaman aşımına uğradı (10 dakika). Lütfen tekrar deneyin.';
+            } else if (e.message?.startsWith('AUTH_FAILED')) {
+                errorCode = 'AUTH_FAILED';
+                errorMessage = 'GİB giriş başarısız: ' + e.message.replace('AUTH_FAILED: ', '');
+            } else if (e.message?.startsWith('CAPTCHA_FAILED') || e.message?.startsWith('CAPTCHA_SERVICE_DOWN')) {
+                errorCode = 'CAPTCHA_FAILED';
+                errorMessage = e.message.includes('SERVICE_DOWN')
+                    ? 'Captcha çözüm servisleri şu anda erişilemez.'
+                    : 'Captcha çözülemedi: ' + e.message.replace('CAPTCHA_FAILED: ', '');
+            } else if (e.message?.startsWith('GIB_MAINTENANCE')) {
+                errorCode = 'GIB_MAINTENANCE';
+                errorMessage = 'GİB şu anda bakımda. Lütfen daha sonra tekrar deneyin.';
+            } else if (e.message?.startsWith('IVD_TOKEN_FAILED') || e.message?.startsWith('IVD_SESSION_EXPIRED')) {
+                errorCode = 'IVD_ERROR';
+                errorMessage = 'İnternet Vergi Dairesi oturumu açılamadı. Lütfen tekrar deneyin.';
+            } else if (e.message?.includes('ECONNREFUSED') || e.message?.includes('network') || e.message?.includes('fetch')) {
+                errorCode = 'NETWORK_ERROR';
+                errorMessage = 'GİB sunucusuna bağlanılamadı. İnternet bağlantınızı kontrol edin.';
+            }
+
+            wsClient?.send('intvrg:vergi-levhasi-error', {
+                error: errorMessage, errorCode, requesterId,
+            });
+        } finally {
+            activeVergiLevhasiQueries.delete(queryKey);
+        }
+    });
+
     // TÜRMOB Luca E-Entegratör Hızlı Giriş Handler
     wsClient.on('turmob:launch', async (data: BotCommandData) => {
         const customerName = data.customerName as string | undefined;

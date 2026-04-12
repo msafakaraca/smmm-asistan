@@ -142,25 +142,28 @@ export function KdvTevkifatHesaplama() {
     const kdvOraniLabel = KDV_ORANLARI[Number(kdvOraniIdx)]?.label ?? "%20";
 
     return (
-        <div className="space-y-8">
-            {/* Başlık */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        KDV Tevkifat Hesaplama
-                    </h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        KDV tevkifat tutarını ve beyanname bilgilerini hesaplayın
-                    </p>
+        <div className="flex flex-col h-full p-1">
+            <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+                {/* Başlık */}
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            KDV Tevkifat Hesaplama
+                        </h1>
+                        <p className="text-muted-foreground text-sm mt-1">
+                            KDV tevkifat tutarını ve beyanname bilgilerini hesaplayın
+                        </p>
+                    </div>
+                    {hasInput && (
+                        <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
+                            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                            Sıfırla
+                        </Button>
+                    )}
                 </div>
-                {hasInput && (
-                    <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
-                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                        Sıfırla
-                    </Button>
-                )}
-            </div>
 
+                {/* Content */}
+                <div className="flex-1 overflow-auto p-6 space-y-8">
             {/* Giriş */}
             <Card>
                 <CardHeader className="pb-3">
@@ -438,6 +441,8 @@ export function KdvTevkifatHesaplama() {
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
+                </div>
+            </div>
         </div>
     );
 }

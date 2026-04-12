@@ -38,7 +38,7 @@ export default async function DuyurularPage() {
   }));
 
   return (
-    <div className="h-[calc(100vh-theme(spacing.20))] -m-4 xl:-m-6 bg-white overflow-hidden">
+    <div className="h-full overflow-hidden">
       <AnnouncementPage customerGroups={customerGroups} />
     </div>
   );

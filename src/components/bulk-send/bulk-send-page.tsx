@@ -187,9 +187,10 @@ export function BulkSendPage({ customers, customerGroups = [] }: BulkSendPagePro
   }, []);
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-background">
+    <div className="flex flex-col h-full p-1">
+     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 border-b shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -239,14 +240,14 @@ export function BulkSendPage({ customers, customerGroups = [] }: BulkSendPagePro
             fixed lg:relative
             top-0 bottom-0 left-0
             w-80 lg:w-[420px]
-            border-r border-border bg-background
+            border-r border-border/60
             flex flex-col overflow-hidden
             transition-transform duration-300
             z-40 lg:z-0
             shadow-lg lg:shadow-none
           `}
         >
-          <div className="p-4 border-b border-border bg-background flex items-center justify-between">
+          <div className="p-4 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Icon icon="solar:filter-bold" className="w-4 h-4" />
               Filtreler
@@ -274,7 +275,7 @@ export function BulkSendPage({ customers, customerGroups = [] }: BulkSendPagePro
           </div>
 
           {/* Sol Panel Footer - İstatistikler */}
-          <div className="p-4 border-t border-border bg-background shrink-0">
+          <div className="p-4 border-t border-border/60 shrink-0">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Toplam Dosya</span>
@@ -318,7 +319,7 @@ export function BulkSendPage({ customers, customerGroups = [] }: BulkSendPagePro
         </div>
 
         {/* Sağ Panel - Dosyalar ve Aksiyonlar */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-background">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Actions Bar */}
           {selectedIds.length > 0 && (
             <div className="px-4 py-2.5 border-b border-border bg-blue-50 dark:bg-blue-900/20 shrink-0">
@@ -372,6 +373,7 @@ export function BulkSendPage({ customers, customerGroups = [] }: BulkSendPagePro
           </div>
         </div>
       </div>
+     </div>
 
       {/* Dialogs */}
       <MailDialog

@@ -730,9 +730,10 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
   }, []);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
       {/* Başlık */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-6 py-4 border-b">
         <ScrollText className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Beyannameler</h1>
         <div className="ml-auto">
@@ -753,7 +754,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       </div>
 
       {/* Filtreler — Combobox + Filtrele + Sorgula + Toplu Sorgula + Export */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="p-4 border-b">
         <div className="flex flex-wrap items-center gap-3">
           {/* Mükellef Seçimi — Combobox */}
           <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -922,7 +923,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
       {/* Yıl Filtresi */}
       {archiveBeyannameler.length > 0 && availableYears.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 px-6 py-3 border-b">
           <button
             type="button"
             onClick={() => setYearFilter("all")}
@@ -952,6 +953,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
       )}
 
       {/* Beyanname Grup Listesi — Mikro Kartlar */}
+      <div className="flex-1 overflow-auto px-6 py-4">
       {archiveBeyannameler.length > 0 && (
         <BeyannameGroupList
           beyannameler={filteredBeyannameler}
@@ -967,7 +969,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
       {/* Boş Durum — Henüz filtrelenmemiş */}
       {!archiveLoading && archiveBeyannameler.length === 0 && !filterDone && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 p-12 text-muted-foreground">
           <ScrollText className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Mükellef seçip <strong>Filtrele</strong> ile arşivdeki beyannameleri görüntüleyin
@@ -978,7 +980,7 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
 
       {/* Boş Durum — Filtrelendi ama sonuç yok */}
       {!archiveLoading && archiveBeyannameler.length === 0 && filterDone && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card p-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center gap-2 p-12 text-muted-foreground">
           <ScrollText className="h-12 w-12 opacity-30" />
           <p className="text-center">
             Seçilen mükellef için arşivde beyanname bulunamadı.
@@ -987,6 +989,8 @@ export default function BeyannameArsivClient({ initialCustomers }: BeyannameArsi
           </p>
         </div>
       )}
+      </div>
+      </div>
 
       {/* PDF Önizleme Dialog */}
       <PdfPreviewDialog data={pdfPreview} onClose={closePdfPreview} />

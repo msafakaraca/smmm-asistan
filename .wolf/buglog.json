@@ -1,0 +1,533 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-04-12T17:25:46.432Z",
+      "error_message": "Wrong reference: false should be true",
+      "file": "../../../.claude/settings.json",
+      "root_cause": "Used \"false\" instead of \"true\"",
+      "fix": "Changed false → true",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T17:25:46.432Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-04-12T17:29:10.617Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../../.claude-mem/settings.json",
+      "root_cause": "Had \"37777\"",
+      "fix": "Changed to \"37778\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T17:29:10.617Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-04-12T19:09:28.868Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 24→31 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:09:28.868Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-12T19:10:40.915Z",
+      "error_message": "Missing guard clause",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "No early return/throw for edge case: saved === \"true\"",
+      "fix": "Added guard clause: if (saved === \"true\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:10:40.915Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-12T19:10:54.892Z",
+      "error_message": "Wrong reference: collapsed should be effectiveCollapsed",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Used \"collapsed\" instead of \"effectiveCollapsed\"",
+      "fix": "Changed collapsed → effectiveCollapsed",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-12T19:11:04.358Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-04-12T19:17:14.981Z",
+      "error_message": "Incorrect value in code",
+      "file": "server.ts",
+      "root_cause": "Had `║  🌐 HTTP Server:      http://${hostname}:${port",
+      "fix": "Changed to `║  🌐 HTTP Server:      http://localhost:${port} ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:17:14.981Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-04-12T19:17:20.515Z",
+      "error_message": "Wrong reference: hostname should be nextHostname",
+      "file": "server.ts",
+      "root_cause": "Used \"hostname\" instead of \"nextHostname\"",
+      "fix": "Changed hostname → nextHostname",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:17:20.515Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-04-12T19:32:05.570Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "fix": "Changed to \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:32:05.570Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-12T19:44:56.921Z",
+      "error_message": "Type error",
+      "file": "src/components/kontrol/kontrol-table.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:44:56.921Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-04-12T19:45:02.081Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kontrol/kontrol-table.tsx",
+      "root_cause": "overscan: 15, → 5,",
+      "fix": "Changed overscan: 15, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:45:02.081Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-04-12T19:45:50.945Z",
+      "error_message": "Wrong reference: setPopover should be handleClosePopover",
+      "file": "src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+      "root_cause": "Used \"setPopover\" instead of \"handleClosePopover\"",
+      "fix": "Changed setPopover → handleClosePopover",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:45:50.945Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-04-12T19:47:13.301Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+      "root_cause": "overscan: 10, → 5,",
+      "fix": "Changed overscan: 10, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:47:13.301Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-04-12T19:47:14.272Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+      "root_cause": "overscan: 10, → 5,",
+      "fix": "Changed overscan: 10, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:47:14.272Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-04-12T19:47:15.872Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+      "root_cause": "overscan: 10, → 5,",
+      "fix": "Changed overscan: 10, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:47:15.872Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-04-12T19:47:16.793Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+      "root_cause": "overscan: 10, → 5,",
+      "fix": "Changed overscan: 10, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:47:16.793Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-04-12T19:47:17.660Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+      "root_cause": "overscan: 10, → 5,",
+      "fix": "Changed overscan: 10, → 5,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:47:17.660Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-04-12T19:55:09.848Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kontrol/kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 15,",
+      "fix": "Changed overscan: 5, → 15,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:09.848Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-04-12T19:55:10.901Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 10,",
+      "fix": "Changed overscan: 5, → 10,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:10.901Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-04-12T19:55:11.863Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 10,",
+      "fix": "Changed overscan: 5, → 10,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:11.863Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-04-12T19:55:13.120Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 10,",
+      "fix": "Changed overscan: 5, → 10,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:13.120Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-04-12T19:55:14.266Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 10,",
+      "fix": "Changed overscan: 5, → 10,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:14.266Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-04-12T19:55:15.395Z",
+      "error_message": "CSS fix: overscan",
+      "file": "src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+      "root_cause": "overscan: 5, → 10,",
+      "fix": "Changed overscan: 5, → 10,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:15.395Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-04-12T19:55:24.356Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "fix": "Changed to \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T19:55:24.356Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-04-12T20:14:11.993Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "fix": "Changed to \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T20:14:11.993Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-04-12T20:26:36.884Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "fix": "Changed to \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T20:26:36.884Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-04-12T21:04:19.435Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "fix": "Changed to \"border-r bg-card flex flex-col sticky top-0 h-scr",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:04:19.435Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-04-12T21:14:22.745Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 9→19 lines (2 removed) | Also: <>; <button | Also: {effectiveCollapsed ? (; <div className=\"w-full flex items-center justify-c",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-12T21:21:52.305Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-04-12T21:17:56.891Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "hover: bg-muted hover:text-foreground transition-colors\" → bg-muted transition-colors\">",
+      "fix": "Changed hover: bg-muted hover:text-foreground transition-colors\" → bg-muted transition-colors\">",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:17:56.891Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-04-12T21:25:05.908Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:25:05.908Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-04-12T21:28:49.754Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/dashboard/nav.tsx",
+      "root_cause": "Had \"flex-1 overflow-y-auto\"",
+      "fix": "Changed to \"flex-1 overflow-y-auto scrollbar-thin\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 6,
+      "last_seen": "2026-04-12T21:34:51.062Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-04-12T21:38:43.734Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/components/dashboard/header.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:38:43.734Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-04-12T22:12:53.470Z",
+      "error_message": "Type error",
+      "file": "src/components/dashboard/header.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T22:12:53.470Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-04-12T22:16:15.941Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/calculator/calculator-widget.tsx",
+      "root_cause": "Had \"fixed z-[9999] shadow-xl border border-border rou",
+      "fix": "Changed to \"fixed z-[9999] shadow-2xl border-2 border-border/",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-12T22:16:33.882Z"
+    }
+  ]
+}

@@ -59,7 +59,7 @@ export default async function TopluGonderimPage() {
   }));
 
   return (
-    <div className="h-[calc(100vh-5rem)] bg-white overflow-hidden -m-4 xl:-m-6">
+    <div className="h-full overflow-hidden">
       <BulkSendPage customers={customers} customerGroups={customerGroups} />
     </div>
   );

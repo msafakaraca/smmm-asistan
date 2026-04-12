@@ -3,6 +3,7 @@
 import { memo, useRef, useCallback, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BeyannameHeaderCell } from "./beyanname-header-cell";
@@ -83,6 +84,7 @@ export const BeyannameMatrix = memo(function BeyannameMatrix({
         estimateSize: () => ROW_HEIGHT,
         overscan: 10,
         enabled: useVirtual,
+        observeElementRect: observeElementRectHeightOnly,
     });
 
     const handleCellChange = useCallback(

@@ -8,6 +8,7 @@
 
 import { memo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { observeElementRectHeightOnly } from "@/lib/virtualizer-helpers";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import {
@@ -146,6 +147,7 @@ export const SgkKontrolTable = memo(function SgkKontrolTable({
     estimateSize: () => 48,
     overscan: 10,
     enabled: useVirtual,
+    observeElementRect: observeElementRectHeightOnly,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();

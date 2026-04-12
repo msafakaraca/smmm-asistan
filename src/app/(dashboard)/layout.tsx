@@ -17,14 +17,14 @@ export default async function DashboardLayout({
 
     return (
         <DashboardClientLayout>
-            <div className="flex min-h-screen">
+            <div className="flex h-screen overflow-hidden">
                 {/* Sidebar */}
                 <DashboardNav />
 
                 {/* Main Content */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <DashboardHeader user={session.user} />
-                    <main className="flex-1 overflow-auto p-4 xl:p-6 bg-muted/30">
+                    <main className="flex-1 min-h-0 overflow-auto p-4 xl:p-6 bg-muted/30">
                         {children}
                     </main>
                 </div>

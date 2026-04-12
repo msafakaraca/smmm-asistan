@@ -1,0 +1,4040 @@
+{
+  "version": 1,
+  "created_at": "2026-04-12T16:23:22.218Z",
+  "lifetime": {
+    "total_tokens_estimated": 790020,
+    "total_reads": 231,
+    "total_writes": 359,
+    "total_sessions": 24,
+    "anatomy_hits": 186,
+    "anatomy_misses": 43,
+    "repeated_reads_blocked": 122,
+    "estimated_savings_vs_bare_cli": 624319
+  },
+  "sessions": [
+    {
+      "id": "session-2026-04-12-1929",
+      "started": "2026-04-12T16:29:59.992Z",
+      "ended": "2026-04-12T16:43:21.876Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-1945",
+      "started": "2026-04-12T16:45:36.427Z",
+      "ended": "2026-04-12T16:47:36.787Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/_bmad-output/handoffs/2026-04-07-vergi-levhasi-modulu.md",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 3,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-1951",
+      "started": "2026-04-12T16:51:28.563Z",
+      "ended": "2026-04-12T16:56:34.043Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/.agent/rules/claude-mem-context.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/architecture-overview.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 3,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-1951",
+      "started": "2026-04-12T16:51:28.563Z",
+      "ended": "2026-04-12T17:01:34.056Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/.agent/rules/claude-mem-context.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/architecture-overview.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 0,
+        "reads_count": 3,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-1951",
+      "started": "2026-04-12T16:51:28.563Z",
+      "ended": "2026-04-12T17:12:05.058Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/.agent/rules/claude-mem-context.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/architecture-overview.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/hooks/hooks.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bemhyv8zz.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/scripts/bun-runner.js",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bztchusj0.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/package.json",
+          "tokens_estimated": 1264,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/reports/2026-01-06--windows-woes-comprehensive-report.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1264,
+        "output_tokens_estimated": 0,
+        "reads_count": 9,
+        "writes_count": 0,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-1951",
+      "started": "2026-04-12T16:51:28.563Z",
+      "ended": "2026-04-12T17:33:19.760Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 441,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/.agent/rules/claude-mem-context.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/architecture-overview.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/hooks/hooks.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bemhyv8zz.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/scripts/bun-runner.js",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bztchusj0.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/package.json",
+          "tokens_estimated": 1264,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/reports/2026-01-06--windows-woes-comprehensive-report.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/by1j4d016.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bloeomz87.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/btc2ljvbx.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/ba3vccyr4.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/.claude-mem/supervisor.json",
+          "tokens_estimated": 7,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 9,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/settings.json",
+          "tokens_estimated": 10,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/start-worker.ps1",
+          "tokens_estimated": 281,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1705,
+        "output_tokens_estimated": 307,
+        "reads_count": 14,
+        "writes_count": 4,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-1951",
+      "started": "2026-04-12T16:51:28.563Z",
+      "ended": "2026-04-12T17:33:23.973Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 441,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/.agent/rules/claude-mem-context.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/architecture-overview.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/hooks/hooks.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bemhyv8zz.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/scripts/bun-runner.js",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bztchusj0.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/cache/thedotmack/claude-mem/12.1.0/package.json",
+          "tokens_estimated": 1264,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plugins/marketplaces/thedotmack/docs/reports/2026-01-06--windows-woes-comprehensive-report.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/by1j4d016.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/bloeomz87.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/btc2ljvbx.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/AppData/Local/Temp/claude/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/7fdafa49-d96b-40df-b830-7a50359e74e5/tasks/ba3vccyr4.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/.claude-mem/supervisor.json",
+          "tokens_estimated": 7,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/.claude/settings.json",
+          "tokens_estimated": 9,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/settings.json",
+          "tokens_estimated": 10,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/.claude-mem/start-worker.ps1",
+          "tokens_estimated": 281,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1705,
+        "output_tokens_estimated": 307,
+        "reads_count": 14,
+        "writes_count": 4,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-2035",
+      "started": "2026-04-12T17:35:37.818Z",
+      "ended": "2026-04-12T17:37:03.470Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/.claude/projects/C--Users-msafa-Desktop-Projeler-SMMM-Asistan-G-ncel/memory/MEMORY.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/_bmad-output/handoffs/2026-04-07-vergi-levhasi-modulu.md",
+          "tokens_estimated": 8359,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 8359,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-2038",
+      "started": "2026-04-12T17:38:10.223Z",
+      "ended": "2026-04-12T17:40:11.323Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 4276,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 4588,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2038",
+      "started": "2026-04-12T17:38:10.223Z",
+      "ended": "2026-04-12T17:43:23.810Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 4276,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 4588,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2045",
+      "started": "2026-04-12T17:45:46.314Z",
+      "ended": "2026-04-12T17:48:25.430Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 4276,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 4588,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T17:56:11.351Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 558,
+        "output_tokens_estimated": 5527,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T17:56:21.109Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 558,
+        "output_tokens_estimated": 5527,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T19:09:38.109Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 490,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 558,
+        "output_tokens_estimated": 6017,
+        "reads_count": 1,
+        "writes_count": 2,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T19:11:23.559Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5666,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 490,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 318,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 100,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 45,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6224,
+        "output_tokens_estimated": 6584,
+        "reads_count": 2,
+        "writes_count": 7,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T19:16:07.686Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5666,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 8874,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 490,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 318,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 100,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 45,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 15098,
+        "output_tokens_estimated": 6584,
+        "reads_count": 3,
+        "writes_count": 7,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T19:17:30.874Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5666,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 8874,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 490,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 318,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 100,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 45,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 57,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 50,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 28,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 15098,
+        "output_tokens_estimated": 6741,
+        "reads_count": 3,
+        "writes_count": 11,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-12-2053",
+      "started": "2026-04-12T17:53:59.400Z",
+      "ended": "2026-04-12T19:18:02.497Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5666,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 8874,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5527,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 490,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 318,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 100,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 45,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 57,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 50,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/server.ts",
+          "tokens_estimated": 28,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 15098,
+        "output_tokens_estimated": 6741,
+        "reads_count": 3,
+        "writes_count": 11,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-12-2222",
+      "started": "2026-04-12T19:22:47.367Z",
+      "ended": "2026-04-12T19:27:52.701Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5944,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6256,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2222",
+      "started": "2026-04-12T19:22:47.367Z",
+      "ended": "2026-04-12T19:33:02.567Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5944,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 43,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 428,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6256,
+        "output_tokens_estimated": 546,
+        "reads_count": 2,
+        "writes_count": 3,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-2222",
+      "started": "2026-04-12T19:22:47.367Z",
+      "ended": "2026-04-12T19:48:16.748Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5944,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/kontrol-cizelgesi/page.tsx",
+          "tokens_estimated": 99,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/kontrol-cizelgesi/beyanname-takip/page.tsx",
+          "tokens_estimated": 102,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6402,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/page-header.tsx",
+          "tokens_estimated": 316,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 2677,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-filters.tsx",
+          "tokens_estimated": 1358,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-customer-row.tsx",
+          "tokens_estimated": 5557,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 6458,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 6318,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 6342,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 7292,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 6422,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 43,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 428,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 61,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-customer-row.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-customer-row.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 110,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 200,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 92,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 39,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 11,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 57030,
+        "output_tokens_estimated": 1322,
+        "reads_count": 15,
+        "writes_count": 20,
+        "repeated_reads_blocked": 10,
+        "anatomy_lookups": 14
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T19:55:58.527Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 55,
+        "reads_count": 6,
+        "writes_count": 7,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T19:59:04.679Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 7847,
+        "reads_count": 6,
+        "writes_count": 13,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:02:37.421Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 9032,
+        "reads_count": 6,
+        "writes_count": 16,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:09:12.870Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 561,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 583,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 303,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 10479,
+        "reads_count": 6,
+        "writes_count": 19,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:11:52.854Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 561,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 583,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 303,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 1185,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 11664,
+        "reads_count": 6,
+        "writes_count": 20,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:14:16.839Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 561,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 583,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 303,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 1185,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 11685,
+        "reads_count": 6,
+        "writes_count": 21,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:27:58.172Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 561,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 583,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 303,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 1185,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/lib/virtualizer-helpers.ts",
+          "tokens_estimated": 264,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 49,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 64,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 12712,
+        "output_tokens_estimated": 12474,
+        "reads_count": 6,
+        "writes_count": 35,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-04-12-2254",
+      "started": "2026-04-12T19:54:28.366Z",
+      "ended": "2026-04-12T20:48:29.659Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 2174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 2101,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 2112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 2070,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 2059,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/kontrol-cizelgesi/page.tsx",
+          "tokens_estimated": 99,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/takip/page.tsx",
+          "tokens_estimated": 159,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/toplu-gonderim/page.tsx",
+          "tokens_estimated": 504,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/duyurular/page.tsx",
+          "tokens_estimated": 349,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/notlar/page.tsx",
+          "tokens_estimated": 84,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/dashboard/gorevler/page.tsx",
+          "tokens_estimated": 161,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/takip/takip-cizelgesi.tsx",
+          "tokens_estimated": 10280,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/bulk-send/bulk-send-page.tsx",
+          "tokens_estimated": 4327,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/announcements/announcement-page.tsx",
+          "tokens_estimated": 4665,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/tasks/tasks-page.tsx",
+          "tokens_estimated": 4605,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/reminders/reminders-page.tsx",
+          "tokens_estimated": 1236,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/takip/takip-satir.tsx",
+          "tokens_estimated": 2258,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/bulk-send/bulk-send-table.tsx",
+          "tokens_estimated": 3923,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/announcements/announcement-customer-table.tsx",
+          "tokens_estimated": 3652,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/reminders/split-layout.tsx",
+          "tokens_estimated": 209,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/lib/virtualizer-helpers.ts",
+          "tokens_estimated": 264,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 2801,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-yonetimi/beyanname-matrix.tsx",
+          "tokens_estimated": 5812,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/client-layout.tsx",
+          "tokens_estimated": 112,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-arsiv-fatura/e-arsiv-fatura-table.tsx",
+          "tokens_estimated": 5469,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-tebligat/etebligat-table.tsx",
+          "tokens_estimated": 6384,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-kontrol/tabs/bulunan-tab.tsx",
+          "tokens_estimated": 1064,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/gib-passwords-table.tsx",
+          "tokens_estimated": 6424,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/sgk-passwords-table.tsx",
+          "tokens_estimated": 12361,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/turmob-passwords-table.tsx",
+          "tokens_estimated": 3940,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/iskur-passwords-table.tsx",
+          "tokens_estimated": 4108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/edevlet-passwords-table.tsx",
+          "tokens_estimated": 4300,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/muhsgk-detay-page.tsx",
+          "tokens_estimated": 1309,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv-detay-page.tsx",
+          "tokens_estimated": 1304,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv2-detay-page.tsx",
+          "tokens_estimated": 1311,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kdv9015-detay-page.tsx",
+          "tokens_estimated": 1360,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/ggecici-detay-page.tsx",
+          "tokens_estimated": 1259,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/kgecici-detay-page.tsx",
+          "tokens_estimated": 1249,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 438,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 514,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 561,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 583,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 303,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 1185,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/lib/virtualizer-helpers.ts",
+          "tokens_estimated": 264,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 49,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-table.tsx",
+          "tokens_estimated": 64,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv-kontrol/kdv-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv2-kontrol/kdv2-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kdv9015-kontrol/kdv9015-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sgk-kontrol/sgk-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/gecici-vergi-kontrol/gecici-vergi-kontrol-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/.claude/plans/curious-skipping-quasar.md",
+          "tokens_estimated": 654,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/takip/takip-cizelgesi.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/announcements/announcement-customer-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-arsiv-fatura/e-arsiv-fatura-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-tebligat/etebligat-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-kontrol/tabs/bulunan-tab.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-yonetimi/beyanname-matrix.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/gib-passwords-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/sgk-passwords-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/turmob-passwords-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/iskur-passwords-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/edevlet-passwords-table.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/takip/takip-cizelgesi.tsx",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/announcements/announcement-customer-table.tsx",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-arsiv-fatura/e-arsiv-fatura-table.tsx",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/e-tebligat/etebligat-table.tsx",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-kontrol/tabs/bulunan-tab.tsx",
+          "tokens_estimated": 22,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/beyanname-yonetimi/beyanname-matrix.tsx",
+          "tokens_estimated": 34,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/gib-passwords-table.tsx",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/sgk-passwords-table.tsx",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/turmob-passwords-table.tsx",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/iskur-passwords-table.tsx",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/sifreler/edevlet-passwords-table.tsx",
+          "tokens_estimated": 29,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 109979,
+        "output_tokens_estimated": 13843,
+        "reads_count": 36,
+        "writes_count": 58,
+        "repeated_reads_blocked": 14,
+        "anatomy_lookups": 35
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:05:46.358Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 48,
+        "reads_count": 4,
+        "writes_count": 1,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:15:10.960Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 240,
+        "reads_count": 4,
+        "writes_count": 3,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:16:55.957Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 367,
+        "reads_count": 4,
+        "writes_count": 4,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:18:02.641Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 103,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 470,
+        "reads_count": 4,
+        "writes_count": 5,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:18:56.839Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 103,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 97,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 567,
+        "reads_count": 4,
+        "writes_count": 6,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:19:12.313Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 103,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 97,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 96,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 663,
+        "reads_count": 4,
+        "writes_count": 7,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:21:58.745Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 103,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 97,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 96,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 85,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 748,
+        "reads_count": 4,
+        "writes_count": 8,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0002",
+      "started": "2026-04-12T21:02:44.014Z",
+      "ended": "2026-04-12T21:22:36.404Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5974,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/beyanname-takip-page.tsx",
+          "tokens_estimated": 6549,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/(dashboard)/layout.tsx",
+          "tokens_estimated": 312,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol-cizelgesi/dashboard-cards.tsx",
+          "tokens_estimated": 1431,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 174,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 103,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 97,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 96,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 85,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 164,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14266,
+        "output_tokens_estimated": 912,
+        "reads_count": 4,
+        "writes_count": 9,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-12-0023",
+      "started": "2026-04-12T21:23:26.763Z",
+      "ended": "2026-04-12T21:24:08.318Z",
+      "reads": [],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 133,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 133,
+        "reads_count": 0,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-0023",
+      "started": "2026-04-12T21:23:26.763Z",
+      "ended": "2026-04-12T21:26:19.699Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5731,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 133,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 150,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 67,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 34,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 43,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 46,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 168,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5731,
+        "output_tokens_estimated": 658,
+        "reads_count": 1,
+        "writes_count": 8,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-0023",
+      "started": "2026-04-12T21:23:26.763Z",
+      "ended": "2026-04-12T21:26:20.027Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5731,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 133,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 150,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 67,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 34,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 43,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 46,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 168,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5731,
+        "output_tokens_estimated": 658,
+        "reads_count": 1,
+        "writes_count": 8,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-0028",
+      "started": "2026-04-12T21:28:06.800Z",
+      "ended": "2026-04-12T21:29:27.442Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5828,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 1226,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 16,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 228,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 7054,
+        "output_tokens_estimated": 244,
+        "reads_count": 2,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-0028",
+      "started": "2026-04-12T21:28:06.800Z",
+      "ended": "2026-04-12T21:30:26.143Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5832,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 1226,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 16,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 228,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 19,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 15,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 7058,
+        "output_tokens_estimated": 278,
+        "reads_count": 2,
+        "writes_count": 4,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-0028",
+      "started": "2026-04-12T21:28:06.800Z",
+      "ended": "2026-04-12T21:31:13.497Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5832,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 1226,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 16,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 228,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 19,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 26,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 7058,
+        "output_tokens_estimated": 304,
+        "reads_count": 2,
+        "writes_count": 5,
+        "repeated_reads_blocked": 4,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-12-0031",
+      "started": "2026-04-12T21:31:53.817Z",
+      "ended": "2026-04-12T21:32:01.886Z",
+      "reads": [],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 21,
+        "reads_count": 0,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-0031",
+      "started": "2026-04-12T21:31:53.817Z",
+      "ended": "2026-04-12T21:32:12.281Z",
+      "reads": [],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 21,
+        "reads_count": 0,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-12-0032",
+      "started": "2026-04-12T21:32:55.167Z",
+      "ended": "2026-04-12T21:34:55.434Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5838,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 59,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5838,
+        "output_tokens_estimated": 59,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-0032",
+      "started": "2026-04-12T21:32:55.167Z",
+      "ended": "2026-04-12T21:39:12.912Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5838,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 59,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 238,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 327,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 688,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5838,
+        "output_tokens_estimated": 1312,
+        "reads_count": 1,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-0032",
+      "started": "2026-04-12T21:32:55.167Z",
+      "ended": "2026-04-12T21:40:59.421Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 5838,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/nav.tsx",
+          "tokens_estimated": 59,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 238,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 327,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 688,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 763,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5838,
+        "output_tokens_estimated": 2075,
+        "reads_count": 1,
+        "writes_count": 5,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-12-0053",
+      "started": "2026-04-12T21:53:29.729Z",
+      "ended": "2026-04-12T22:13:56.387Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 2875,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/package.json",
+          "tokens_estimated": 1264,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 1221,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-file-row.tsx",
+          "tokens_estimated": 1665,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-client.tsx",
+          "tokens_estimated": 29836,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dialog.tsx",
+          "tokens_estimated": 1183,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/popover.tsx",
+          "tokens_estimated": 383,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dropdown-menu.tsx",
+          "tokens_estimated": 2481,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-module.tsx",
+          "tokens_estimated": 21788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/button.tsx",
+          "tokens_estimated": 592,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/bot-report-modal.tsx",
+          "tokens_estimated": 2387,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/.claude/plans/async-knitting-harbor.md",
+          "tokens_estimated": 770,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 4356,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 56,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 230,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 66233,
+        "output_tokens_estimated": 5450,
+        "reads_count": 12,
+        "writes_count": 5,
+        "repeated_reads_blocked": 16,
+        "anatomy_lookups": 12
+      }
+    },
+    {
+      "id": "session-2026-04-12-0053",
+      "started": "2026-04-12T21:53:29.729Z",
+      "ended": "2026-04-12T22:16:56.827Z",
+      "reads": [
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 3137,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/package.json",
+          "tokens_estimated": 1264,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/app/globals.css",
+          "tokens_estimated": 1221,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-file-row.tsx",
+          "tokens_estimated": 1665,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/kontrol-client.tsx",
+          "tokens_estimated": 29836,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dialog.tsx",
+          "tokens_estimated": 1183,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/popover.tsx",
+          "tokens_estimated": 383,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/dropdown-menu.tsx",
+          "tokens_estimated": 2481,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dosyalar/dosyalar-module.tsx",
+          "tokens_estimated": 21788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/button.tsx",
+          "tokens_estimated": 592,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/kontrol/bot-report-modal.tsx",
+          "tokens_estimated": 2387,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/ui/tooltip.tsx",
+          "tokens_estimated": 558,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "C:/Users/msafa/.claude/plans/async-knitting-harbor.md",
+          "tokens_estimated": 770,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 4356,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 56,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 230,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 11,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/dashboard/header.tsx",
+          "tokens_estimated": 371,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 51,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/msafa/Desktop/Projeler/SMMM Asistan Güncel/src/components/calculator/calculator-widget.tsx",
+          "tokens_estimated": 39,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 66495,
+        "output_tokens_estimated": 6014,
+        "reads_count": 12,
+        "writes_count": 11,
+        "repeated_reads_blocked": 17,
+        "anatomy_lookups": 12
+      }
+    }
+  ],
+  "daemon_usage": [],
+  "waste_flags": [],
+  "optimization_report": {
+    "last_generated": "2026-04-12T16:23:55.711Z",
+    "patterns": []
+  }
+}

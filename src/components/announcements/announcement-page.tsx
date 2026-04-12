@@ -227,181 +227,183 @@ export function AnnouncementPage({ customerGroups = [] }: AnnouncementPageProps)
   );
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 xl:px-6 py-3 border-b border-border bg-background shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col h-full p-1">
+      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border/60 bg-card/50 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg border border-border hover:bg-muted"
+            >
+              <Icon icon="solar:filter-bold" className="w-5 h-5 text-muted-foreground" />
+            </button>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+              <Icon icon="solar:megaphone-bold" className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Mükellef Duyuruları</h1>
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                Mükelleflere toplu e-posta, SMS ve WhatsApp duyuruları gönderin
+              </p>
+            </div>
+          </div>
+
           <button
-            onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg border border-border hover:bg-muted"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted disabled:opacity-50"
           >
-            <Icon icon="solar:filter-bold" className="w-5 h-5 text-muted-foreground" />
+            <Icon
+              icon="solar:refresh-bold"
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Yenile</span>
           </button>
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-            <Icon icon="solar:megaphone-bold" className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Mükellef Duyuruları</h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              Mükelleflere toplu e-posta, SMS ve WhatsApp duyuruları gönderin
-            </p>
-          </div>
         </div>
 
-        <button
-          onClick={() => refetch()}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted disabled:opacity-50"
-        >
-          <Icon
-            icon="solar:refresh-bold"
-            className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-          />
-          <span className="hidden sm:inline">Yenile</span>
-        </button>
-      </div>
-
-      {/* Two Column Layout */}
-      <div className="flex flex-1 overflow-hidden min-h-0 relative">
-        {/* Mobile Overlay Backdrop */}
-        {showMobileFilters && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-            onClick={() => setShowMobileFilters(false)}
-          />
-        )}
-
-        {/* Left Panel - Filters */}
-        <div
-          className={`
-            ${showMobileFilters ? "translate-x-0" : "-translate-x-full"}
-            lg:translate-x-0
-            fixed lg:relative
-            top-0 bottom-0 left-0
-            w-80 lg:w-[360px]
-            border-r border-border bg-background
-            flex flex-col overflow-hidden
-            transition-transform duration-300
-            z-40 lg:z-0
-            shadow-lg lg:shadow-none
-          `}
-        >
-          <div className="h-14 px-4 border-b border-border bg-background flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Icon icon="solar:filter-bold" className="w-4 h-4" />
-              Filtreler
-            </h2>
-            <button
+        {/* Two Column Layout */}
+        <div className="flex flex-1 overflow-hidden min-h-0 relative">
+          {/* Mobile Overlay Backdrop */}
+          {showMobileFilters && (
+            <div
+              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
               onClick={() => setShowMobileFilters(false)}
-              className="lg:hidden p-1 hover:bg-muted rounded"
-            >
-              <Icon icon="solar:close-circle-bold" className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            <AnnouncementFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onReset={resetFilters}
-              customerGroups={customerGroups}
-              isLoading={isLoading}
             />
-          </div>
+          )}
 
-          {/* Left Panel Footer - Stats */}
-          <div className="p-4 border-t border-border bg-background shrink-0">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Toplam Mükellef</span>
-                <span className="font-semibold text-foreground">{customers.length}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Seçili</span>
-                <span className="font-semibold text-blue-600 dark:text-blue-400">{selectedIds.size}</span>
-              </div>
-              <div className="pt-3 border-t border-border space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Icon icon="solar:letter-bold" className="w-3.5 h-3.5 text-blue-500" />
-                    <span>E-posta var</span>
-                  </div>
-                  <span className="font-medium text-foreground">
-                    {customers.filter((c) => c.email).length}
-                  </span>
+          {/* Left Panel - Filters */}
+          <div
+            className={`
+              ${showMobileFilters ? "translate-x-0" : "-translate-x-full"}
+              lg:translate-x-0
+              fixed lg:relative
+              top-0 bottom-0 left-0
+              w-80 lg:w-[360px]
+              border-r border-border bg-background
+              flex flex-col overflow-hidden
+              transition-transform duration-300
+              z-40 lg:z-0
+              shadow-lg lg:shadow-none
+            `}
+          >
+            <div className="h-14 px-4 border-b border-border bg-background flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Icon icon="solar:filter-bold" className="w-4 h-4" />
+                Filtreler
+              </h2>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="lg:hidden p-1 hover:bg-muted rounded"
+              >
+                <Icon icon="solar:close-circle-bold" className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <AnnouncementFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onReset={resetFilters}
+                customerGroups={customerGroups}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* Left Panel Footer - Stats */}
+            <div className="p-4 border-t border-border shrink-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Toplam Mükellef</span>
+                  <span className="font-semibold text-foreground">{customers.length}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Icon icon="solar:phone-bold" className="w-3.5 h-3.5 text-green-500" />
-                    <span>Telefon var</span>
-                  </div>
-                  <span className="font-medium text-foreground">
-                    {customers.filter((c) => c.telefon1 || c.telefon2).length}
-                  </span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Seçili</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">{selectedIds.size}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Icon icon="solar:users-group-rounded-bold" className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Grup sayısı</span>
+                <div className="pt-3 border-t border-border space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Icon icon="solar:letter-bold" className="w-3.5 h-3.5 text-blue-500" />
+                      <span>E-posta var</span>
+                    </div>
+                    <span className="font-medium text-foreground">
+                      {customers.filter((c) => c.email).length}
+                    </span>
                   </div>
-                  <span className="font-medium text-foreground">{customerGroups.length}</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Icon icon="solar:phone-bold" className="w-3.5 h-3.5 text-green-500" />
+                      <span>Telefon var</span>
+                    </div>
+                    <span className="font-medium text-foreground">
+                      {customers.filter((c) => c.telefon1 || c.telefon2).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Icon icon="solar:users-group-rounded-bold" className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Grup sayısı</span>
+                    </div>
+                    <span className="font-medium text-foreground">{customerGroups.length}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Panel - Table and Actions */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-background">
-          {/* Actions Bar - Her zaman görünür, sol panel header ile aynı yükseklikte */}
-          <div className={`h-14 px-4 border-b border-border shrink-0 flex items-center ${selectedIds.size > 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-muted'}`}>
-            <AnnouncementActions
-              selectedCount={selectedIds.size}
-              onSendEmail={handleSendEmail}
-              onSendSms={handleSendSms}
-              onSendWhatsApp={handleSendWhatsApp}
-              onSchedule={handleSchedule}
-              onUseTemplate={handleUseTemplate}
-              isLoading={isLoading}
-              hasEmail={selectedWithEmail}
-              hasPhone={selectedWithPhone}
-              totalWithEmail={customers.filter((c) => c.email).length}
-              totalWithPhone={customers.filter((c) => c.telefon1 || c.telefon2).length}
-            />
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 overflow-hidden min-h-0 p-4">
-            {error ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <Icon icon="solar:danger-triangle-bold" className="w-16 h-16 text-red-400 mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">Bir hata oluştu</h3>
-                <p className="text-sm text-muted-foreground mb-4">{error}</p>
-                <button
-                  onClick={() => refetch()}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
-                >
-                  Tekrar Dene
-                </button>
-              </div>
-            ) : (
-              <AnnouncementCustomerTable
-                customers={customers}
+          {/* Right Panel - Table and Actions */}
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            {/* Actions Bar */}
+            <div className={`h-14 px-4 border-b shrink-0 flex items-center ${selectedIds.size > 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-muted/50'}`}>
+              <AnnouncementActions
+                selectedCount={selectedIds.size}
+                onSendEmail={handleSendEmail}
+                onSendSms={handleSendSms}
+                onSendWhatsApp={handleSendWhatsApp}
+                onSchedule={handleSchedule}
+                onUseTemplate={handleUseTemplate}
                 isLoading={isLoading}
-                selectedIds={selectedIds}
-                onRowSelect={toggleSelection}
-                onSelectAll={toggleAll}
-                isAllSelected={isAllSelected}
-                isSomeSelected={isSomeSelected}
+                hasEmail={selectedWithEmail}
+                hasPhone={selectedWithPhone}
+                totalWithEmail={customers.filter((c) => c.email).length}
+                totalWithPhone={customers.filter((c) => c.telefon1 || c.telefon2).length}
               />
-            )}
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+              {error ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Icon icon="solar:danger-triangle-bold" className="w-16 h-16 text-red-400 mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Bir hata oluştu</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{error}</p>
+                  <button
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+                  >
+                    Tekrar Dene
+                  </button>
+                </div>
+              ) : (
+                <AnnouncementCustomerTable
+                  customers={customers}
+                  isLoading={isLoading}
+                  selectedIds={selectedIds}
+                  onRowSelect={toggleSelection}
+                  onSelectAll={toggleAll}
+                  isAllSelected={isAllSelected}
+                  isSomeSelected={isSomeSelected}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Send Dialog */}
+      {/* Dialoglar — çerçeve dışında */}
       <SendDialog
         open={sendDialogOpen}
         onOpenChange={setSendDialogOpen}
@@ -411,14 +413,12 @@ export function AnnouncementPage({ customerGroups = [] }: AnnouncementPageProps)
         initialChannels={sendDialogChannels}
       />
 
-      {/* Send Result Dialog */}
       <SendResultDialog
         open={resultDialogOpen}
         onOpenChange={setResultDialogOpen}
         result={sendResult}
       />
 
-      {/* Scheduled Dialog */}
       <ScheduledDialog
         open={scheduledDialogOpen}
         onOpenChange={setScheduledDialogOpen}
@@ -427,7 +427,6 @@ export function AnnouncementPage({ customerGroups = [] }: AnnouncementPageProps)
         onSave={handleCreateScheduled}
       />
 
-      {/* Template Dialog */}
       <TemplateDialog
         open={templateDialogOpen}
         onOpenChange={setTemplateDialogOpen}

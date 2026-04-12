@@ -17,18 +17,19 @@ const prisma = new PrismaClient();
 
 // Environment
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.WS_HOST || 'localhost';
+const hostname = process.env.WS_HOST || '0.0.0.0';
+const nextHostname = 'localhost';
 const port = parseInt(process.env.PORT || '3000', 10);
 const wsPort = parseInt(process.env.WS_PORT || '3001', 10);
 
 // Internal API base URL (WebSocket server -> Next.js API arası iletişim)
-const internalApiBaseUrl = `http://${hostname}:${port}`;
+const internalApiBaseUrl = `http://localhost:${port}`;
 
 // Turbopack desteği (--turbo argümanı veya TURBOPACK env)
 const turbo = process.env.TURBOPACK === 'true' || process.argv.includes('--turbo');
 
 // Next.js app
-const app = next({ dev, hostname, port, turbopack: turbo });
+const app = next({ dev, hostname: nextHostname, port, turbopack: turbo });
 const handle = app.getRequestHandler();
 
 // Types
@@ -566,7 +567,7 @@ app.prepare().then(() => {
   // HTTP Server for Next.js + Internal API
   const server = createServer(async (req, res) => {
     try {
-      const parsedUrl = new URL(req.url!, `http://${req.headers.host || `${hostname}:${port}`}`);
+      const parsedUrl = new URL(req.url!, `http://${req.headers.host || `${nextHostname}:${port}`}`);
 
       // Internal API endpoints for Electron delegation
       if (parsedUrl.pathname === '/_internal/clients' && req.method === 'GET') {
@@ -792,8 +793,8 @@ app.prepare().then(() => {
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║                    SMMM-AI SERVER                          ║');
     console.log('╠════════════════════════════════════════════════════════════╣');
-    console.log(`║  🌐 HTTP Server:      http://${hostname}:${port}                 ║`);
-    console.log(`║  🔌 WebSocket Server: ws://${hostname}:${wsPort}                  ║`);
+    console.log(`║  🌐 HTTP Server:      http://localhost:${port}                 ║`);
+    console.log(`║  🔌 WebSocket Server: ws://localhost:${wsPort}                  ║`);
     console.log(`║  📦 Mode:             ${dev ? 'Development' : 'Production'}                      ║`);
     console.log(`║  ⚡ Turbopack:        ${turbo ? 'Enabled' : 'Disabled'}                       ║`);
     console.log('╚════════════════════════════════════════════════════════════╝');
